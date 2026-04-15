@@ -1,6 +1,6 @@
-# Usage4Claude
+# Usage4Claude-Arcanii
+A fork of [f-is-h](https://github.com/f-is-h) 's awesome work.
 
-[English](README.md) | [日本語](docs/README.ja.md) | [简体中文](docs/README.zh-CN.md) | [繁體中文](docs/README.zh-TW.md) | [한국어](docs/README.ko.md)
 
 <div align="center">
 
@@ -11,7 +11,6 @@
 [![SwiftUI](https://img.shields.io/badge/SwiftUI-✓-green?style=flat-square)](https://developer.apple.com/xcode/swiftui/)
 [![License](https://img.shields.io/badge/License-MIT-purple?style=flat-square)](LICENSE)
 [![Release](https://img.shields.io/github/v/release/f-is-h/Usage4Claude?style=flat-square)](https://github.com/f-is-h/Usage4Claude/releases)
-[![Downloads (all assets, all releases)](https://img.shields.io/github/downloads/f-is-h/Usage4Claude/total)](https://github.com/f-is-h/Usage4Claude/releases)
 
 **An elegant macOS menu bar app for real-time monitoring of your Claude AI usage.**
 
