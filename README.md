@@ -1,6 +1,16 @@
-# Usage4Claude
+# Usage4Claude-Arcanii
+A fork of [f-is-h](https://github.com/f-is-h) 's awesome work -> (https://github.com/f-is-h/Usage4Claude).
 
-[English](README.md) | [日本語](docs/README.ja.md) | [简体中文](docs/README.zh-CN.md) | [繁體中文](docs/README.zh-TW.md) | [한국어](docs/README.ko.md)
+Thank you f-is-h !!! :smiley: All buy "me" a coffee are changed to buy f-is-h a coffee.
+
+Forked from v2.6.0
+
+### New features testing
+1. Added double number % inside the circle to track 5-hour, and 7-day
+2. Added a tiny number in menu bar icons
+3. Added a unified smash everything into one icon on menu bar
+
+
 
 <div align="center">
 
@@ -11,7 +21,6 @@
 [![SwiftUI](https://img.shields.io/badge/SwiftUI-✓-green?style=flat-square)](https://developer.apple.com/xcode/swiftui/)
 [![License](https://img.shields.io/badge/License-MIT-purple?style=flat-square)](LICENSE)
 [![Release](https://img.shields.io/github/v/release/f-is-h/Usage4Claude?style=flat-square)](https://github.com/f-is-h/Usage4Claude/releases)
-[![Downloads (all assets, all releases)](https://img.shields.io/github/downloads/f-is-h/Usage4Claude/total)](https://github.com/f-is-h/Usage4Claude/releases)
 
 **An elegant macOS menu bar app for real-time monitoring of your Claude AI usage.**
 
