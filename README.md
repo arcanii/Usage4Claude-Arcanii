@@ -6,7 +6,7 @@ Thank you f-is-h !!! :smiley: All buy "me" a coffee are changed to buy f-is-h a 
 Forked from v2.6.0
 
 ### New features testing
-1. Added double number% inside the circle to track 5-hour, and 7-day
+1. Added double number % inside the circle to track 5-hour, and 7-day
 2. Added a tiny number in menu bar icons
 3. Added a unified smash everything into one icon on menu bar
 
