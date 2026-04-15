@@ -12,7 +12,7 @@
 "menu.check_updates" = "Check for Updates";
 "menu.about" = "About";
 "menu.web_usage" = "View Claude Usage";
-"menu.coffee" = "Buy Me A Coffee";
+"menu.coffee" = "Buy f-is-h a Coffee";
 "menu.github_sponsor" = "GitHub Sponsor";
 "menu.quit" = "Quit Usage4Claude";
 "menu.account" = "Account";
@@ -95,7 +95,7 @@
 "settings.about.license" = "License";
 "settings.about.license_value" = "MIT License";
 "settings.about.github" = "Visit GitHub Repository";
-"settings.about.coffee" = "Buy Me A Coffee";
+"settings.about.coffee" = "Buy f-is-h a Coffee";
 "settings.about.github_sponsor" = "GitHub Sponsor";
 "settings.about.copyright" = "© 2025 All Rights Reserved";
 
@@ -133,6 +133,8 @@
 "display.percentage_only" = "Percentage Only";
 "display.icon_only" = "Icon Only";
 "display.both" = "Icon and Percentage";
+"display.unified" = "Unified";
+"display.show_number" = "Show Number";
 "display.show_icon" = "Show Icon";
 "display.show_percentage" = "Show Percentage";
 
@@ -238,7 +240,7 @@
 "diagnostic.suggestion_configure_auth" = "Please configure Organization ID and Session Key in the fields above";
 "diagnostic.suggestion_check_org_id" = "Check if Organization ID format is correct (should be a UUID)";
 "diagnostic.suggestion_export_and_share" = "Export this diagnostic report and share it on GitHub Issues";
-"diagnostic.suggestion_contact_support" = "Contact developer for help at github.com/f-is-h/Usage4Claude/issues";
+"diagnostic.suggestion_contact_support" = "Contact developer for help at github.com/arcanii/Usage4Claude-Arcanii/issues";
 "diagnostic.open_log_folder" = "Open Log Folder";
 
 // MARK: - Limit Types (v2.0.0)

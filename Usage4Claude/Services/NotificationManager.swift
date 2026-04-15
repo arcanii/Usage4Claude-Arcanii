@@ -10,8 +10,8 @@ import Foundation
 import UserNotifications
 import OSLog
 
-/// 用量通知管理器
-/// 负责在用量达到阈值或重置时发送 macOS 系统通知
+/// Usage notification manager
+/// Responsible for sending macOS system notifications when usage reaches thresholds or resets
 class NotificationManager {
     // MARK: - Singleton
 
@@ -19,27 +19,45 @@ class NotificationManager {
 
     // MARK: - Constants
 
-    /// 用量警告阈值（90%）
+    /// Usage warning threshold (90%)
     private let warningThreshold: Double = 90.0
 
-    /// 7天限制的早期警告阈值（75%）
+    /// 7-day limit early warning threshold (75%)
     private let sevenDayEarlyWarningThreshold: Double = 75.0
 
-    /// 重置检测阈值：百分比骤降超过此值视为重置
+    /// Reset detection threshold: a percentage drop exceeding this value is treated as a reset
     private let resetDropThreshold: Double = 30.0
 
     // MARK: - State
 
-    /// 已通知记录（防止同一周期内重复通知）
-    /// key = LimitType.rawValue, value = true 表示已发送过警告
+    /// Notification records (prevent duplicate notifications within the same cycle)
+    /// key = LimitType.rawValue, value = true means a warning has been sent
     private var notifiedWarnings: [String: Bool] = [:]
+
+    /// Whether UNUserNotificationCenter is usable (requires App Sandbox or proper signing)
+    private lazy var notificationsAvailable: Bool = {
+        // Check if the app is running in a sandbox — UNUserNotificationCenter traps without one
+        let environment = ProcessInfo.processInfo.environment
+        if environment["APP_SANDBOX_CONTAINER_ID"] != nil {
+            return true
+        }
+        // Also allow if the app has a proper code signature (not ad-hoc)
+        let bundleID = Bundle.main.bundleIdentifier ?? ""
+        if !bundleID.isEmpty, let teamID = Bundle.main.infoDictionary?["CFBundleIdentifier"] as? String, !teamID.isEmpty {
+            // Try to access notification center — if properly signed, this won't trap
+            // But since we can't catch EXC_BREAKPOINT, be conservative
+        }
+        Logger.menuBar.info("通知不可用: 应用未在沙盒中运行")
+        return false
+    }()
 
     private init() {}
 
     // MARK: - Permission
 
-    /// 请求通知权限
+    /// Request notification permission
     func requestPermission() {
+        guard notificationsAvailable else { return }
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { granted, error in
             if let error = error {
                 Logger.menuBar.error("请求通知权限失败: \(error.localizedDescription)")
@@ -50,12 +68,12 @@ class NotificationManager {
 
     // MARK: - Check & Notify
 
-    /// 检查用量数据并在需要时发送通知
+    /// Check usage data and send notifications when needed
     /// - Parameters:
-    ///   - usageData: 最新的用量数据
-    ///   - previousData: 上一次的用量数据（用于对比变化）
+    ///   - usageData: Latest usage data
+    ///   - previousData: Previous usage data (for comparing changes)
     func checkAndNotify(usageData: UsageData, previousData: UsageData?) {
-        // 逐个限制类型检查
+        // Check each limit type
         checkLimit(
             type: .fiveHour,
             current: usageData.fiveHour?.percentage,
@@ -85,7 +103,7 @@ class NotificationManager {
             previousResetsAt: previousData?.sonnet?.resetsAt
         )
 
-        // Extra Usage 单独处理
+        // Handle Extra Usage separately
         checkLimit(
             type: .extraUsage,
             current: usageData.extraUsage?.percentage,
@@ -97,7 +115,7 @@ class NotificationManager {
 
     // MARK: - Private Methods
 
-    /// 检查单个限制类型的用量变化
+    /// Check usage changes for a single limit type
     private func checkLimit(
         type: LimitType,
         current: Double?,
@@ -107,7 +125,7 @@ class NotificationManager {
     ) {
         guard let currentPct = current else { return }
 
-        // 检测重置：百分比骤降 或 resetsAt 发生变化
+        // Detect reset: sharp percentage drop or resetsAt changed
         if let previousPct = previous, isReset(
             currentPct: currentPct,
             previousPct: previousPct,
@@ -122,7 +140,7 @@ class NotificationManager {
 
         let previousPct = previous ?? 0
 
-        // 7天限制额外检查 75% 阈值
+        // Additional 75% threshold check for 7-day limit
         if type == .sevenDay {
             let earlyKey = "\(type.rawValue)_75"
             let alreadyNotifiedEarly = notifiedWarnings[earlyKey] ?? false
@@ -132,7 +150,7 @@ class NotificationManager {
             }
         }
 
-        // 检测是否跨越 90% 阈值
+        // Detect if the 90% threshold was crossed
         let alreadyNotified = notifiedWarnings[type.rawValue] ?? false
         if !alreadyNotified && previousPct < warningThreshold && currentPct >= warningThreshold {
             sendUsageWarning(limitType: type, percentage: currentPct)
@@ -140,22 +158,22 @@ class NotificationManager {
         }
     }
 
-    /// 判断是否发生了重置
+    /// Determine if a reset has occurred
     private func isReset(
         currentPct: Double,
         previousPct: Double,
         currentResetsAt: Date?,
         previousResetsAt: Date?
     ) -> Bool {
-        // 百分比骤降（从较高值降到较低值）
+        // Sharp percentage drop (from higher value to lower value)
         if previousPct >= warningThreshold && (previousPct - currentPct) > resetDropThreshold {
             return true
         }
 
-        // resetsAt 发生了变化（新的重置周期）
+        // resetsAt changed (new reset cycle)
         if let current = currentResetsAt, let previous = previousResetsAt {
             if abs(current.timeIntervalSince(previous)) > 1.0 {
-                // resetsAt 变了，且百分比也下降了，确认是重置
+                // resetsAt changed and percentage also dropped, confirming a reset
                 if currentPct < previousPct {
                     return true
                 }
@@ -165,8 +183,9 @@ class NotificationManager {
         return false
     }
 
-    /// 发送用量警告通知
+    /// Send usage warning notification
     private func sendUsageWarning(limitType: LimitType, percentage: Double) {
+        guard notificationsAvailable else { return }
         let content = UNMutableNotificationContent()
         content.title = L.UsageNotification.warningTitle
         content.body = L.UsageNotification.warningBody(limitType.displayName, Int(percentage))
@@ -187,8 +206,9 @@ class NotificationManager {
         Logger.menuBar.info("已发送用量警告: \(limitType.displayName) \(Int(percentage))%")
     }
 
-    /// 发送用量重置通知
+    /// Send usage reset notification
     private func sendResetNotification(limitType: LimitType) {
+        guard notificationsAvailable else { return }
         let content = UNMutableNotificationContent()
         content.title = L.UsageNotification.resetTitle
         content.body = L.UsageNotification.resetBody(limitType.displayName)
@@ -209,7 +229,7 @@ class NotificationManager {
         Logger.menuBar.info("已发送重置通知: \(limitType.displayName)")
     }
 
-    /// 重置所有已通知记录
+    /// Reset all notification records
     func resetAllNotificationStates() {
         notifiedWarnings.removeAll()
     }

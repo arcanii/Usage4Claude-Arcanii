@@ -8,8 +8,8 @@
 
 import SwiftUI
 
-/// 首次启动欢迎界面
-/// 单页流程：欢迎 → 所有设置（认证 + 主题 + 预览）
+/// First launch welcome screen
+/// Single page flow: Welcome -> All settings (authentication + theme + preview)
 struct WelcomeView: View {
     @ObservedObject private var settings = UserSettings.shared
     @Environment(\.dismiss) private var dismiss
@@ -27,7 +27,7 @@ struct WelcomeView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // 内容区域
+            // Content area
             Group {
                 switch currentStep {
                 case .welcome:
@@ -41,7 +41,7 @@ struct WelcomeView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-            // 底部导航按钮
+            // Bottom navigation buttons
             NavigationButtons(
                 currentStep: currentStep,
                 canProceed: canProceed,
@@ -102,30 +102,30 @@ struct WelcomeView: View {
     private func completeSetup() {
         let trimmedKey = sessionKey.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        // 显示加载状态
+        // Show loading state
         isFetchingOrgId = true
         fetchError = nil
 
-        // 获取 Organization ID 并创建账户
+        // Fetch Organization ID and create account
         fetchOrganizationAndCreateAccount(sessionKey: trimmedKey) { success in
             DispatchQueue.main.async {
                 isFetchingOrgId = false
 
                 if success {
-                    // 获取成功，标记首次启动完成
+                    // Fetch successful, mark first launch as complete
                     settings.isFirstLaunch = false
 
-                    // 发送通知以启动数据刷新
+                    // Post notification to trigger data refresh
                     NotificationCenter.default.post(name: .openSettings, object: nil)
 
-                    // 关闭窗口
+                    // Close window
                     dismiss()
                 } else {
-                    // 获取失败，显示错误但不阻止用户继续
-                    // 用户可以稍后在设置中重新配置
+                    // Fetch failed, show error but don't block user from continuing
+                    // User can reconfigure later in settings
                     fetchError = L.Welcome.fetchOrgIdFailed
 
-                    // 3秒后自动关闭错误提示并继续
+                    // Auto-close error and continue after 3 seconds
                     DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
                         settings.isFirstLaunch = false
                         dismiss()
@@ -135,10 +135,10 @@ struct WelcomeView: View {
         }
     }
 
-    /// 获取 Organization 并创建账户
+    /// Fetch Organization and create account
     /// - Parameters:
     ///   - sessionKey: Session Key
-    ///   - completion: 完成回调，返回是否成功
+    ///   - completion: Completion callback, returns whether it succeeded
     private func fetchOrganizationAndCreateAccount(sessionKey: String, completion: @escaping (Bool) -> Void) {
         let apiService = ClaudeAPIService()
         apiService.fetchOrganizations(sessionKey: sessionKey) { result in
@@ -175,7 +175,7 @@ struct WelcomeStepView: View {
         VStack(spacing: 24) {
             Spacer()
 
-            // App图标
+            // App icon
             if let icon = ImageHelper.createAppIcon(size: 120) {
                 Image(nsImage: icon)
                     .resizable()
@@ -184,11 +184,16 @@ struct WelcomeStepView: View {
                     .shadow(radius: 10)
             }
 
-            // 欢迎文字
+            // Welcome text
             VStack(spacing: 12) {
-                Text(L.Welcome.title)
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
+                VStack(spacing: 4) {
+                    Text(L.Welcome.title)
+                        .font(.largeTitle)
+                        .fontWeight(.bold)
+                    Text("(Arcanii Mod)")
+                        .font(.title3)
+                        .foregroundColor(.secondary)
+                }
 
                 Text(L.Welcome.subtitle)
                     .font(.body)
@@ -211,11 +216,11 @@ struct SetupStepView: View {
 
     // MARK: - Checkbox Helper Methods
 
-    /// 判断是否应该禁用某个checkbox
+    /// Determine if a checkbox should be disabled
     private func shouldDisableCheckbox(for limitType: LimitType) -> Bool {
         let circularTypes: Set<LimitType> = [.fiveHour, .sevenDay]
 
-        // 如果这是最后一个选中的圆形图标，则禁用
+        // Disable if this is the last selected circular icon
         if circularTypes.contains(limitType) {
             let selectedCircular = settings.customDisplayTypes.intersection(circularTypes)
             return selectedCircular.count == 1 && selectedCircular.contains(limitType)
@@ -224,10 +229,10 @@ struct SetupStepView: View {
         return false
     }
 
-    /// 切换限制类型的选中状态
+    /// Toggle limit type selection state
     private func toggleLimitType(_ limitType: LimitType) {
         if settings.customDisplayTypes.contains(limitType) {
-            // 检查是否可以取消选择
+            // Check if deselection is allowed
             if !shouldDisableCheckbox(for: limitType) {
                 settings.customDisplayTypes.remove(limitType)
             }
@@ -239,7 +244,7 @@ struct SetupStepView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
-                // 紧凑的欢迎信息
+                // Compact welcome info
                 VStack(spacing: 8) {
                     if let icon = ImageHelper.createAppIcon(size: 48) {
                         Image(nsImage: icon)
@@ -248,9 +253,14 @@ struct SetupStepView: View {
                             .cornerRadius(10)
                     }
 
-                    Text(L.Welcome.title)
-                        .font(.title3)
-                        .fontWeight(.bold)
+                    VStack(spacing: 2) {
+                        Text(L.Welcome.title)
+                            .font(.title3)
+                            .fontWeight(.bold)
+                        Text("(Arcanii Mod)")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
                 }
                 .padding(.top, 20)
                 .padding(.bottom, 16)
@@ -258,11 +268,11 @@ struct SetupStepView: View {
                 Divider()
                     .padding(.vertical, 20)
 
-                // 主设置区域
+                // Main settings area
                 VStack(alignment: .leading, spacing: 20) {
-                    // SessionKey 设置
+                    // SessionKey setup
                     VStack(alignment: .leading, spacing: 12) {
-                        // 标题
+                        // Title
                         HStack(spacing: 8) {
                             Image(systemName: "key.fill")
                                 .font(.title3)
@@ -282,10 +292,10 @@ struct SetupStepView: View {
                             }
                         }
 
-                        // 浏览器登录按钮（推荐）
+                        // Browser login button (recommended)
                         Button(action: {
                             WebLoginWindowManager.shared.showLoginWindow { account in
-                                // 登录成功后自动填充 sessionKey
+                                // Auto-fill sessionKey after successful login
                                 sessionKey = account.sessionKey
                             }
                         }) {
@@ -298,7 +308,7 @@ struct SetupStepView: View {
                         .buttonStyle(.borderedProminent)
                         .controlSize(.large)
 
-                        // 分隔线
+                        // Separator line
                         HStack {
                             Rectangle()
                                 .fill(Color.secondary.opacity(0.3))
@@ -312,7 +322,7 @@ struct SetupStepView: View {
                                 .frame(height: 1)
                         }
 
-                        // Session Key输入 - 横向
+                        // Session Key input - horizontal
                         HStack(alignment: .top, spacing: 12) {
                             Text(L.Welcome.sessionKey)
                                 .font(.subheadline)
@@ -340,7 +350,7 @@ struct SetupStepView: View {
                                     .buttonStyle(.plain)
                                 }
 
-                                // 验证状态
+                                // Validation status
                                 if !sessionKey.isEmpty {
                                     if settings.isValidSessionKey(sessionKey) {
                                         Label(L.Welcome.validFormat, systemImage: "checkmark.circle.fill")
@@ -357,7 +367,7 @@ struct SetupStepView: View {
                                     .font(.caption)
                                     .foregroundColor(.secondary)
 
-                                // 帮助按钮
+                                // Help button
                                 Button(action: {
                                     if let url = URL(string: getGitHubReadmeURL(section: .initialSetup)) {
                                         NSWorkspace.shared.open(url)
@@ -377,11 +387,11 @@ struct SetupStepView: View {
 
                     Divider()
 
-                    // 主题设置
+                    // Theme settings
                     VStack(alignment: .leading, spacing: 12) {
-                        // 标题和预览
+                        // Title and preview
                         HStack(alignment: .top, spacing: 8) {
-                            // 左侧标题
+                            // Left side title
                             HStack(spacing: 8) {
                                 Image(systemName: "paintpalette.fill")
                                     .font(.title3)
@@ -392,11 +402,11 @@ struct SetupStepView: View {
 
                             Spacer()
 
-                            // 右侧预览
+                            // Right side preview
                             VStack(alignment: .trailing, spacing: 6) {
                                 MenuBarIconPreview()
 
-                                // 菜单栏图标提示链接
+                                // Menu bar icon hint link
                                 Button(action: {
                                     if let url = URL(string: getGitHubReadmeURL(section: .faq)) {
                                         NSWorkspace.shared.open(url)
@@ -413,7 +423,7 @@ struct SetupStepView: View {
                             }
                         }
 
-                        // 第一行：菜单栏主题
+                        // Row 1: menu bar theme
                         HStack(alignment: .top, spacing: 12) {
                             Text(L.SettingsGeneral.menubarTheme)
                                 .font(.subheadline)
@@ -429,7 +439,7 @@ struct SetupStepView: View {
                             )
                         }
 
-                        // 第二行：显示内容 - 使用 checkbox
+                        // Row 2: display content - using checkboxes
                         HStack(alignment: .top, spacing: 12) {
                             Text(L.SettingsGeneral.displayContent)
                                 .font(.subheadline)
@@ -449,7 +459,6 @@ struct SetupStepView: View {
                                             } else if showPercentage {
                                                 settings.iconDisplayMode = .percentageOnly
                                             } else {
-                                                // 至少保留一个
                                                 settings.iconDisplayMode = .percentageOnly
                                             }
                                         }
@@ -457,6 +466,7 @@ struct SetupStepView: View {
                                         Text(L.Display.showIcon)
                                     }
                                     .toggleStyle(.checkbox)
+                                    .disabled(settings.iconDisplayMode == .unified)
 
                                     Toggle(isOn: Binding(
                                         get: { settings.iconDisplayMode == .percentageOnly || settings.iconDisplayMode == .both },
@@ -469,7 +479,6 @@ struct SetupStepView: View {
                                             } else if showIcon {
                                                 settings.iconDisplayMode = .iconOnly
                                             } else {
-                                                // 至少保留一个
                                                 settings.iconDisplayMode = .iconOnly
                                             }
                                         }
@@ -477,11 +486,31 @@ struct SetupStepView: View {
                                         Text(L.Display.showPercentage)
                                     }
                                     .toggleStyle(.checkbox)
+                                    .disabled(settings.iconDisplayMode == .unified)
+
+                                    Toggle(isOn: $settings.showIconNumbers) {
+                                        Text(L.Display.showNumber)
+                                    }
+                                    .toggleStyle(.checkbox)
+
+                                    Toggle(isOn: Binding(
+                                        get: { settings.iconDisplayMode == .unified },
+                                        set: { isUnified in
+                                            if isUnified {
+                                                settings.iconDisplayMode = .unified
+                                            } else {
+                                                settings.iconDisplayMode = .percentageOnly
+                                            }
+                                        }
+                                    )) {
+                                        Text(L.Display.unified)
+                                    }
+                                    .toggleStyle(.checkbox)
                                 }
                             }
                         }
 
-                        // 第三行：显示模式（智能/自定义）
+                        // Row 3: display mode (smart/custom)
                         HStack(alignment: .top, spacing: 12) {
                             Text(L.DisplayOptions.displayModeLabel)
                                 .font(.subheadline)
@@ -497,7 +526,7 @@ struct SetupStepView: View {
                                     ]
                                 )
 
-                                // 模式说明
+                                // Mode description
                                 HStack(alignment: .top, spacing: 6) {
                                     Image(systemName: "info.circle.fill")
                                         .font(.caption)
@@ -510,7 +539,7 @@ struct SetupStepView: View {
                                         .fixedSize(horizontal: false, vertical: true)
                                 }
 
-                                // 自定义选择的checkbox - 3+2两行布局
+                                // Custom selection checkboxes - 3+2 two-row layout
                                 if settings.displayMode == .custom {
                                     VStack(alignment: .leading, spacing: 8) {
                                         Text(L.Welcome.selectLimits)
@@ -518,7 +547,7 @@ struct SetupStepView: View {
                                             .fontWeight(.medium)
 
                                         VStack(alignment: .leading, spacing: 10) {
-                                            // 第一行：5小时、7天、Extra Usage
+                                            // Row 1: 5-hour, 7-day, Extra Usage
                                             HStack(spacing: 16) {
                                                 LimitTypeCheckbox(
                                                     limitType: .fiveHour,
@@ -547,7 +576,7 @@ struct SetupStepView: View {
                                                 Spacer()
                                             }
 
-                                            // 第二行：Opus Weekly、Sonnet Weekly
+                                            // Row 2: Opus Weekly, Sonnet Weekly
                                             HStack(spacing: 16) {
                                                 LimitTypeCheckbox(
                                                     limitType: .opusWeekly,
@@ -584,17 +613,17 @@ struct SetupStepView: View {
 
     // MARK: - GitHub README URL Helper
 
-    /// README 章节枚举
+    /// README section enum
     private enum ReadmeSection {
         case initialSetup
         case faq
     }
 
-    /// 根据当前语言生成 GitHub README URL
-    /// - Parameter section: README 章节
-    /// - Returns: 对应语言和章节的 GitHub README URL
+    /// Generate GitHub README URL based on current language
+    /// - Parameter section: README section
+    /// - Returns: GitHub README URL for the corresponding language and section
     private func getGitHubReadmeURL(section: ReadmeSection) -> String {
-        let baseURL = "https://github.com/f-is-h/Usage4Claude/blob/main"
+        let baseURL = "https://github.com/arcanii/Usage4Claude-Arcanii/blob/main"
         let language = settings.language
 
         switch language {
@@ -623,7 +652,7 @@ struct SetupStepView: View {
 
 // MARK: - Horizontal Radio Group Component
 
-/// 横向单选按钮组
+/// Horizontal radio button group
 struct HorizontalRadioGroup<T: Hashable>: View {
     let selection: Binding<T>
     let options: [(value: T, label: String)]
@@ -651,7 +680,7 @@ struct HorizontalRadioGroup<T: Hashable>: View {
                     }
                 }
                 .buttonStyle(.plain)
-                .focusable(false)  // 禁用键盘焦点
+                .focusable(false)  // Disable keyboard focus
             }
         }
     }
@@ -659,13 +688,13 @@ struct HorizontalRadioGroup<T: Hashable>: View {
 
 // MARK: - Menu Bar Icon Preview
 
-/// 菜单栏图标预览组件
-/// 使用假数据模拟真实的菜单栏图标显示效果
+/// Menu bar icon preview component
+/// Uses mock data to simulate the actual menu bar icon display
 struct MenuBarIconPreview: View {
     @ObservedObject private var settings = UserSettings.shared
 
     var body: some View {
-        // 模拟菜单栏背景
+        // Simulated menu bar background
         HStack(spacing: 3) {
             Image(nsImage: getPreviewIcon())
                 .resizable()
@@ -678,16 +707,16 @@ struct MenuBarIconPreview: View {
         .cornerRadius(4)
     }
 
-    /// 获取预览图标（使用createIcon方法）
+    /// Get preview icon (using createIcon method)
     private func getPreviewIcon() -> NSImage {
         let renderer = MenuBarIconRenderer(settings: settings)
         let mockData = createMockUsageData()
 
-        // 使用 createIcon 方法，这样会正确响应 iconDisplayMode
+        // Use createIcon method so it correctly responds to iconDisplayMode
         return renderer.createIcon(usageData: mockData, hasUpdate: false, button: nil)
     }
 
-    /// 创建模拟用量数据（66% 使用率）
+    /// Create mock usage data (66% usage)
     private func createMockUsageData() -> UsageData {
         let mockPercentage = 66.0
 
@@ -717,13 +746,13 @@ struct MenuBarIconPreview: View {
         )
     }
 
-    /// 预览背景色（模拟菜单栏）
+    /// Preview background color (simulated menu bar)
     private var previewBackgroundColor: Color {
-        // 根据系统外观返回菜单栏颜色
+        // Return menu bar color based on system appearance
         if UsageColorScheme.isDarkMode {
-            return Color(white: 0.2)  // 深色模式菜单栏
+            return Color(white: 0.2)  // Dark mode menu bar
         } else {
-            return Color(white: 0.95)  // 浅色模式菜单栏
+            return Color(white: 0.95)  // Light mode menu bar
         }
     }
 }
@@ -742,7 +771,7 @@ struct NavigationButtons: View {
 
     var body: some View {
         VStack(spacing: 8) {
-            // 错误提示
+            // Error message
             if let error = fetchError {
                 HStack(spacing: 6) {
                     Image(systemName: "exclamationmark.triangle.fill")
@@ -753,9 +782,9 @@ struct NavigationButtons: View {
                 }
             }
 
-            // 按钮行
+            // Button row
             HStack(spacing: 12) {
-                // 返回按钮
+                // Back button
                 if currentStep != .welcome {
                     Button(action: onBack) {
                         HStack {
@@ -769,7 +798,7 @@ struct NavigationButtons: View {
 
                 Spacer()
 
-                // 跳过按钮
+                // Skip button
                 if currentStep != .setup {
                     Button(L.Welcome.skip, action: onSkip)
                         .buttonStyle(.plain)
@@ -777,7 +806,7 @@ struct NavigationButtons: View {
                         .disabled(isFetchingOrgId)
                 }
 
-                // 继续/完成按钮
+                // Continue/Finish button
                 Button(action: currentStep == .setup ? onComplete : onNext) {
                     HStack(spacing: 8) {
                         if isFetchingOrgId && currentStep == .setup {

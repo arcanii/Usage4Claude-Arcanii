@@ -10,42 +10,42 @@ import SwiftUI
 import AppKit
 import OSLog
 
-/// 统一配色方案管理
-/// 提供5小时和7天限制的颜色配置，支持 AppKit 和 SwiftUI
+/// Unified color scheme management
+/// Provides color configurations for 5-hour and 7-day limits, supporting both AppKit and SwiftUI
 enum UsageColorScheme {
 
-    // MARK: - 外观检测
+    // MARK: - Appearance Detection
 
-    /// 检测当前是否为深色模式
-    /// - Parameter statusButton: 可选的状态栏按钮，用于获取外观信息
-    /// - Returns: true 表示深色模式，false 表示浅色模式
+    /// Detect whether the current appearance is dark mode
+    /// - Parameter statusButton: Optional status bar button used to obtain appearance information
+    /// - Returns: true for dark mode, false for light mode
     static func isDarkMode(for statusButton: NSStatusBarButton? = nil) -> Bool {
-        // 方法1: 使用状态栏按钮的外观（最准确，反映系统菜单栏的真实外观）
+        // Method 1: Use the status bar button's appearance (most accurate, reflects the actual system menu bar appearance)
         if let button = statusButton,
            let appearance = button.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) {
             return appearance == .darkAqua
         }
 
-        // 方法2: 直接读取系统外观设置（不受 NSApp.appearance 影响）
-        // 当用户设置了应用外观偏好时，NSApp.effectiveAppearance 会反映应用设置而非系统设置
-        // 菜单栏图标渲染需要始终跟随系统外观，所以这里检测系统真实状态
+        // Method 2: Directly read system appearance settings (unaffected by NSApp.appearance)
+        // When the user has set an app appearance preference, NSApp.effectiveAppearance reflects the app setting, not the system setting
+        // Menu bar icon rendering must always follow the system appearance, so we detect the actual system state here
         return UserDefaults.standard.string(forKey: "AppleInterfaceStyle") == "Dark"
     }
 
-    /// 检测当前是否为深色模式（便捷属性）
+    /// Detect whether the current appearance is dark mode (convenience property)
     static var isDarkMode: Bool {
         return isDarkMode(for: nil)
     }
 
-    // MARK: - 5小时限制配色（绿→橙→红）
+    // MARK: - 5-Hour Limit Colors (Green -> Orange -> Red)
 
-    /// 根据5小时限制使用百分比返回 NSColor
-    /// - Parameter percentage: 使用百分比 (0-100)
-    /// - Returns: 对应的状态颜色
-    /// - Note: 0-70% 绿色(安全), 70-90% 橙色(警告), 90-100% 红色(危险)
+    /// Returns an NSColor based on 5-hour limit usage percentage
+    /// - Parameter percentage: Usage percentage (0-100)
+    /// - Returns: Corresponding status color
+    /// - Note: 0-70% green (safe), 70-90% orange (warning), 90-100% red (danger)
     static func fiveHourColor(_ percentage: Double) -> NSColor {
         if percentage < 70 {
-            return NSColor(red: 40/255.0, green: 180/255.0, blue: 70/255.0, alpha: 1.0)  // 稍暗的绿色 #28B446
+            return NSColor(red: 40/255.0, green: 180/255.0, blue: 70/255.0, alpha: 1.0)  // Slightly dark green #28B446
         } else if percentage < 90 {
             return NSColor.systemOrange
         } else {
@@ -53,14 +53,14 @@ enum UsageColorScheme {
         }
     }
 
-    /// 根据5小时限制使用百分比返回 SwiftUI Color
-    /// - Parameter percentage: 使用百分比 (0-100)
-    /// - Returns: 对应的状态颜色
-    /// - Note: 0-70% 绿色(安全), 70-90% 橙色(警告), 90-100% 红色(危险)
-    ///         详细界面使用时会添加透明度，使颜色更柔和
+    /// Returns a SwiftUI Color based on 5-hour limit usage percentage
+    /// - Parameter percentage: Usage percentage (0-100)
+    /// - Returns: Corresponding status color
+    /// - Note: 0-70% green (safe), 70-90% orange (warning), 90-100% red (danger)
+    ///         Opacity is applied when used in the detail view for softer colors
     static func fiveHourColorSwiftUI(_ percentage: Double, opacity: Double = 0.9) -> Color {
         if percentage < 70 {
-            return .green.opacity(opacity)  // 系统绿色
+            return .green.opacity(opacity)  // System green
         } else if percentage < 90 {
             return .orange.opacity(opacity)
         } else {
@@ -68,92 +68,92 @@ enum UsageColorScheme {
         }
     }
 
-    /// 根据5小时限制使用百分比返回自适应 NSColor（根据系统外观调整亮度）
+    /// Returns an adaptive NSColor based on 5-hour limit usage percentage (adjusts brightness based on system appearance)
     /// - Parameters:
-    ///   - percentage: 使用百分比 (0-100)
-    ///   - statusButton: 状态栏按钮，用于获取准确的外观
-    /// - Returns: 适配当前外观的状态颜色
-    /// - Note: 深色模式下会自动提高亮度，确保在深色背景下清晰可见
+    ///   - percentage: Usage percentage (0-100)
+    ///   - statusButton: Status bar button used to obtain the accurate appearance
+    /// - Returns: Status color adapted to the current appearance
+    /// - Note: Brightness is automatically increased in dark mode to ensure visibility against dark backgrounds
     static func fiveHourColorAdaptive(_ percentage: Double, for statusButton: NSStatusBarButton? = nil) -> NSColor {
         let baseColor = fiveHourColor(percentage)
 
         if isDarkMode(for: statusButton) {
-            // 深色模式：提高亮度，让颜色更明亮
+            // Dark mode: increase brightness to make colors more vivid
             return baseColor.adjustedForDarkMode()
         } else {
-            // 浅色模式：使用原色或稍微加深
+            // Light mode: use original color or slightly darker
             return baseColor
         }
     }
 
-    // MARK: - 7天限制配色
+    // MARK: - 7-Day Limit Colors
 
-    /// 根据7天限制使用百分比返回 NSColor
-    /// - Parameter percentage: 使用百分比 (0-100)
-    /// - Returns: 对应的状态颜色
-    /// - Note: 当前方案 - 淡紫→浓紫→深紫红
-    ///         0-70% 淡紫色(安全), 70-90% 浓紫色(警告), 90-100% 深紫红色(危险)
+    /// Returns an NSColor based on 7-day limit usage percentage
+    /// - Parameter percentage: Usage percentage (0-100)
+    /// - Returns: Corresponding status color
+    /// - Note: Current scheme - light purple -> deep purple -> dark magenta
+    ///         0-70% light purple (safe), 70-90% deep purple (warning), 90-100% dark magenta (danger)
     static func sevenDayColor(_ percentage: Double) -> NSColor {
         if percentage < 70 {
-            return NSColor(red: 192/255.0, green: 132/255.0, blue: 252/255.0, alpha: 1.0)  // 淡紫色 #C084FC
+            return NSColor(red: 192/255.0, green: 132/255.0, blue: 252/255.0, alpha: 1.0)  // Light purple #C084FC
         } else if percentage < 90 {
-            return NSColor(red: 180/255.0, green: 80/255.0, blue: 240/255.0, alpha: 1.0)  // 浓紫色 #B450F0
+            return NSColor(red: 180/255.0, green: 80/255.0, blue: 240/255.0, alpha: 1.0)  // Deep purple #B450F0
         } else {
-            return NSColor(red: 180/255.0, green: 30/255.0, blue: 160/255.0, alpha: 1.0)   // 深紫红色 #B41EA0（浓郁警示）
+            return NSColor(red: 180/255.0, green: 30/255.0, blue: 160/255.0, alpha: 1.0)   // Dark magenta #B41EA0 (rich warning)
         }
     }
 
-    /// 根据7天限制使用百分比返回 SwiftUI Color
-    /// - Parameter percentage: 使用百分比 (0-100)
-    /// - Returns: 对应的状态颜色
-    /// - Note: 当前方案 - 淡紫→浓紫→深紫红
-    ///         0-70% 淡紫色(安全), 70-90% 浓紫色(警告), 90-100% 深紫红色(危险)
-    ///         详细界面使用时会添加透明度，使颜色更柔和
+    /// Returns a SwiftUI Color based on 7-day limit usage percentage
+    /// - Parameter percentage: Usage percentage (0-100)
+    /// - Returns: Corresponding status color
+    /// - Note: Current scheme - light purple -> deep purple -> dark magenta
+    ///         0-70% light purple (safe), 70-90% deep purple (warning), 90-100% dark magenta (danger)
+    ///         Opacity is applied when used in the detail view for softer colors
     static func sevenDayColorSwiftUI(_ percentage: Double, opacity: Double = 0.9) -> Color {
         if percentage < 70 {
-            return Color(red: 192/255.0, green: 132/255.0, blue: 252/255.0).opacity(opacity)  // 淡紫色 #C084FC
+            return Color(red: 192/255.0, green: 132/255.0, blue: 252/255.0).opacity(opacity)  // Light purple #C084FC
         } else if percentage < 90 {
-            return Color(red: 180/255.0, green: 80/255.0, blue: 240/255.0).opacity(opacity)  // 浓紫色 #B450F0
+            return Color(red: 180/255.0, green: 80/255.0, blue: 240/255.0).opacity(opacity)  // Deep purple #B450F0
         } else {
-            return Color(red: 180/255.0, green: 30/255.0, blue: 160/255.0).opacity(opacity)   // 深紫红色 #B41EA0（浓郁警示）
+            return Color(red: 180/255.0, green: 30/255.0, blue: 160/255.0).opacity(opacity)   // Dark magenta #B41EA0 (rich warning)
         }
     }
 
-    /// 根据7天限制使用百分比返回自适应 NSColor（根据系统外观调整亮度）
+    /// Returns an adaptive NSColor based on 7-day limit usage percentage (adjusts brightness based on system appearance)
     /// - Parameters:
-    ///   - percentage: 使用百分比 (0-100)
-    ///   - statusButton: 状态栏按钮，用于获取准确的外观
-    /// - Returns: 适配当前外观的状态颜色
-    /// - Note: 深色模式下会自动提高亮度和饱和度，确保在深色背景下清晰可见
+    ///   - percentage: Usage percentage (0-100)
+    ///   - statusButton: Status bar button used to obtain the accurate appearance
+    /// - Returns: Status color adapted to the current appearance
+    /// - Note: Brightness and saturation are automatically increased in dark mode to ensure visibility against dark backgrounds
     static func sevenDayColorAdaptive(_ percentage: Double, for statusButton: NSStatusBarButton? = nil) -> NSColor {
         let baseColor = sevenDayColor(percentage)
 
         if isDarkMode(for: statusButton) {
-            // 深色模式：提高亮度和饱和度
+            // Dark mode: increase brightness and saturation
             return baseColor.adjustedForDarkMode()
         } else {
-            // 浅色模式：使用原色
+            // Light mode: use original color
             return baseColor
         }
     }
 
-    // MARK: - Extra Usage 配色（粉→红→紫红）
+    // MARK: - Extra Usage Colors (Pink -> Rose -> Magenta)
 
-    /// 根据Extra Usage使用百分比返回 NSColor
-    /// - Parameter percentage: 使用百分比 (0-100)
-    /// - Returns: 对应的状态颜色
-    /// - Note: 0-70% 粉色(安全), 70-90% 玫红色(警告), 90-100% 紫红色(危险)
+    /// Returns an NSColor based on Extra Usage percentage
+    /// - Parameter percentage: Usage percentage (0-100)
+    /// - Returns: Corresponding status color
+    /// - Note: 0-70% pink (safe), 70-90% rose (warning), 90-100% magenta (danger)
     static func extraUsageColor(_ percentage: Double) -> NSColor {
         if percentage < 70 {
-            return NSColor(red: 255/255.0, green: 158/255.0, blue: 205/255.0, alpha: 1.0)  // 粉色 #FF9ECD
+            return NSColor(red: 255/255.0, green: 158/255.0, blue: 205/255.0, alpha: 1.0)  // Pink #FF9ECD
         } else if percentage < 90 {
-            return NSColor(red: 236/255.0, green: 72/255.0, blue: 153/255.0, alpha: 1.0)   // 玫红色 #EC4899
+            return NSColor(red: 236/255.0, green: 72/255.0, blue: 153/255.0, alpha: 1.0)   // Rose #EC4899
         } else {
-            return NSColor(red: 217/255.0, green: 70/255.0, blue: 239/255.0, alpha: 1.0)   // 紫红色 #D946EF
+            return NSColor(red: 217/255.0, green: 70/255.0, blue: 239/255.0, alpha: 1.0)   // Magenta #D946EF
         }
     }
 
-    /// 根据Extra Usage使用百分比返回自适应 NSColor
+    /// Returns an adaptive NSColor based on Extra Usage percentage
     static func extraUsageColorAdaptive(_ percentage: Double, for statusButton: NSStatusBarButton? = nil) -> NSColor {
         let baseColor = extraUsageColor(percentage)
         if isDarkMode(for: statusButton) {
@@ -163,23 +163,23 @@ enum UsageColorScheme {
         }
     }
 
-    // MARK: - Opus Weekly 配色（浅橙→橙→橙红）
+    // MARK: - Opus Weekly Colors (Light Orange -> Orange -> Orange-Red)
 
-    /// 根据Opus Weekly使用百分比返回 NSColor
-    /// - Parameter percentage: 使用百分比 (0-100)
-    /// - Returns: 对应的状态颜色
-    /// - Note: 0-70% 琥珀色(安全), 70-90% 橙色(警告), 90-100% 橙红色(危险)
+    /// Returns an NSColor based on Opus Weekly usage percentage
+    /// - Parameter percentage: Usage percentage (0-100)
+    /// - Returns: Corresponding status color
+    /// - Note: 0-70% amber (safe), 70-90% orange (warning), 90-100% orange-red (danger)
     static func opusWeeklyColor(_ percentage: Double) -> NSColor {
         if percentage < 70 {
-            return NSColor(red: 251/255.0, green: 191/255.0, blue: 36/255.0, alpha: 1.0)  // 琥珀色 #FBBF24
+            return NSColor(red: 251/255.0, green: 191/255.0, blue: 36/255.0, alpha: 1.0)  // Amber #FBBF24
         } else if percentage < 90 {
             return NSColor.systemOrange
         } else {
-            return NSColor(red: 255/255.0, green: 100/255.0, blue: 50/255.0, alpha: 1.0)   // 橙红色 #FF6432
+            return NSColor(red: 255/255.0, green: 100/255.0, blue: 50/255.0, alpha: 1.0)   // Orange-red #FF6432
         }
     }
 
-    /// 根据Opus Weekly使用百分比返回自适应 NSColor
+    /// Returns an adaptive NSColor based on Opus Weekly usage percentage
     static func opusWeeklyColorAdaptive(_ percentage: Double, for statusButton: NSStatusBarButton? = nil) -> NSColor {
         let baseColor = opusWeeklyColor(percentage)
         if isDarkMode(for: statusButton) {
@@ -189,23 +189,23 @@ enum UsageColorScheme {
         }
     }
 
-    // MARK: - Sonnet Weekly 配色（浅蓝→蓝→蓝紫）
+    // MARK: - Sonnet Weekly Colors (Light Blue -> Blue -> Indigo)
 
-    /// 根据Sonnet Weekly使用百分比返回 NSColor
-    /// - Parameter percentage: 使用百分比 (0-100)
-    /// - Returns: 对应的状态颜色
-    /// - Note: 0-70% 浅蓝色(安全), 70-90% 蓝色(警告), 90-100% 深靛蓝色(危险)
+    /// Returns an NSColor based on Sonnet Weekly usage percentage
+    /// - Parameter percentage: Usage percentage (0-100)
+    /// - Returns: Corresponding status color
+    /// - Note: 0-70% light blue (safe), 70-90% blue (warning), 90-100% deep indigo (danger)
     static func sonnetWeeklyColor(_ percentage: Double) -> NSColor {
         if percentage < 70 {
-            return NSColor(red: 100/255.0, green: 200/255.0, blue: 255/255.0, alpha: 1.0)  // 浅蓝色 #64C8FF
+            return NSColor(red: 100/255.0, green: 200/255.0, blue: 255/255.0, alpha: 1.0)  // Light blue #64C8FF
         } else if percentage < 90 {
             return NSColor.systemBlue
         } else {
-            return NSColor(red: 79/255.0, green: 70/255.0, blue: 229/255.0, alpha: 1.0)   // 深靛蓝色 #4F46E5
+            return NSColor(red: 79/255.0, green: 70/255.0, blue: 229/255.0, alpha: 1.0)   // Deep indigo #4F46E5
         }
     }
 
-    /// 根据Sonnet Weekly使用百分比返回自适应 NSColor
+    /// Returns an adaptive NSColor based on Sonnet Weekly usage percentage
     static func sonnetWeeklyColorAdaptive(_ percentage: Double, for statusButton: NSStatusBarButton? = nil) -> NSColor {
         let baseColor = sonnetWeeklyColor(percentage)
         if isDarkMode(for: statusButton) {
@@ -215,83 +215,83 @@ enum UsageColorScheme {
         }
     }
 
-    // MARK: - 备选配色方案（注释保留，方便切换测试）
+    // MARK: - Alternative Color Schemes (comments preserved for easy switching and testing)
 
     /*
-    // 方案2: 粉红→紫红→深紫红
+    // Scheme 2: Pink -> Magenta -> Deep magenta
     static func sevenDayColor(_ percentage: Double) -> NSColor {
         if percentage < 70 {
-            return NSColor(red: 255/255.0, green: 158/255.0, blue: 205/255.0, alpha: 1.0)  // 粉红色 #FF9ECD
+            return NSColor(red: 255/255.0, green: 158/255.0, blue: 205/255.0, alpha: 1.0)  // Pink #FF9ECD
         } else if percentage < 90 {
-            return NSColor(red: 217/255.0, green: 70/255.0, blue: 239/255.0, alpha: 1.0)  // 紫红色 #D946EF
+            return NSColor(red: 217/255.0, green: 70/255.0, blue: 239/255.0, alpha: 1.0)  // Magenta #D946EF
         } else {
-            return NSColor(red: 168/255.0, green: 85/255.0, blue: 247/255.0, alpha: 1.0)   // 深紫红 #A855F7
+            return NSColor(red: 168/255.0, green: 85/255.0, blue: 247/255.0, alpha: 1.0)   // Deep magenta #A855F7
         }
     }
 
     static func sevenDayColorSwiftUI(_ percentage: Double, opacity: Double = 0.7) -> Color {
         if percentage < 70 {
-            return Color(red: 255/255.0, green: 158/255.0, blue: 205/255.0).opacity(opacity)  // 粉红色 #FF9ECD
+            return Color(red: 255/255.0, green: 158/255.0, blue: 205/255.0).opacity(opacity)  // Pink #FF9ECD
         } else if percentage < 90 {
-            return Color(red: 217/255.0, green: 70/255.0, blue: 239/255.0).opacity(opacity)  // 紫红色 #D946EF
+            return Color(red: 217/255.0, green: 70/255.0, blue: 239/255.0).opacity(opacity)  // Magenta #D946EF
         } else {
-            return Color(red: 168/255.0, green: 85/255.0, blue: 247/255.0).opacity(opacity)   // 深紫红 #A855F7
+            return Color(red: 168/255.0, green: 85/255.0, blue: 247/255.0).opacity(opacity)   // Deep magenta #A855F7
         }
     }
     */
 
     /*
-    // 方案3: 薄荷绿→青紫→靛蓝
+    // Scheme 3: Mint green -> Periwinkle -> Indigo
     static func sevenDayColor(_ percentage: Double) -> NSColor {
         if percentage < 70 {
-            return NSColor(red: 107/255.0, green: 237/255.0, blue: 227/255.0, alpha: 1.0)  // 薄荷绿 #6BEDE3
+            return NSColor(red: 107/255.0, green: 237/255.0, blue: 227/255.0, alpha: 1.0)  // Mint green #6BEDE3
         } else if percentage < 90 {
-            return NSColor(red: 129/255.0, green: 140/255.0, blue: 248/255.0, alpha: 1.0)  // 青紫色 #818CF8
+            return NSColor(red: 129/255.0, green: 140/255.0, blue: 248/255.0, alpha: 1.0)  // Periwinkle #818CF8
         } else {
-            return NSColor(red: 76/255.0, green: 81/255.0, blue: 191/255.0, alpha: 1.0)   // 靛蓝色 #4C51BF
+            return NSColor(red: 76/255.0, green: 81/255.0, blue: 191/255.0, alpha: 1.0)   // Indigo #4C51BF
         }
     }
 
     static func sevenDayColorSwiftUI(_ percentage: Double, opacity: Double = 0.7) -> Color {
         if percentage < 70 {
-            return Color(red: 107/255.0, green: 237/255.0, blue: 227/255.0).opacity(opacity)  // 薄荷绿 #6BEDE3
+            return Color(red: 107/255.0, green: 237/255.0, blue: 227/255.0).opacity(opacity)  // Mint green #6BEDE3
         } else if percentage < 90 {
-            return Color(red: 129/255.0, green: 140/255.0, blue: 248/255.0).opacity(opacity)  // 青紫色 #818CF8
+            return Color(red: 129/255.0, green: 140/255.0, blue: 248/255.0).opacity(opacity)  // Periwinkle #818CF8
         } else {
-            return Color(red: 76/255.0, green: 81/255.0, blue: 191/255.0).opacity(opacity)   // 靛蓝色 #4C51BF
+            return Color(red: 76/255.0, green: 81/255.0, blue: 191/255.0).opacity(opacity)   // Indigo #4C51BF
         }
     }
     */
 
     /*
-    // 方案4: 琥珀→橙紫→深紫
+    // Scheme 4: Amber -> Orange-purple -> Deep purple
     static func sevenDayColor(_ percentage: Double) -> NSColor {
         if percentage < 70 {
-            return NSColor(red: 251/255.0, green: 191/255.0, blue: 36/255.0, alpha: 1.0)  // 琥珀色 #FBBF24
+            return NSColor(red: 251/255.0, green: 191/255.0, blue: 36/255.0, alpha: 1.0)  // Amber #FBBF24
         } else if percentage < 90 {
-            return NSColor(red: 192/255.0, green: 132/255.0, blue: 252/255.0, alpha: 1.0)  // 橙紫色 #C084FC
+            return NSColor(red: 192/255.0, green: 132/255.0, blue: 252/255.0, alpha: 1.0)  // Orange-purple #C084FC
         } else {
-            return NSColor(red: 124/255.0, green: 58/255.0, blue: 237/255.0, alpha: 1.0)   // 深紫色 #7C3AED
+            return NSColor(red: 124/255.0, green: 58/255.0, blue: 237/255.0, alpha: 1.0)   // Deep purple #7C3AED
         }
     }
 
     static func sevenDayColorSwiftUI(_ percentage: Double, opacity: Double = 0.7) -> Color {
         if percentage < 70 {
-            return Color(red: 251/255.0, green: 191/255.0, blue: 36/255.0).opacity(opacity)  // 琥珀色 #FBBF24
+            return Color(red: 251/255.0, green: 191/255.0, blue: 36/255.0).opacity(opacity)  // Amber #FBBF24
         } else if percentage < 90 {
-            return Color(red: 192/255.0, green: 132/255.0, blue: 252/255.0).opacity(opacity)  // 橙紫色 #C084FC
+            return Color(red: 192/255.0, green: 132/255.0, blue: 252/255.0).opacity(opacity)  // Orange-purple #C084FC
         } else {
-            return Color(red: 124/255.0, green: 58/255.0, blue: 237/255.0).opacity(opacity)   // 深紫色 #7C3AED
+            return Color(red: 124/255.0, green: 58/255.0, blue: 237/255.0).opacity(opacity)   // Deep purple #7C3AED
         }
     }
     */
 }
 
-// MARK: - NSColor 扩展
+// MARK: - NSColor Extension
 
 extension NSColor {
-    /// 为深色模式调整颜色（提高亮度和饱和度）
-    /// - Returns: 适合深色背景显示的更亮版本
+    /// Adjust color for dark mode (increase brightness and saturation)
+    /// - Returns: A brighter version suitable for display on dark backgrounds
     func adjustedForDarkMode() -> NSColor {
         guard let rgbColor = self.usingColorSpace(.deviceRGB) else {
             return self
@@ -304,10 +304,10 @@ extension NSColor {
 
         rgbColor.getHue(&hue, saturation: &saturation, brightness: &brightness, alpha: &alpha)
 
-        // 提高亮度：确保亮度至少为 0.75，最多提升 40%（从 0.7/1.3 提升到 0.75/1.4）
+        // Increase brightness: ensure minimum brightness of 0.75, up to 40% boost (raised from 0.7/1.3 to 0.75/1.4)
         let adjustedBrightness = min(1.0, max(0.75, brightness * 1.4))
 
-        // 保持饱和度不变，让颜色更鲜艳（从 0.9 改为 1.0）
+        // Keep saturation unchanged for more vivid colors (changed from 0.9 to 1.0)
         let adjustedSaturation = min(1.0, saturation * 1.0)
 
         return NSColor(hue: hue, saturation: adjustedSaturation, brightness: adjustedBrightness, alpha: alpha)

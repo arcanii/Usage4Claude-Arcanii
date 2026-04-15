@@ -9,7 +9,7 @@
 import SwiftUI
 import Combine
 
-/// Usage4Claude 应用主入口
+/// Usage4Claude application main entry point
 @main
 struct ClaudeUsageMonitorApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
@@ -21,34 +21,34 @@ struct ClaudeUsageMonitorApp: App {
     }
 }
 
-/// 应用代理类
-/// 负责应用生命周期管理、资源初始化和清理
+/// Application delegate class
+/// Responsible for application lifecycle management, resource initialization and cleanup
 class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Properties
     
     private var statusItem: NSStatusItem!
     private var popover: NSPopover!
     
-    /// 菜单栏管理器，负责所有菜单栏相关功能
+    /// Menu bar manager, responsible for all menu bar related functionality
     private var menuBarManager: MenuBarManager!
     
-    /// 欢迎窗口，在首次启动时显示
+    /// Welcome window, displayed on first launch
     private var welcomeWindow: NSWindow?
     
-    /// 用户设置实例
+    /// User settings instance
     private let settings = UserSettings.shared
 
-    /// Combine 订阅集合，用于自动管理观察者生命周期
+    /// Combine subscription set, used for automatic observer lifecycle management
     private var cancellables = Set<AnyCancellable>()
     
     // MARK: - Application Lifecycle
     
-    /// 应用启动完成时调用
-    /// 初始化菜单栏管理器，根据是否首次启动显示欢迎窗口或开始刷新数据
+    /// Called when the application has finished launching
+    /// Initializes the menu bar manager, shows the welcome window on first launch or starts data refresh
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
 
-        // 请求通知权限
+        // Request notification permission
         NotificationManager.shared.requestPermission()
 
         menuBarManager = MenuBarManager()
@@ -59,7 +59,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             menuBarManager.startRefreshing()
         }
 
-        // 使用 Combine 订阅通知，自动管理生命周期
+        // Use Combine to subscribe to notifications, automatically managing lifecycle
         NotificationCenter.default.publisher(for: .openSettings)
             .sink { [weak self] notification in
                 self?.openSettingsFromNotification(notification)
@@ -75,8 +75,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     // MARK: - Private Methods
     
-    /// 显示欢迎窗口
-    /// 在首次启动或未配置认证信息时调用
+    /// Show the welcome window
+    /// Called on first launch or when authentication credentials are not configured
     private func showWelcomeWindow() {
         NSApp.setActivationPolicy(.regular)
 
@@ -98,7 +98,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             welcomeWindow?.setFrameOrigin(NSPoint(x: x, y: y))
         }
 
-        // 使用 Combine 订阅窗口关闭通知
+        // Use Combine to subscribe to window close notification
         NotificationCenter.default.publisher(for: NSWindow.willCloseNotification, object: welcomeWindow)
             .sink { _ in
                 NSApp.setActivationPolicy(.accessory)
@@ -110,8 +110,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.activate(ignoringOtherApps: true)
     }
     
-    /// 处理打开设置的通知
-    /// 关闭欢迎窗口并根据认证配置状态启动刷新
+    /// Handle the open settings notification
+    /// Closes the welcome window and starts refresh based on authentication configuration status
     private func openSettingsFromNotification(_ notification: Notification) {
         welcomeWindow?.close()
         welcomeWindow = nil
@@ -121,9 +121,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
     
-    /// 应用即将退出时调用
-    /// 清理定时器和窗口资源
-    /// 注意：Combine 订阅会在 cancellables 被释放时自动清理
+    /// Called when the application is about to terminate
+    /// Cleans up timers and window resources
+    /// Note: Combine subscriptions are automatically cleaned up when cancellables are deallocated
     func applicationWillTerminate(_ notification: Notification) {
         menuBarManager?.cleanup()
         welcomeWindow?.close()

@@ -9,14 +9,14 @@
 import SwiftUI
 import AppKit
 
-/// 菜单栏图标渲染器
-/// 负责所有图标的绘制逻辑，支持彩色和单色两种模式
-/// 从 MenuBarUI 中提取以实现职责分离
+/// Menu bar icon renderer
+/// Handles all icon drawing logic, supporting both colored and monochrome modes
+/// Extracted from MenuBarUI for separation of concerns
 class MenuBarIconRenderer {
     
     // MARK: - Settings Reference
     
-    /// 用户设置实例
+    /// User settings instance
     private let settings: UserSettings
     
     // MARK: - Initialization
@@ -27,18 +27,18 @@ class MenuBarIconRenderer {
     
     // MARK: - Public API
     
-    /// 创建菜单栏图标
+    /// Create menu bar icon
     /// - Parameters:
-    ///   - usageData: 用量数据
-    ///   - hasUpdate: 是否有可用更新
-    ///   - button: 状态栏按钮（用于获取外观模式）
-    /// - Returns: 生成的图标图像
+    ///   - usageData: Usage data
+    ///   - hasUpdate: Whether an update is available
+    ///   - button: Status bar button (used to get appearance mode)
+    /// - Returns: The generated icon image
     func createIcon(
         usageData: UsageData?,
         hasUpdate: Bool,
         button: NSStatusBarButton?
     ) -> NSImage {
-        // 无数据时显示默认图标
+        // Show default icon when no data is available
         guard let data = usageData else {
             let size = NSSize(width: 22, height: 22)
             return settings.iconStyleMode == .monochrome ?
@@ -46,24 +46,24 @@ class MenuBarIconRenderer {
                 createCircleImage(percentage: 0, size: size, button: button, removeBackground: true)
         }
 
-        // 获取要显示的限制类型
+        // Get the limit types to display
         let activeTypes = settings.getActiveDisplayTypes(usageData: data)
 
-        // 判断是否可以使用彩色主题
+        // Determine if the colored theme can be used
         let canUseColor = settings.canUseColoredTheme(usageData: data)
         let forceMonochrome = !canUseColor && settings.iconStyleMode != .monochrome
         let isMonochrome = settings.iconStyleMode == .monochrome || forceMonochrome
 
         var icon: NSImage
 
-        // 根据显示模式创建图标
+        // Create icon based on display mode
         switch settings.iconDisplayMode {
         case .percentageOnly:
-            // 仅显示百分比（圆形/矩形/六边形组合）
+            // Percentage only (circle/rectangle/hexagon combination)
             icon = createCombinedPercentageIcon(data: data, types: activeTypes, isMonochrome: isMonochrome, button: button)
 
         case .iconOnly:
-            // 仅显示 App 图标
+            // App icon only
             let iconName = isMonochrome ? "AppIconReverse" : "AppIcon"
             if let appIcon = NSImage(named: iconName), let iconCopy = appIcon.copy() as? NSImage {
                 iconCopy.size = NSSize(width: 18, height: 18)
@@ -74,11 +74,15 @@ class MenuBarIconRenderer {
             }
 
         case .both:
-            // App 图标 + 百分比组合
+            // App icon + percentage combination
             icon = createCombinedIconWithAppIcon(data: data, types: activeTypes, isMonochrome: isMonochrome, button: button)
+
+        case .unified:
+            // Unified concentric ring display
+            icon = createUnifiedIcon(data: data, isMonochrome: isMonochrome, button: button)
         }
 
-        // 如果需要徽章，添加徽章
+        // Add badge if needed
         if hasUpdate {
             icon = addBadgeToImage(icon)
         }
@@ -86,7 +90,7 @@ class MenuBarIconRenderer {
         return icon
     }
 
-    /// 创建仅百分比的组合图标
+    /// Create a combined percentage-only icon
     private func createCombinedPercentageIcon(
         data: UsageData,
         types: [LimitType],
@@ -97,12 +101,12 @@ class MenuBarIconRenderer {
             return createSimpleCircleIcon()
         }
 
-        // 为每个类型创建图标
+        // Create icon for each type
         let icons = types.compactMap { type in
             createIconForType(type, data: data, isMonochrome: isMonochrome, button: button)
         }
 
-        // 组合图标
+        // Combine icons
         if icons.isEmpty {
             return createSimpleCircleIcon()
         } else if icons.count == 1 {
@@ -114,14 +118,14 @@ class MenuBarIconRenderer {
         }
     }
 
-    /// 创建 App 图标 + 百分比的组合图标
+    /// Create a combined icon with app icon + percentage
     private func createCombinedIconWithAppIcon(
         data: UsageData,
         types: [LimitType],
         isMonochrome: Bool,
         button: NSStatusBarButton?
     ) -> NSImage {
-        // 获取 App 图标（单色模式使用反转图标）
+        // Get the app icon (monochrome mode uses reversed icon)
         let iconName = isMonochrome ? "AppIconReverse" : "AppIcon"
         guard let appIcon = NSImage(named: iconName), let appIconCopy = appIcon.copy() as? NSImage else {
             return createCombinedPercentageIcon(data: data, types: types, isMonochrome: isMonochrome, button: button)
@@ -130,12 +134,12 @@ class MenuBarIconRenderer {
         appIconCopy.size = NSSize(width: 18, height: 18)
         appIconCopy.isTemplate = isMonochrome
 
-        // 创建百分比图标
+        // Create percentage icons
         let percentageIcons = types.compactMap { type in
             createIconForType(type, data: data, isMonochrome: isMonochrome, button: button)
         }
 
-        // 组合 App 图标 + 百分比图标
+        // Combine app icon + percentage icons
         var allIcons = [appIconCopy]
         allIcons.append(contentsOf: percentageIcons)
 
@@ -144,7 +148,161 @@ class MenuBarIconRenderer {
         return combined
     }
     
-    // MARK: - Icon Drawing - Colored Mode (彩色模式)
+    // MARK: - Vertical Text Column Mode
+
+    /// Create unified concentric rings icon, optionally with percentage numbers
+    private func createUnifiedIcon(
+        data: UsageData,
+        isMonochrome: Bool,
+        button: NSStatusBarButton?
+    ) -> NSImage {
+        let fiveHourPct = data.fiveHour?.percentage
+        let sevenDayPct = data.sevenDay?.percentage
+
+        // If neither limit is available, show a placeholder
+        guard fiveHourPct != nil || sevenDayPct != nil else {
+            return createSimpleCircleIcon()
+        }
+
+        let hasBoth = fiveHourPct != nil && sevenDayPct != nil
+        let iconSize: CGFloat = 22.0
+        let size = NSSize(width: iconSize, height: iconSize)
+        let image = NSImage(size: size)
+        image.lockFocus()
+
+        let center = NSPoint(x: iconSize / 2, y: iconSize / 2)
+        let lineWidth: CGFloat = 2.0
+
+        // Ring radii: outer = 7d (dashed), inner = 5h (solid)
+        let outerRadius: CGFloat = iconSize / 2 - 2
+        let innerRadius: CGFloat = outerRadius - lineWidth - 1.5
+
+        // Helper: draw a progress ring
+        func drawRing(percentage: Double, radius: CGFloat, color: NSColor, dashed: Bool) {
+            // Background track
+            let bgColor = isMonochrome ? NSColor.labelColor.withAlphaComponent(0.25) : NSColor.gray.withAlphaComponent(0.5)
+            bgColor.setStroke()
+            let bgPath = NSBezierPath()
+            bgPath.appendArc(withCenter: center, radius: radius, startAngle: 0, endAngle: 360, clockwise: false)
+            bgPath.lineWidth = 1.5
+            if dashed {
+                let dashPattern: [CGFloat] = [3, 1]
+                bgPath.setLineDash(dashPattern, count: dashPattern.count, phase: 0)
+            }
+            bgPath.stroke()
+
+            // Progress arc
+            guard percentage > 0 else { return }
+            color.setStroke()
+            let progressPath = NSBezierPath()
+
+            let baseAngle = CGFloat(percentage) / 100.0 * 360
+            let circumference = 2 * CGFloat.pi * radius
+            let capAngle = (lineWidth / circumference) * 360
+
+            let progressAngle: CGFloat
+            let startAngle: CGFloat
+
+            if percentage >= 100 {
+                progressAngle = baseAngle
+                startAngle = 90
+            } else {
+                progressAngle = baseAngle - capAngle * min(1.0, CGFloat(percentage / 50.0))
+                startAngle = 90 - capAngle / 2 + 0.5
+            }
+
+            let endAngle = startAngle - progressAngle
+            progressPath.appendArc(withCenter: center, radius: radius, startAngle: startAngle, endAngle: endAngle, clockwise: true)
+            progressPath.lineWidth = lineWidth
+            progressPath.lineCapStyle = percentage >= 100 ? .butt : .round
+            progressPath.stroke()
+        }
+
+        // Draw rings
+        if hasBoth, let fhPct = fiveHourPct, let sdPct = sevenDayPct {
+            let outerColor: NSColor = isMonochrome ? NSColor.labelColor : UsageColorScheme.sevenDayColorAdaptive(sdPct, for: button)
+            let innerColor: NSColor = isMonochrome ? NSColor.labelColor : UsageColorScheme.fiveHourColorAdaptive(fhPct, for: button)
+
+            drawRing(percentage: sdPct, radius: outerRadius, color: outerColor, dashed: true)
+            drawRing(percentage: fhPct, radius: innerRadius, color: innerColor, dashed: false)
+        } else {
+            // Single ring centered
+            let pct = fiveHourPct ?? sevenDayPct ?? 0
+            let isFiveHour = fiveHourPct != nil
+            let color: NSColor
+            if isMonochrome {
+                color = NSColor.labelColor
+            } else if isFiveHour {
+                color = UsageColorScheme.fiveHourColorAdaptive(pct, for: button)
+            } else {
+                color = UsageColorScheme.sevenDayColorAdaptive(pct, for: button)
+            }
+            drawRing(percentage: pct, radius: outerRadius, color: color, dashed: !isFiveHour)
+        }
+
+        // Draw percentage text in center (only when showIconNumbers is enabled)
+        if settings.showIconNumbers {
+            let paragraphStyle = NSMutableParagraphStyle()
+            paragraphStyle.alignment = .center
+
+            func pctText(_ pct: Double) -> String {
+                return "\(Int(min(pct, 999)))"
+            }
+
+            if hasBoth, let fhPct = fiveHourPct, let sdPct = sevenDayPct {
+                // Two-line text: 5h on top, 7d on bottom
+                let fontSize: CGFloat = 5.5
+                let font = NSFont.monospacedDigitSystemFont(ofSize: fontSize, weight: .bold)
+
+                let topText = pctText(fhPct)
+                let botText = pctText(sdPct)
+
+                let topColor: NSColor = isMonochrome ? NSColor.black : UsageColorScheme.fiveHourColorAdaptive(fhPct, for: button)
+                let botColor: NSColor = isMonochrome ? NSColor.black : UsageColorScheme.sevenDayColorAdaptive(sdPct, for: button)
+
+                let topAttrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: topColor, .paragraphStyle: paragraphStyle]
+                let botAttrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: botColor, .paragraphStyle: paragraphStyle]
+
+                let topSize = (topText as NSString).size(withAttributes: topAttrs)
+                let botSize = (botText as NSString).size(withAttributes: botAttrs)
+
+                let totalTextHeight = topSize.height + botSize.height + 0.5
+                let textTop = center.y + totalTextHeight / 2
+
+                let topRect = NSRect(x: 0, y: textTop - topSize.height, width: iconSize, height: topSize.height)
+                let botRect = NSRect(x: 0, y: textTop - topSize.height - 0.5 - botSize.height, width: iconSize, height: botSize.height)
+
+                (topText as NSString).draw(in: topRect, withAttributes: topAttrs)
+                (botText as NSString).draw(in: botRect, withAttributes: botAttrs)
+            } else {
+                // Single centered text
+                let pct = fiveHourPct ?? sevenDayPct ?? 0
+                let isFiveHour = fiveHourPct != nil
+                let fontSize: CGFloat = pct >= 100 ? 6.0 : 7.5
+                let font = NSFont.monospacedDigitSystemFont(ofSize: fontSize, weight: .bold)
+                let text = pctText(pct)
+
+                let color: NSColor
+                if isMonochrome {
+                    color = NSColor.black
+                } else if isFiveHour {
+                    color = UsageColorScheme.fiveHourColorAdaptive(pct, for: button)
+                } else {
+                    color = UsageColorScheme.sevenDayColorAdaptive(pct, for: button)
+                }
+
+                let attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: color, .paragraphStyle: paragraphStyle]
+                let textSize = (text as NSString).size(withAttributes: attrs)
+                text.draw(at: NSPoint(x: center.x - textSize.width / 2, y: center.y - textSize.height / 2), withAttributes: attrs)
+            }
+        }
+
+        image.unlockFocus()
+        image.isTemplate = isMonochrome
+        return image
+    }
+
+    // MARK: - Icon Drawing - Colored Mode
 
     private func createCircleImage(percentage: Double, size: NSSize, useSevenDayColor: Bool = false, button: NSStatusBarButton?, removeBackground: Bool = false) -> NSImage {
         let image = NSImage(size: size)
@@ -165,7 +323,7 @@ class MenuBarIconRenderer {
         backgroundPath.appendArc(withCenter: center, radius: radius, startAngle: 0, endAngle: 360, clockwise: false)
         backgroundPath.lineWidth = 1.5
 
-        // 7天限制使用虚线以区分5小时限制
+        // 7-day limit uses dashed line to distinguish from 5-hour limit
         if useSevenDayColor {
             let dashPattern: [CGFloat] = [3, 1]
             backgroundPath.setLineDash(dashPattern, count: dashPattern.count, phase: 0)
@@ -179,21 +337,21 @@ class MenuBarIconRenderer {
         let progressPath = NSBezierPath()
         let lineWidth: CGFloat = 2.5
 
-        // 计算进度角度
+        // Calculate progress angle
         let baseAngle = CGFloat(percentage) / 100.0 * 360
-        let circumference = 2 * CGFloat.pi * radius  // 圆周长
-        let capAngle = (lineWidth / circumference) * 360  // 圆头延伸对应的角度
+        let circumference = 2 * CGFloat.pi * radius  // Circumference
+        let capAngle = (lineWidth / circumference) * 360  // Angle corresponding to round cap extension
 
         let progressAngle: CGFloat
         let startAngle: CGFloat
 
         if percentage >= 100 {
-            // 100%: 使用完整角度和固定起点，因为 .butt 端点无延伸
+            // 100%: Use full angle with fixed start point, since .butt cap has no extension
             progressAngle = baseAngle
             startAngle = 90
         } else {
-            // 5小时/7天限制：使用渐进式减法，保持起点固定，实现平滑增长
-            // 减去的角度随百分比线性增加，在50%时完成完整减法，50%-100%显示完全精确
+            // 5-hour/7-day limit: Use progressive subtraction, keeping start point fixed for smooth growth
+            // Subtracted angle increases linearly with percentage, completing full subtraction at 50%, showing exact values from 50%-100%
             progressAngle = baseAngle - capAngle * min(1.0, CGFloat(percentage / 50.0))
             startAngle = 90 - capAngle / 2 + 0.5
         }
@@ -202,26 +360,29 @@ class MenuBarIconRenderer {
 
         progressPath.appendArc(withCenter: center, radius: radius, startAngle: startAngle, endAngle: endAngle, clockwise: true)
         progressPath.lineWidth = lineWidth
-        // 100%时使用平头让圆环完美闭合，其他进度使用圆头
+        // Use butt cap at 100% for a perfectly closed ring, round cap for other progress values
         progressPath.lineCapStyle = percentage >= 100 ? .butt : .round
         progressPath.stroke()
 
-        let fontSize: CGFloat = percentage >= 100 ? size.width * 0.275 : size.width * 0.4
-        let font = NSFont.systemFont(ofSize: fontSize, weight: percentage >= 100 ? .bold : .semibold)
-        let text = "\(Int(percentage))"
-        let paragraphStyle = NSMutableParagraphStyle()
-        paragraphStyle.alignment = .center
+        if settings.showIconNumbers {
+            let fontSize: CGFloat = percentage >= 100 ? size.width * 0.275 : size.width * 0.4
+            let font = NSFont.systemFont(ofSize: fontSize, weight: percentage >= 100 ? .bold : .semibold)
+            let text = "\(Int(percentage))"
+            let paragraphStyle = NSMutableParagraphStyle()
+            paragraphStyle.alignment = .center
+            let textColor = UsageColorScheme.isDarkMode(for: button) ? NSColor.white : NSColor.black
 
-        let attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: NSColor.black, .paragraphStyle: paragraphStyle]
-        let textSize = text.size(withAttributes: attrs)
-        let textOrigin = NSPoint(x: center.x - textSize.width / 2, y: center.y - textSize.height / 2)
-        text.draw(at: textOrigin, withAttributes: attrs)
+            let attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: textColor, .paragraphStyle: paragraphStyle]
+            let textSize = text.size(withAttributes: attrs)
+            let textOrigin = NSPoint(x: center.x - textSize.width / 2, y: center.y - textSize.height / 2)
+            text.draw(at: textOrigin, withAttributes: attrs)
+        }
 
         image.unlockFocus()
         return image
     }
 
-    // MARK: - Icon Drawing - Template Mode (单色模式)
+    // MARK: - Icon Drawing - Template Mode (Monochrome)
 
     private func createCircleTemplateImage(percentage: Double, size: NSSize, useSevenDayStyle: Bool = false, button: NSStatusBarButton? = nil, removeBackground: Bool = false) -> NSImage {
         let image = NSImage(size: size)
@@ -235,7 +396,7 @@ class MenuBarIconRenderer {
         backgroundPath.appendArc(withCenter: center, radius: radius, startAngle: 0, endAngle: 360, clockwise: false)
         backgroundPath.lineWidth = 1.5
 
-        // 7天限制使用虚线以区分5小时限制
+        // 7-day limit uses dashed line to distinguish from 5-hour limit
         if useSevenDayStyle {
             let dashPattern: [CGFloat] = [3, 1]
             backgroundPath.setLineDash(dashPattern, count: dashPattern.count, phase: 0)
@@ -247,21 +408,21 @@ class MenuBarIconRenderer {
         let progressPath = NSBezierPath()
         let lineWidth: CGFloat = 2.5
 
-        // 计算进度角度
+        // Calculate progress angle
         let baseAngle = CGFloat(percentage) / 100.0 * 360
-        let circumference = 2 * CGFloat.pi * radius  // 圆周长
-        let capAngle = (lineWidth / circumference) * 360  // 圆头延伸对应的角度
+        let circumference = 2 * CGFloat.pi * radius  // Circumference
+        let capAngle = (lineWidth / circumference) * 360  // Angle corresponding to round cap extension
 
         let progressAngle: CGFloat
         let startAngle: CGFloat
 
         if percentage >= 100 {
-            // 100%: 使用完整角度和固定起点，因为 .butt 端点无延伸
+            // 100%: Use full angle with fixed start point, since .butt cap has no extension
             progressAngle = baseAngle
             startAngle = 90
         } else {
-            // 单色模式：使用渐进式减法，保持起点固定，实现平滑增长
-            // 减去的角度随百分比线性增加，在50%时完成完整减法，50%-100%显示完全精确
+            // Monochrome mode: Use progressive subtraction, keeping start point fixed for smooth growth
+            // Subtracted angle increases linearly with percentage, completing full subtraction at 50%, showing exact values from 50%-100%
             progressAngle = baseAngle - capAngle * min(1.0, CGFloat(percentage / 50.0))
             startAngle = 90 - capAngle / 2 + 0.5
         }
@@ -270,18 +431,20 @@ class MenuBarIconRenderer {
 
         progressPath.appendArc(withCenter: center, radius: radius, startAngle: startAngle, endAngle: endAngle, clockwise: true)
         progressPath.lineWidth = lineWidth
-        // 100%时使用平头让圆环完美闭合，其他进度使用圆头
+        // Use butt cap at 100% for a perfectly closed ring, round cap for other progress values
         progressPath.lineCapStyle = percentage >= 100 ? .butt : .round
         progressPath.stroke()
 
-        let fontSize: CGFloat = percentage >= 100 ? size.width * 0.275 : size.width * 0.4
-        let font = NSFont.systemFont(ofSize: fontSize, weight: percentage >= 100 ? .bold : .semibold)
-        let text = "\(Int(percentage))"
-        let paragraphStyle = NSMutableParagraphStyle()
-        paragraphStyle.alignment = .center
-        let attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: NSColor.black, .paragraphStyle: paragraphStyle]
-        let textSize = text.size(withAttributes: attrs)
-        text.draw(at: NSPoint(x: center.x - textSize.width / 2, y: center.y - textSize.height / 2), withAttributes: attrs)
+        if settings.showIconNumbers {
+            let fontSize: CGFloat = percentage >= 100 ? size.width * 0.275 : size.width * 0.4
+            let font = NSFont.systemFont(ofSize: fontSize, weight: percentage >= 100 ? .bold : .semibold)
+            let text = "\(Int(percentage))"
+            let paragraphStyle = NSMutableParagraphStyle()
+            paragraphStyle.alignment = .center
+            let attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: NSColor.black, .paragraphStyle: paragraphStyle]
+            let textSize = text.size(withAttributes: attrs)
+            text.draw(at: NSPoint(x: center.x - textSize.width / 2, y: center.y - textSize.height / 2), withAttributes: attrs)
+        }
 
         image.unlockFocus()
         image.isTemplate = true
@@ -290,7 +453,7 @@ class MenuBarIconRenderer {
 
     // MARK: - Utility Icons
 
-    /// 创建简单圆形图标（备用）
+    /// Create a simple circle icon (fallback)
     private func createSimpleCircleIcon() -> NSImage {
         let size = NSSize(width: 18, height: 18)
         let image = NSImage(size: size)
@@ -308,7 +471,7 @@ class MenuBarIconRenderer {
         return image
     }
 
-    /// 在图标上添加徽章（小红点）
+    /// Add a badge (red dot) to the icon
     private func addBadgeToImage(_ baseImage: NSImage) -> NSImage {
         let size = baseImage.size
         let expandedSize = NSSize(width: size.width + 2.5, height: size.height + 2.5)
@@ -336,18 +499,18 @@ class MenuBarIconRenderer {
 
     // MARK: - Icon Combination Methods (v2.0)
 
-    /// 组合多个图标到单个图像
+    /// Combine multiple icons into a single image
     /// - Parameters:
-    ///   - icons: 要组合的图标数组
-    ///   - spacing: 图标间距
-    ///   - height: 统一高度（默认18）
-    /// - Returns: 组合后的图标
+    ///   - icons: Array of icons to combine
+    ///   - spacing: Spacing between icons
+    ///   - height: Uniform height (default 18)
+    /// - Returns: Combined icon
     private func combineIcons(_ icons: [NSImage], spacing: CGFloat = 3.0, height: CGFloat = 18) -> NSImage {
         guard !icons.isEmpty else {
             return createSimpleCircleIcon()
         }
 
-        // 计算总宽度
+        // Calculate total width
         let totalWidth = icons.reduce(0) { $0 + $1.size.width } + CGFloat(icons.count - 1) * spacing
         let size = NSSize(width: totalWidth, height: height)
 
@@ -356,7 +519,7 @@ class MenuBarIconRenderer {
 
         var currentX: CGFloat = 0
         for icon in icons {
-            let y = (height - icon.size.height) / 2  // 垂直居中
+            let y = (height - icon.size.height) / 2  // Vertical centering
             icon.draw(at: NSPoint(x: currentX, y: y),
                      from: NSRect(origin: .zero, size: icon.size),
                      operation: .sourceOver,
@@ -368,26 +531,26 @@ class MenuBarIconRenderer {
         return image
     }
 
-    /// 根据限制类型和数据创建单个图标
+    /// Create a single icon based on limit type and data
     /// - Parameters:
-    ///   - type: 限制类型
-    ///   - data: 用量数据
-    ///   - isMonochrome: 是否为单色模式
-    ///   - button: 状态栏按钮
-    /// - Returns: 图标图像
+    ///   - type: Limit type
+    ///   - data: Usage data
+    ///   - isMonochrome: Whether in monochrome mode
+    ///   - button: Status bar button
+    /// - Returns: Icon image
     func createIconForType(
         _ type: LimitType,
         data: UsageData,
         isMonochrome: Bool,
         button: NSStatusBarButton?
     ) -> NSImage? {
-        // 根据主题模式决定是否移除背景
-        // colorTranslucent: 移除背景（通透）
-        // colorWithBackground: 保留背景（半透明白色）
+        // Decide whether to remove background based on theme mode
+        // colorTranslucent: Remove background (translucent)
+        // colorWithBackground: Keep background (semi-transparent white)
         let removeBackground = settings.iconStyleMode == .colorTranslucent
 
-        // 在自定义模式下，即使数据为 nil 也显示占位图标（0%）
-        // 在智能模式下，数据为 nil 时返回 nil
+        // In custom mode, show placeholder icon (0%) even when data is nil
+        // In smart mode, return nil when data is nil
         let showPlaceholder = settings.displayMode == .custom
 
         switch type {

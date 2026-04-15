@@ -8,33 +8,33 @@
 
 import SwiftUI
 
-/// 信息行组件
-/// 显示一行信息，包含图标、标题和值
+/// Info row component
+/// Displays a single row of information with icon, title, and value
 struct InfoRow: View {
     let icon: String
     let title: String
     let value: String
-    var tintColor: Color = .blue  // 新增：可自定义图标颜色
+    var tintColor: Color = .blue  // Customizable icon color
 
     var body: some View {
         HStack {
             Image(systemName: icon)
-                .foregroundColor(tintColor)  // 使用自定义颜色
+                .foregroundColor(tintColor)  // Use custom color
                 .frame(width: 8)
-                .font(.system(size: 12))  // 图标大小
+                .font(.system(size: 12))  // Icon size
 
             Text(title)
-                .font(.system(size: 12))  // 第一列文字大小
+                .font(.system(size: 12))  // First column text size
                 .foregroundColor(.secondary)
 
             Spacer()
 
             Text(value)
-                .font(.system(size: 12))  // 第二列文字大小
+                .font(.system(size: 12))  // Second column text size
                 .fontWeight(.medium)
         }
-        .padding(.vertical, 6)  // 行高
-        .padding(.horizontal, 12) // 行宽
+        .padding(.vertical, 6)  // Row height
+        .padding(.horizontal, 12) // Row width
         .background(Color.gray.opacity(0.1))
         .cornerRadius(8)
     }

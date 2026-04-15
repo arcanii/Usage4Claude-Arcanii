@@ -9,8 +9,8 @@
 import Foundation
 import OSLog
 
-/// 诊断日志记录器
-/// 提供详细的运行时日志，帮助追踪和诊断问题
+/// Diagnostic logger
+/// Provides detailed runtime logs to help track and diagnose issues
 @MainActor
 class DiagnosticLogger {
 
@@ -20,7 +20,7 @@ class DiagnosticLogger {
 
     // MARK: - Properties
 
-    /// 日志级别
+    /// Log level
     enum LogLevel: String {
         case debug = "DEBUG"
         case info = "INFO"
@@ -28,20 +28,20 @@ class DiagnosticLogger {
         case error = "ERROR"
     }
 
-    /// 日志文件URL
+    /// Log file URL
     private var logFileURL: URL?
 
-    /// 日志队列（用于异步写入）
-    private let logQueue = DispatchQueue(label: "com.f-is-h.Usage4Claude.logging", qos: .utility)
+    /// Log queue (for asynchronous writing)
+    private let logQueue = DispatchQueue(label: "com.arcanii.Usage4Claude.logging", qos: .utility)
 
-    /// 最大日志文件大小（5MB）
+    /// Maximum log file size (5MB)
     private let maxLogFileSize: UInt64 = 5 * 1024 * 1024
 
-    /// 是否启用日志记录
+    /// Whether logging is enabled
     private var isEnabled: Bool = true
 
-    /// 系统日志器
-    private let osLogger = Logger(subsystem: "com.f-is-h.Usage4Claude", category: "Diagnostics")
+    /// System logger
+    private let osLogger = Logger(subsystem: "com.arcanii.Usage4Claude", category: "Diagnostics")
 
     // MARK: - Initialization
 
@@ -51,32 +51,32 @@ class DiagnosticLogger {
 
     // MARK: - Public Methods
 
-    /// 记录调试信息
+    /// Log debug information
     func debug(_ message: String, file: String = #file, line: Int = #line, function: String = #function) {
         log(message, level: .debug, file: file, line: line, function: function)
     }
 
-    /// 记录一般信息
+    /// Log general information
     func info(_ message: String, file: String = #file, line: Int = #line, function: String = #function) {
         log(message, level: .info, file: file, line: line, function: function)
     }
 
-    /// 记录警告信息
+    /// Log warning information
     func warning(_ message: String, file: String = #file, line: Int = #line, function: String = #function) {
         log(message, level: .warning, file: file, line: line, function: function)
     }
 
-    /// 记录错误信息
+    /// Log error information
     func error(_ message: String, file: String = #file, line: Int = #line, function: String = #function) {
         log(message, level: .error, file: file, line: line, function: function)
     }
 
-    /// 获取日志文件路径
+    /// Get the log file path
     func getLogFilePath() -> String? {
         return logFileURL?.path
     }
 
-    /// 读取日志内容
+    /// Read log contents
     func readLogs(maxLines: Int = 1000) -> String {
         guard let logFileURL = logFileURL,
               FileManager.default.fileExists(atPath: logFileURL.path) else {
@@ -93,7 +93,7 @@ class DiagnosticLogger {
         }
     }
 
-    /// 清空日志
+    /// Clear logs
     func clearLogs() {
         guard let logFileURL = logFileURL else { return }
 
@@ -106,14 +106,14 @@ class DiagnosticLogger {
         }
     }
 
-    /// 导出日志文件
+    /// Export log file
     func exportLogs() -> URL? {
         return logFileURL
     }
 
     // MARK: - Private Methods
 
-    /// 设置日志文件
+    /// Set up log file
     private func setupLogFile() {
         guard let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
             print("❌ Failed to get Application Support directory")
@@ -122,7 +122,7 @@ class DiagnosticLogger {
 
         let logDirectory = appSupport.appendingPathComponent("Usage4Claude/logs")
 
-        // 创建日志目录
+        // Create log directory
         do {
             try FileManager.default.createDirectory(at: logDirectory, withIntermediateDirectories: true)
         } catch {
@@ -130,55 +130,55 @@ class DiagnosticLogger {
             return
         }
 
-        // 设置日志文件路径
+        // Set log file path
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd"
         let dateString = dateFormatter.string(from: Date())
         logFileURL = logDirectory.appendingPathComponent("usage4claude_\(dateString).log")
 
-        // 检查并轮转日志
+        // Check and rotate logs
         checkAndRotateLogIfNeeded()
     }
 
-    /// 核心日志记录方法
+    /// Core log recording method
     private func log(_ message: String, level: LogLevel, file: String, line: Int, function: String) {
         guard isEnabled else { return }
 
-        // Release版本只记录warning和error，减少日志占用和隐私泄露
+        // Release builds only log warning and error to reduce log size and privacy leaks
         #if !DEBUG
         guard level == .warning || level == .error else { return }
         #endif
 
-        // 脱敏处理
+        // Redact sensitive data
         let sanitizedMessage = sanitize(message)
 
-        // 提取文件名
+        // Extract file name
         let fileName = (file as NSString).lastPathComponent
 
-        // 构建日志消息
+        // Build log message
         let timestamp = ISO8601DateFormatter().string(from: Date())
         let logMessage = "[\(timestamp)] [\(level.rawValue)] [\(fileName):\(line)] \(function) - \(sanitizedMessage)\n"
 
-        // 输出到控制台（仅在Debug模式）
+        // Output to console (Debug mode only)
         #if DEBUG
         print(logMessage, terminator: "")
         #endif
 
-        // 输出到系统日志
+        // Output to system log
         osLogger.log(level: osLogLevel(for: level), "\(sanitizedMessage)")
 
-        // 异步写入文件
+        // Write to file asynchronously
         writeToFile(logMessage)
     }
 
-    /// 写入日志到文件
+    /// Write log to file
     private func writeToFile(_ message: String) {
         guard let logFileURL = logFileURL else { return }
 
         logQueue.async {
             do {
                 if FileManager.default.fileExists(atPath: logFileURL.path) {
-                    // 文件存在，追加内容
+                    // File exists, append content
                     let fileHandle = try FileHandle(forWritingTo: logFileURL)
                     defer { fileHandle.closeFile() }
 
@@ -194,11 +194,11 @@ class DiagnosticLogger {
                         }
                     }
                 } else {
-                    // 文件不存在，创建新文件
+                    // File does not exist, create new file
                     try message.write(to: logFileURL, atomically: true, encoding: .utf8)
                 }
 
-                // 检查文件大小
+                // Check file size
                 Task { @MainActor in
                     self.checkAndRotateLogIfNeeded()
                 }
@@ -208,22 +208,22 @@ class DiagnosticLogger {
         }
     }
 
-    /// 检查并轮转日志文件
+    /// Check and rotate log file if needed
     private func checkAndRotateLogIfNeeded() {
         guard let logFileURL = logFileURL else { return }
 
         do {
             let attributes = try FileManager.default.attributesOfItem(atPath: logFileURL.path)
             if let fileSize = attributes[.size] as? UInt64, fileSize > maxLogFileSize {
-                // 文件过大，进行轮转
+                // File too large, perform rotation
                 rotateLog()
             }
         } catch {
-            // 文件不存在或无法读取，忽略
+            // File does not exist or cannot be read, ignore
         }
     }
 
-    /// 轮转日志文件
+    /// Rotate log file
     private func rotateLog() {
         guard let logFileURL = logFileURL else { return }
 
@@ -235,17 +235,17 @@ class DiagnosticLogger {
             .appendingPathComponent("usage4claude_\(timestamp).log.old")
 
         do {
-            // 重命名当前日志文件
+            // Rename current log file
             try FileManager.default.moveItem(at: logFileURL, to: archiveURL)
 
-            // 删除旧的归档文件（保留最近5个）
+            // Delete old archive files (keep the most recent 5)
             cleanupOldLogs()
         } catch {
             print("❌ Failed to rotate log: \(error)")
         }
     }
 
-    /// 清理旧日志文件
+    /// Clean up old log files
     private func cleanupOldLogs() {
         guard let logFileURL = logFileURL else { return }
 
@@ -258,17 +258,17 @@ class DiagnosticLogger {
                 options: .skipsHiddenFiles
             )
 
-            // 只保留.old文件
+            // Only keep .old files
             let oldLogs = fileURLs.filter { $0.pathExtension == "old" }
 
-            // 按创建时间排序
+            // Sort by creation date
             let sortedLogs = try oldLogs.sorted { url1, url2 in
                 let date1 = try url1.resourceValues(forKeys: [.creationDateKey]).creationDate ?? Date.distantPast
                 let date2 = try url2.resourceValues(forKeys: [.creationDateKey]).creationDate ?? Date.distantPast
                 return date1 > date2
             }
 
-            // 删除超过5个的旧日志
+            // Delete old logs exceeding 5
             if sortedLogs.count > 5 {
                 for logURL in sortedLogs.dropFirst(5) {
                     try FileManager.default.removeItem(at: logURL)
@@ -279,13 +279,13 @@ class DiagnosticLogger {
         }
     }
 
-    /// 脱敏敏感信息
+    /// Redact sensitive information
     private func sanitize(_ message: String) -> String {
-        // 使用统一的敏感数据脱敏工具
+        // Use the unified sensitive data redaction utility
         return SensitiveDataRedactor.redactText(message)
     }
 
-    /// 转换为系统日志级别
+    /// Convert to system log level
     private func osLogLevel(for level: LogLevel) -> OSLogType {
         switch level {
         case .debug:
@@ -302,7 +302,7 @@ class DiagnosticLogger {
 
 // MARK: - Convenience Global Functions
 
-/// 全局便捷日志函数
+/// Global convenience log functions
 @MainActor
 func logDebug(_ message: String, file: String = #file, line: Int = #line, function: String = #function) {
     DiagnosticLogger.shared.debug(message, file: file, line: line, function: function)

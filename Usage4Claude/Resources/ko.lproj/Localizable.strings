@@ -12,7 +12,7 @@
 "menu.check_updates" = "업데이트 확인";
 "menu.about" = "정보";
 "menu.web_usage" = "Claude 사용량 웹페이지";
-"menu.coffee" = "Buy Me A Coffee";
+"menu.coffee" = "Buy f-is-h a Coffee";
 "menu.github_sponsor" = "GitHub Sponsor";
 "menu.quit" = "Usage4Claude 종료";
 "menu.account" = "계정";
@@ -95,7 +95,7 @@
 "settings.about.license" = "라이선스";
 "settings.about.license_value" = "MIT License";
 "settings.about.github" = "GitHub 저장소 방문";
-"settings.about.coffee" = "Buy Me A Coffee";
+"settings.about.coffee" = "Buy f-is-h a Coffee";
 "settings.about.github_sponsor" = "GitHub Sponsor";
 "settings.about.copyright" = "© 2025 All Rights Reserved";
 
@@ -133,6 +133,8 @@
 "display.percentage_only" = "백분율만 표시";
 "display.icon_only" = "아이콘만 표시";
 "display.both" = "아이콘과 백분율";
+"display.unified" = "통합";
+"display.show_number" = "숫자 표시";
 "display.show_icon" = "아이콘 표시";
 "display.show_percentage" = "백분율 표시";
 
@@ -238,7 +240,7 @@
 "diagnostic.suggestion_configure_auth" = "위 필드에 조직 ID와 세션 키를 설정하세요";
 "diagnostic.suggestion_check_org_id" = "조직 ID 형식이 올바른지 확인하세요(UUID 형식이어야 함)";
 "diagnostic.suggestion_export_and_share" = "이 진단 보고서를 내보내서 GitHub Issues에 공유하세요";
-"diagnostic.suggestion_contact_support" = "github.com/f-is-h/Usage4Claude/issues에서 개발자에게 도움을 요청하세요";
+"diagnostic.suggestion_contact_support" = "github.com/arcanii/Usage4Claude-Arcanii/issues에서 개발자에게 도움을 요청하세요";
 "diagnostic.open_log_folder" = "로그 폴더 열기";
 
 // MARK: - Limit Types (v2.0.0)

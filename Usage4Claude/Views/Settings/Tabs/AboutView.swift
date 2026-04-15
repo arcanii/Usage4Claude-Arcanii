@@ -8,17 +8,17 @@
 
 import SwiftUI
 
-/// 关于页面
-/// 显示应用信息、版本号和相关链接
+/// About page
+/// Displays app information, version number, and related links
 struct AboutView: View {
-    /// 从 Bundle 中读取应用版本号
+    /// Read app version from Bundle
     private var appVersion: String {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown"
     }
     
     var body: some View {
         VStack(spacing: 20) {
-            // 应用图标（不使用template模式）
+            // App icon (not using template mode)
             if let icon = ImageHelper.createAppIcon(size: 100) {
                 Image(nsImage: icon)
                     .resizable()
@@ -27,18 +27,21 @@ struct AboutView: View {
                     .shadow(radius: 5)
             }
             
-            // 应用名称和版本
+            // App name and version
             VStack(spacing: 4) {
                 Text("Usage4Claude")
                     .font(.title)
                     .fontWeight(.bold)
-                
+                Text("(Arcanii Mod)")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+
                 Text(L.SettingsAbout.version(appVersion))
                     .font(.subheadline)
                     .foregroundColor(.secondary)
             }
             
-            // 描述
+            // Description
             Text(L.SettingsAbout.description)
                 .font(.body)
                 .foregroundColor(.secondary)
@@ -48,18 +51,18 @@ struct AboutView: View {
             Divider()
                 .padding(.horizontal, 60)
             
-            // 信息列表
+            // Info list
             VStack(alignment: .leading, spacing: 12) {
-                AboutInfoRow(icon: "person.fill", title: L.SettingsAbout.developer, value: "f-is-h")
+                AboutInfoRow(icon: "person.fill", title: L.SettingsAbout.developer, value: "arcanii")
                 AboutInfoRow(icon: "doc.text", title: L.SettingsAbout.license, value: L.SettingsAbout.licenseValue)
             }
             
             Spacer()
             
-            // 链接按钮
+            // Link buttons
             VStack(spacing: 8) {
                 Button(action: {
-                    if let url = URL(string: "https://github.com/f-is-h/Usage4Claude") {
+                    if let url = URL(string: "https://github.com/arcanii/Usage4Claude-Arcanii") {
                         NSWorkspace.shared.open(url)
                     }
                 }) {
@@ -83,22 +86,9 @@ struct AboutView: View {
                     .frame(minWidth: 200)
                 }
                 .focusable(false)
-
-                Button(action: {
-                    if let url = URL(string: "https://github.com/sponsors/f-is-h?frequency=one-time") {
-                        NSWorkspace.shared.open(url)
-                    }
-                }) {
-                    HStack {
-                        Image(systemName: "heart")
-                        Text(L.SettingsAbout.githubSponsor)
-                    }
-                    .frame(minWidth: 200)
-                }
-                .focusable(false)
             }
             
-            // 版权信息
+            // Copyright info
             Text(L.SettingsAbout.copyright)
                 .font(.caption)
                 .foregroundColor(.secondary)

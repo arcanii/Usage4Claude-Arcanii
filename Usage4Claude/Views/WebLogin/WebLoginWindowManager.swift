@@ -9,8 +9,8 @@
 import AppKit
 import SwiftUI
 
-/// Web 登录窗口管理单例
-/// 负责创建、显示和关闭登录窗口
+/// Web login window manager singleton
+/// Responsible for creating, showing, and closing the login window
 final class WebLoginWindowManager {
     static let shared = WebLoginWindowManager()
 
@@ -18,10 +18,10 @@ final class WebLoginWindowManager {
 
     private init() {}
 
-    /// 显示登录窗口
-    /// - Parameter onAccountCreated: 账户创建成功后的回调
+    /// Show the login window
+    /// - Parameter onAccountCreated: Callback after account is successfully created
     func showLoginWindow(onAccountCreated: ((Account) -> Void)? = nil) {
-        // 如果窗口已存在，直接前置
+        // If window already exists, bring it to front
         if let window = loginWindow, window.isVisible {
             window.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
@@ -51,7 +51,7 @@ final class WebLoginWindowManager {
         NSApp.activate(ignoringOtherApps: true)
     }
 
-    /// 关闭登录窗口
+    /// Close the login window
     func closeLoginWindow() {
         loginWindow?.close()
         loginWindow = nil

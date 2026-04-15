@@ -10,38 +10,38 @@ import Foundation
 import Security
 import OSLog
 
-/// 管理 Keychain 存储的类
-/// 用于安全存储敏感信息（如 Organization ID 和 Session Key）
-/// Debug 模式：使用 UserDefaults（便于开发测试，不弹窗）
-/// Release 模式：使用 Keychain（安全存储）
+/// Class that manages Keychain storage
+/// Used for securely storing sensitive information (e.g., Organization ID and Session Key)
+/// Debug mode: Uses UserDefaults (convenient for development, no prompts)
+/// Release mode: Uses Keychain (secure storage)
 class KeychainManager {
     static let shared = KeychainManager()
     
     private init() {
         #if !DEBUG
-        // 动态获取 Bundle ID，如果获取失败则使用默认值
+        // Dynamically get Bundle ID, use default if retrieval fails
         if let bundleID = Bundle.main.bundleIdentifier {
             service = bundleID
         }
         #endif
     }
     
-    // MARK: - Keychain 配置
+    // MARK: - Keychain Configuration
     
     #if DEBUG
-    /// Debug 模式：UserDefaults key 前缀
+    /// Debug mode: UserDefaults key prefix
     private let debugKeyPrefix = "DEBUG_"
     #else
-    /// Keychain 服务标识符（自动从 Bundle 获取）
-    private var service: String = "xyz.fi5h.Usage4Claude"  // 默认值，会在 init 中更新
+    /// Keychain service identifier (automatically obtained from Bundle)
+    private var service: String = "com.arcanii.Usage4Claude"  // Default value, updated in init
     #endif
     
-    // MARK: - 保存方法
+    // MARK: - Save Methods
     
     #if DEBUG
-    /// 保存 Organization ID 到 UserDefaults（Debug 模式）
-    /// - Parameter value: Organization ID 值
-    /// - Returns: 是否保存成功
+    /// Save Organization ID to UserDefaults (Debug mode)
+    /// - Parameter value: Organization ID value
+    /// - Returns: Whether the save was successful
     @discardableResult
     func saveOrganizationId(_ value: String) -> Bool {
         UserDefaults.standard.set(value, forKey: debugKeyPrefix + "organizationId")
@@ -49,9 +49,9 @@ class KeychainManager {
         return true
     }
 
-    /// 保存 Session Key 到 UserDefaults（Debug 模式）
-    /// - Parameter value: Session Key 值
-    /// - Returns: 是否保存成功
+    /// Save Session Key to UserDefaults (Debug mode)
+    /// - Parameter value: Session Key value
+    /// - Returns: Whether the save was successful
     @discardableResult
     func saveSessionKey(_ value: String) -> Bool {
         UserDefaults.standard.set(value, forKey: debugKeyPrefix + "sessionKey")
@@ -59,60 +59,60 @@ class KeychainManager {
         return true
     }
     #else
-    /// 保存 Organization ID 到 Keychain（Release 模式）
-    /// - Parameter value: Organization ID 值
-    /// - Returns: 是否保存成功
+    /// Save Organization ID to Keychain (Release mode)
+    /// - Parameter value: Organization ID value
+    /// - Returns: Whether the save was successful
     @discardableResult
     func saveOrganizationId(_ value: String) -> Bool {
         return save(key: "organizationId", value: value)
     }
     
-    /// 保存 Session Key 到 Keychain（Release 模式）
-    /// - Parameter value: Session Key 值
-    /// - Returns: 是否保存成功
+    /// Save Session Key to Keychain (Release mode)
+    /// - Parameter value: Session Key value
+    /// - Returns: Whether the save was successful
     @discardableResult
     func saveSessionKey(_ value: String) -> Bool {
         return save(key: "sessionKey", value: value)
     }
     #endif
     
-    // MARK: - 读取方法
+    // MARK: - Load Methods
     
     #if DEBUG
-    /// 从 UserDefaults 读取 Organization ID（Debug 模式）
-    /// - Returns: Organization ID 值，如果不存在返回 nil
+    /// Load Organization ID from UserDefaults (Debug mode)
+    /// - Returns: Organization ID value, returns nil if not found
     func loadOrganizationId() -> String? {
         let value = UserDefaults.standard.string(forKey: debugKeyPrefix + "organizationId")
         Logger.keychain.debug("[Debug] 读取 Organization ID: \(value ?? "nil")")
         return value
     }
 
-    /// 从 UserDefaults 读取 Session Key（Debug 模式）
-    /// - Returns: Session Key 值，如果不存在返回 nil
+    /// Load Session Key from UserDefaults (Debug mode)
+    /// - Returns: Session Key value, returns nil if not found
     func loadSessionKey() -> String? {
         let value = UserDefaults.standard.string(forKey: debugKeyPrefix + "sessionKey")
         Logger.keychain.debug("[Debug] 读取 Session Key: \(value != nil ? "存在" : "nil")")
         return value
     }
     #else
-    /// 从 Keychain 读取 Organization ID（Release 模式）
-    /// - Returns: Organization ID 值，如果不存在返回 nil
+    /// Load Organization ID from Keychain (Release mode)
+    /// - Returns: Organization ID value, returns nil if not found
     func loadOrganizationId() -> String? {
         return load(key: "organizationId")
     }
     
-    /// 从 Keychain 读取 Session Key（Release 模式）
-    /// - Returns: Session Key 值，如果不存在返回 nil
+    /// Load Session Key from Keychain (Release mode)
+    /// - Returns: Session Key value, returns nil if not found
     func loadSessionKey() -> String? {
         return load(key: "sessionKey")
     }
     #endif
     
-    // MARK: - 删除方法
+    // MARK: - Delete Methods
     
     #if DEBUG
-    /// 从 UserDefaults 删除 Organization ID（Debug 模式）
-    /// - Returns: 是否删除成功
+    /// Delete Organization ID from UserDefaults (Debug mode)
+    /// - Returns: Whether the deletion was successful
     @discardableResult
     func deleteOrganizationId() -> Bool {
         UserDefaults.standard.removeObject(forKey: debugKeyPrefix + "organizationId")
@@ -120,8 +120,8 @@ class KeychainManager {
         return true
     }
 
-    /// 从 UserDefaults 删除 Session Key（Debug 模式）
-    /// - Returns: 是否删除成功
+    /// Delete Session Key from UserDefaults (Debug mode)
+    /// - Returns: Whether the deletion was successful
     @discardableResult
     func deleteSessionKey() -> Bool {
         UserDefaults.standard.removeObject(forKey: debugKeyPrefix + "sessionKey")
@@ -129,23 +129,23 @@ class KeychainManager {
         return true
     }
     #else
-    /// 从 Keychain 删除 Organization ID（Release 模式）
-    /// - Returns: 是否删除成功
+    /// Delete Organization ID from Keychain (Release mode)
+    /// - Returns: Whether the deletion was successful
     @discardableResult
     func deleteOrganizationId() -> Bool {
         return delete(key: "organizationId")
     }
     
-    /// 从 Keychain 删除 Session Key（Release 模式）
-    /// - Returns: 是否删除成功
+    /// Delete Session Key from Keychain (Release mode)
+    /// - Returns: Whether the deletion was successful
     @discardableResult
     func deleteSessionKey() -> Bool {
         return delete(key: "sessionKey")
     }
     #endif
     
-    /// 删除所有认证信息
-    /// - Returns: 是否全部删除成功
+    /// Delete all authentication credentials
+    /// - Returns: Whether all deletions were successful
     @discardableResult
     func deleteAll() -> Bool {
         let result1 = deleteOrganizationId()
@@ -153,19 +153,19 @@ class KeychainManager {
         return result1 && result2
     }
     
-    /// 删除所有凭证信息（deleteAll的别名，更符合业务语义）
-    /// - Returns: 是否全部删除成功
+    /// Delete all credential information (alias for deleteAll, better business semantics)
+    /// - Returns: Whether all deletions were successful
     @discardableResult
     func deleteCredentials() -> Bool {
         return deleteAll()
     }
 
-    // MARK: - 账户列表存储（v2.1.0 多账户支持）
+    // MARK: - Account List Storage (v2.1.0 multi-account support)
 
     #if DEBUG
-    /// 保存账户列表到 UserDefaults（Debug 模式）
-    /// - Parameter accounts: 账户列表
-    /// - Returns: 是否保存成功
+    /// Save account list to UserDefaults (Debug mode)
+    /// - Parameter accounts: Account list
+    /// - Returns: Whether the save was successful
     @discardableResult
     func saveAccounts(_ accounts: [Account]) -> Bool {
         let encoder = JSONEncoder()
@@ -178,8 +178,8 @@ class KeychainManager {
         return true
     }
 
-    /// 从 UserDefaults 读取账户列表（Debug 模式）
-    /// - Returns: 账户列表，如果不存在返回 nil
+    /// Load account list from UserDefaults (Debug mode)
+    /// - Returns: Account list, returns nil if not found
     func loadAccounts() -> [Account]? {
         guard let data = UserDefaults.standard.data(forKey: debugKeyPrefix + "accounts") else {
             Logger.keychain.debug("[Debug] 账户列表不存在")
@@ -194,8 +194,8 @@ class KeychainManager {
         return accounts
     }
 
-    /// 从 UserDefaults 删除账户列表（Debug 模式）
-    /// - Returns: 是否删除成功
+    /// Delete account list from UserDefaults (Debug mode)
+    /// - Returns: Whether the deletion was successful
     @discardableResult
     func deleteAccounts() -> Bool {
         UserDefaults.standard.removeObject(forKey: debugKeyPrefix + "accounts")
@@ -203,9 +203,9 @@ class KeychainManager {
         return true
     }
     #else
-    /// 保存账户列表到 Keychain（Release 模式）
-    /// - Parameter accounts: 账户列表
-    /// - Returns: 是否保存成功
+    /// Save account list to Keychain (Release mode)
+    /// - Parameter accounts: Account list
+    /// - Returns: Whether the save was successful
     @discardableResult
     func saveAccounts(_ accounts: [Account]) -> Bool {
         let encoder = JSONEncoder()
@@ -221,8 +221,8 @@ class KeychainManager {
         return result
     }
 
-    /// 从 Keychain 读取账户列表（Release 模式）
-    /// - Returns: 账户列表，如果不存在返回 nil
+    /// Load account list from Keychain (Release mode)
+    /// - Returns: Account list, returns nil if not found
     func loadAccounts() -> [Account]? {
         guard let jsonString = load(key: "accounts"),
               let jsonData = jsonString.data(using: .utf8) else {
@@ -237,8 +237,8 @@ class KeychainManager {
         return accounts
     }
 
-    /// 从 Keychain 删除账户列表（Release 模式）
-    /// - Returns: 是否删除成功
+    /// Delete account list from Keychain (Release mode)
+    /// - Returns: Whether the deletion was successful
     @discardableResult
     func deleteAccounts() -> Bool {
         return delete(key: "accounts")
@@ -246,19 +246,19 @@ class KeychainManager {
     #endif
 
     #if !DEBUG
-    // MARK: - 通用 Keychain 操作（仅 Release 模式）
+    // MARK: - Generic Keychain Operations (Release mode only)
     
-    /// 保存数据到 Keychain
+    /// Save data to Keychain
     /// - Parameters:
-    ///   - key: 键名
-    ///   - value: 要保存的值
-    /// - Returns: 是否保存成功
+    ///   - key: Key name
+    ///   - value: Value to save
+    /// - Returns: Whether the save was successful
     private func save(key: String, value: String) -> Bool {
         guard let data = value.data(using: .utf8) else {
             return false
         }
         
-        // 构建查询字典
+        // Build query dictionary
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
@@ -266,10 +266,10 @@ class KeychainManager {
             kSecValueData as String: data
         ]
         
-        // 先尝试删除已存在的项
+        // First try to delete existing item
         SecItemDelete(query as CFDictionary)
         
-        // 添加新项
+        // Add new item
         let status = SecItemAdd(query as CFDictionary, nil)
         
         if status == errSecSuccess {
@@ -280,9 +280,9 @@ class KeychainManager {
         }
     }
     
-    /// 从 Keychain 读取数据
-    /// - Parameter key: 键名
-    /// - Returns: 读取的值，如果不存在返回 nil
+    /// Load data from Keychain
+    /// - Parameter key: Key name
+    /// - Returns: Loaded value, returns nil if not found
     private func load(key: String) -> String? {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
@@ -306,9 +306,9 @@ class KeychainManager {
         return nil
     }
     
-    /// 从 Keychain 删除数据
-    /// - Parameter key: 键名
-    /// - Returns: 是否删除成功
+    /// Delete data from Keychain
+    /// - Parameter key: Key name
+    /// - Returns: Whether the deletion was successful
     private func delete(key: String) -> Bool {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,

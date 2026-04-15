@@ -8,24 +8,24 @@
 
 import Foundation
 
-/// 账户数据模型
-/// 存储用户的 Claude 账户信息，包括认证凭据和显示名称
-/// 一个账户对应一组 Session Key 和 Organization ID
+/// Account data model
+/// Stores Claude account information for the user, including authentication credentials and display name
+/// Each account corresponds to a pair of Session Key and Organization ID
 struct Account: Codable, Identifiable, Equatable {
-    /// 唯一标识符
+    /// Unique identifier
     let id: UUID
     /// Claude Session Key
     var sessionKey: String
-    /// Organization ID（从 API 获取）
+    /// Organization ID (fetched from API)
     var organizationId: String
-    /// API 返回的组织名称（如 "xxx's Organization"）
+    /// Organization name returned by the API (e.g., "xxx's Organization")
     var organizationName: String
-    /// 用户自定义别名（可选）
+    /// User-defined alias (optional)
     var alias: String?
-    /// 创建时间
+    /// Creation time
     let createdAt: Date
 
-    /// 显示名称：优先使用别名，否则使用 API 返回的名称
+    /// Display name: Prefers alias if set, otherwise uses the API-returned name
     var displayName: String {
         if let alias = alias, !alias.isEmpty {
             return alias
@@ -35,12 +35,12 @@ struct Account: Codable, Identifiable, Equatable {
 
     // MARK: - Initialization
 
-    /// 创建新账户
+    /// Create a new account
     /// - Parameters:
     ///   - sessionKey: Claude Session Key
     ///   - organizationId: Organization ID
-    ///   - organizationName: 组织名称
-    ///   - alias: 用户自定义别名（可选）
+    ///   - organizationName: Organization name
+    ///   - alias: User-defined alias (optional)
     init(
         sessionKey: String,
         organizationId: String,
@@ -55,7 +55,7 @@ struct Account: Codable, Identifiable, Equatable {
         self.createdAt = Date()
     }
 
-    /// 用于从存储中解码的完整初始化方法
+    /// Full initializer for decoding from storage
     init(
         id: UUID,
         sessionKey: String,

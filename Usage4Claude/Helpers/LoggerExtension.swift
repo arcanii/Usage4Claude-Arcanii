@@ -10,51 +10,51 @@
 import OSLog
 
 extension Logger {
-    /// 应用的统一 subsystem 标识符
-    private static var subsystem = Bundle.main.bundleIdentifier ?? "xyz.fi5h.Usage4Claude"
+    /// Unified subsystem identifier for the app
+    private static var subsystem = Bundle.main.bundleIdentifier ?? "com.arcanii.Usage4Claude"
 
-    /// 菜单栏管理器日志
-    /// 用于记录菜单栏、刷新、更新检查等相关操作
+    /// Menu bar manager log
+    /// Used to log menu bar, refresh, update check, and related operations
     static let menuBar = Logger(subsystem: subsystem, category: "MenuBar")
 
-    /// 用户设置日志
-    /// 用于记录设置变更、智能模式切换、开机启动等操作
+    /// User settings log
+    /// Used to log settings changes, smart mode switching, launch at login, and related operations
     static let settings = Logger(subsystem: subsystem, category: "Settings")
 
-    /// Keychain 管理日志
-    /// 用于记录敏感信息的存储、读取和删除操作
+    /// Keychain management log
+    /// Used to log storage, retrieval, and deletion operations for sensitive information
     static let keychain = Logger(subsystem: subsystem, category: "Keychain")
 
-    /// API 服务日志
-    /// 用于记录 API 请求、响应和错误
+    /// API service log
+    /// Used to log API requests, responses, and errors
     static let api = Logger(subsystem: subsystem, category: "API")
 
-    /// 本地化管理日志
-    /// 用于记录语言切换和本地化相关操作
+    /// Localization management log
+    /// Used to log language switching and localization-related operations
     static let localization = Logger(subsystem: subsystem, category: "Localization")
 }
 
-// MARK: - 日志级别说明
+// MARK: - Log Level Reference
 /*
- OSLog 提供5个日志级别，Release 版本会自动禁用低级别日志：
+ OSLog provides 5 log levels; Release builds automatically disable lower-level logs:
 
- 1. .debug    - 调试信息，仅开发时输出，Release 不执行
- 2. .info     - 一般信息，默认不持久化
- 3. .notice   - 重要事件，默认持久化
- 4. .error    - 错误信息，总是持久化
- 5. .fault    - 严重错误，总是持久化
+ 1. .debug    - Debug info, only output during development, not executed in Release
+ 2. .info     - General info, not persisted by default
+ 3. .notice   - Important events, persisted by default
+ 4. .error    - Error info, always persisted
+ 5. .fault    - Critical errors, always persisted
 
- 使用示例：
+ Usage examples:
  ```swift
- Logger.menuBar.debug("调试信息")
- Logger.menuBar.info("一般信息")
- Logger.menuBar.notice("重要事件")
- Logger.menuBar.error("错误: \(error.localizedDescription)")
- Logger.menuBar.fault("严重错误")
+ Logger.menuBar.debug("Debug info")
+ Logger.menuBar.info("General info")
+ Logger.menuBar.notice("Important event")
+ Logger.menuBar.error("Error: \(error.localizedDescription)")
+ Logger.menuBar.fault("Critical error")
  ```
 
- 查看日志：
- 1. Xcode Console (开发时)
- 2. Console.app (搜索 subsystem:xyz.fi5h.Usage4Claude)
- 3. 命令行: log show --predicate 'subsystem == "xyz.fi5h.Usage4Claude"' --last 1h
+ Viewing logs:
+ 1. Xcode Console (during development)
+ 2. Console.app (search subsystem:com.arcanii.Usage4Claude)
+ 3. Command line: log show --predicate 'subsystem == "com.arcanii.Usage4Claude"' --last 1h
  */

@@ -10,56 +10,56 @@ import Foundation
 import Combine
 import OSLog
 
-/// 数据刷新管理器
-/// 负责管理所有数据刷新、定时器、更新检查和重置验证逻辑
+/// Data refresh manager
+/// Responsible for managing all data refreshing, timers, update checks, and reset verification logic
 class DataRefreshManager: ObservableObject {
 
     // MARK: - Dependencies
 
-    /// Claude API 服务实例
+    /// Claude API service instance
     private let apiService = ClaudeAPIService()
-    /// 更新检查器实例
+    /// Update checker instance
     private let updateChecker = UpdateChecker()
-    /// 定时器管理器
+    /// Timer manager
     private let timerManager = TimerManager()
-    /// 用户设置实例
+    /// User settings instance
     private let settings = UserSettings.shared
 
     // MARK: - Published State
 
-    /// 当前用量数据
+    /// Current usage data
     @Published var usageData: UsageData?
-    /// 加载状态
+    /// Loading state
     @Published var isLoading = false
-    /// 错误消息
+    /// Error message
     @Published var errorMessage: String?
-    /// 是否有可用更新
+    /// Whether an update is available
     @Published var hasAvailableUpdate = false
-    /// 最新版本号
+    /// Latest version number
     @Published var latestVersion: String?
-    /// 刷新状态管理器
+    /// Refresh state manager
     let refreshState = RefreshState()
 
     // MARK: - Private State
 
-    /// 上次的重置时间（用于检测重置是否完成）
+    /// Last reset time (used to detect whether a reset has completed)
     private var lastResetsAt: Date?
-    /// 上次手动刷新时间
+    /// Last manual refresh time
     private var lastManualRefreshTime: Date?
-    /// 上次API请求时间
+    /// Last API request time
     private var lastAPIFetchTime: Date?
-    /// 刷新动画开始时间（用于确保动画最小显示时长）
+    /// Refresh animation start time (used to ensure minimum animation display duration)
     private var refreshAnimationStartTime: Date?
-    /// 动画最小显示时长（秒）
+    /// Minimum animation display duration (seconds)
     private let minimumAnimationDuration: TimeInterval = 1.0
-    /// 上次检查更新时间
+    /// Last update check time
     private var lastUpdateCheckTime: Date?
-    /// App Nap 防护活动令牌
+    /// App Nap prevention activity token
     private var refreshActivity: NSObjectProtocol?
 
     // MARK: - Timer Identifiers
 
-    /// 定时器标识符
+    /// Timer identifiers
     private enum TimerID {
         static let mainRefresh = "mainRefresh"
         static let popoverRefresh = "popoverRefresh"
@@ -77,13 +77,13 @@ class DataRefreshManager: ObservableObject {
 
     // MARK: - Data Fetching
 
-    /// 获取用量数据
-    /// 调用 API 服务获取最新的使用情况
+    /// Fetch usage data
+    /// Calls the API service to get the latest usage information
     func fetchUsage() {
         isLoading = true
         errorMessage = nil
 
-        // 记录本次API请求时间
+        // Record this API request time
         lastAPIFetchTime = Date()
 
         apiService.fetchUsage { [weak self] result in
@@ -91,7 +91,7 @@ class DataRefreshManager: ObservableObject {
                 guard let self = self else { return }
                 self.isLoading = false
 
-                // 确保动画至少显示最小时长
+                // Ensure animation displays for at least the minimum duration
                 self.endRefreshAnimationWithMinimumDuration {
                 }
 
@@ -101,29 +101,29 @@ class DataRefreshManager: ObservableObject {
                     self.usageData = data
                     self.errorMessage = nil
 
-                    // 检查是否需要发送用量通知
+                    // Check if usage notifications need to be sent
                     if self.settings.notificationsEnabled {
                         NotificationManager.shared.checkAndNotify(usageData: data, previousData: previousData)
                     }
 
-                    // 智能模式：根据百分比变化调整刷新频率
+                    // Smart mode: adjust refresh frequency based on percentage changes
                     self.settings.updateSmartMonitoringMode(currentUtilization: data.percentage)
 
-                    // 检测重置时间是否发生变化
+                    // Detect whether the reset time has changed
                     let newResetsAt = data.resetsAt
                     let hasResetChanged = self.hasResetTimeChanged(from: self.lastResetsAt, to: newResetsAt)
 
                     if hasResetChanged {
-                        // 重置时间发生变化，取消所有待执行的验证
+                        // Reset time changed, cancel all pending verifications
                         self.cancelResetVerification()
                     } else {
-                        // 重置时间未变化，安排验证
+                        // Reset time unchanged, schedule verification
                         if let resetsAt = newResetsAt {
                             self.scheduleResetVerification(resetsAt: resetsAt)
                         }
                     }
 
-                    // 更新上次的重置时间
+                    // Update the last reset time
                     self.lastResetsAt = newResetsAt
 
                 case .failure(let error):
@@ -134,43 +134,43 @@ class DataRefreshManager: ObservableObject {
         }
     }
 
-    /// 开始数据刷新
-    /// 立即获取一次数据并启动定时器
+    /// Start data refreshing
+    /// Immediately fetches data once and starts the timer
     func startRefreshing() {
         beginRefreshActivity()
         fetchUsage()
         restartTimer()
 
         #if DEBUG
-        // 🧪 测试：确保图标显示徽章
+        // Test: ensure icon displays badge
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
             self?.objectWillChange.send()
         }
         #endif
     }
 
-    /// 停止数据刷新
+    /// Stop data refreshing
     func stopRefreshing() {
         timerManager.invalidate(TimerID.mainRefresh)
         endRefreshActivity()
     }
 
-    /// 启动 Popover 刷新定时器
-    /// 用于在 popover 打开时以 1 秒间隔触发 UI 更新
-    /// - Parameter updateHandler: 每秒调用的更新闭包
+    /// Start the Popover refresh timer
+    /// Used to trigger UI updates at 1-second intervals while the popover is open
+    /// - Parameter updateHandler: Update closure called every second
     func startPopoverRefreshTimer(updateHandler: @escaping () -> Void) {
         timerManager.schedule(TimerID.popoverRefresh, interval: 1.0, repeats: true) {
             updateHandler()
         }
     }
 
-    /// 停止 Popover 刷新定时器
+    /// Stop the Popover refresh timer
     func stopPopoverRefreshTimer() {
         timerManager.invalidate(TimerID.popoverRefresh)
     }
 
-    /// 重启刷新定时器
-    /// 根据用户设置的刷新频率重新创建定时器
+    /// Restart the refresh timer
+    /// Recreates the timer based on the user's configured refresh frequency
     private func restartTimer() {
         timerManager.invalidate(TimerID.mainRefresh)
         let interval = TimeInterval(settings.effectiveRefreshInterval)
@@ -181,7 +181,7 @@ class DataRefreshManager: ObservableObject {
 
     // MARK: - App Nap Prevention
 
-    /// 开始后台活动声明，防止 macOS App Nap 冻结定时器
+    /// Begin background activity assertion to prevent macOS App Nap from freezing timers
     private func beginRefreshActivity() {
         guard refreshActivity == nil else { return }
         refreshActivity = ProcessInfo.processInfo.beginActivity(
@@ -190,7 +190,7 @@ class DataRefreshManager: ObservableObject {
         )
     }
 
-    /// 结束后台活动声明
+    /// End background activity assertion
     private func endRefreshActivity() {
         if let activity = refreshActivity {
             ProcessInfo.processInfo.endActivity(activity)
@@ -200,19 +200,19 @@ class DataRefreshManager: ObservableObject {
 
     // MARK: - Smart Refresh
 
-    /// 打开Popover时的智能刷新
-    /// 如果距离上次刷新 > 30秒，则立即刷新数据
+    /// Smart refresh when opening the Popover
+    /// Immediately refreshes data if more than 30 seconds since last refresh
     func refreshOnPopoverOpen() {
         let now = Date()
 
-        // 用户打开详细界面，强制切换到活跃模式（1分钟刷新）
+        // User opened the detail view, force switch to active mode (1-minute refresh)
         if settings.refreshMode == .smart {
             settings.currentMonitoringMode = .active
             settings.unchangedCount = 0
             Logger.menuBar.debug("用户打开界面，切换到活跃模式")
         }
 
-        // 如果距离上次刷新 < 30秒，跳过
+        // If less than 30 seconds since last refresh, skip
         if let lastFetch = lastAPIFetchTime,
            now.timeIntervalSince(lastFetch) < 30 {
             return
@@ -221,52 +221,52 @@ class DataRefreshManager: ObservableObject {
         fetchUsage()
     }
 
-    /// 处理手动刷新
-    /// 防抖机制：10秒内只能刷新一次（调试模式下不启用）
+    /// Handle manual refresh
+    /// Debounce mechanism: only allows one refresh per 10 seconds (disabled in debug mode)
     func handleManualRefresh() {
         let now = Date()
 
         #if !DEBUG
-        // 防抖检查：10秒内只能刷新一次（仅在 Release 模式下）
+        // Debounce check: only allow one refresh per 10 seconds (Release mode only)
         if let lastManual = lastManualRefreshTime,
            now.timeIntervalSince(lastManual) < 10 {
             return
         }
         #endif
 
-        // 用户主动刷新，强制切换到活跃模式（1分钟刷新）
+        // User manually refreshed, force switch to active mode (1-minute refresh)
         if settings.refreshMode == .smart {
             settings.currentMonitoringMode = .active
             settings.unchangedCount = 0
             Logger.menuBar.debug("用户主动刷新，切换到活跃模式")
         }
 
-        // 更新状态
+        // Update state
         lastManualRefreshTime = now
-        refreshAnimationStartTime = now  // 记录动画开始时间
+        refreshAnimationStartTime = now  // Record animation start time
         refreshState.isRefreshing = true
 
         #if DEBUG
-        // 调试模式：立即允许下次刷新
+        // Debug mode: immediately allow next refresh
         refreshState.canRefresh = true
         #else
-        // 正式模式：设置防抖
+        // Release mode: set debounce
         refreshState.canRefresh = false
-        // 10秒后解除防抖
+        // Release debounce after 10 seconds
         DispatchQueue.main.asyncAfter(deadline: .now() + 10) { [weak self] in
             self?.refreshState.canRefresh = true
         }
         #endif
 
-        // 触发刷新
+        // Trigger refresh
         fetchUsage()
     }
 
-    /// 结束刷新动画，确保至少显示最小时长
-    /// - Parameter completion: 动画结束后的回调
+    /// End the refresh animation, ensuring it displays for at least the minimum duration
+    /// - Parameter completion: Callback after the animation ends
     private func endRefreshAnimationWithMinimumDuration(completion: @escaping () -> Void) {
         guard let startTime = refreshAnimationStartTime else {
-            // 没有记录开始时间，直接结束
+            // No start time recorded, end immediately
             refreshState.isRefreshing = false
             completion()
             return
@@ -276,40 +276,40 @@ class DataRefreshManager: ObservableObject {
         let remaining = minimumAnimationDuration - elapsed
 
         if remaining > 0 {
-            // 动画时间不足，延迟剩余时间后再结束
+            // Animation duration insufficient, delay for remaining time before ending
             DispatchQueue.main.asyncAfter(deadline: .now() + remaining) { [weak self] in
                 self?.refreshState.isRefreshing = false
                 completion()
             }
         } else {
-            // 动画时间已足够，直接结束
+            // Animation duration sufficient, end immediately
             refreshState.isRefreshing = false
             completion()
         }
 
-        // 清除开始时间记录
+        // Clear start time record
         refreshAnimationStartTime = nil
     }
 
     // MARK: - Reset Verification
 
-    /// 检测重置时间是否发生变化
+    /// Detect whether the reset time has changed
     /// - Parameters:
-    ///   - oldTime: 上次的重置时间
-    ///   - newTime: 新的重置时间
-    /// - Returns: 如果重置时间发生了变化则返回 true
+    ///   - oldTime: Previous reset time
+    ///   - newTime: New reset time
+    /// - Returns: true if the reset time has changed
     private func hasResetTimeChanged(from oldTime: Date?, to newTime: Date?) -> Bool {
-        // 如果两者都为 nil，没有变化
+        // If both are nil, no change
         if oldTime == nil && newTime == nil {
             return false
         }
 
-        // 如果一个为 nil 另一个不为 nil，有变化
+        // If one is nil and the other is not, there is a change
         if (oldTime == nil) != (newTime == nil) {
             return true
         }
 
-        // 如果两者都不为 nil，比较时间值（允许1秒误差）
+        // If both are non-nil, compare time values (allowing 1-second tolerance)
         if let old = oldTime, let new = newTime {
             return abs(old.timeIntervalSince(new)) > 1.0
         }
@@ -317,24 +317,24 @@ class DataRefreshManager: ObservableObject {
         return false
     }
 
-    /// 取消所有重置验证定时器
+    /// Cancel all reset verification timers
     private func cancelResetVerification() {
         timerManager.invalidate(TimerID.resetVerify1)
         timerManager.invalidate(TimerID.resetVerify2)
         timerManager.invalidate(TimerID.resetVerify3)
     }
 
-    /// 安排重置时间验证
-    /// 在重置时间过后的1秒、10秒、30秒分别触发一次刷新
-    /// - Parameter resetsAt: 用量重置时间
+    /// Schedule reset time verification
+    /// Triggers a refresh at 1 second, 10 seconds, and 30 seconds after the reset time
+    /// - Parameter resetsAt: Usage reset time
     private func scheduleResetVerification(resetsAt: Date) {
-        // 清除旧的验证定时器
+        // Clear old verification timers
         cancelResetVerification()
 
-        // 计算距离重置时间的间隔
+        // Calculate the interval until reset time
         let timeUntilReset = resetsAt.timeIntervalSinceNow
 
-        // 只有重置时间在未来才安排验证
+        // Only schedule verification if the reset time is in the future
         guard timeUntilReset > 0 else {
             Logger.menuBar.debug("重置时间已过，跳过验证安排")
             return
@@ -345,19 +345,19 @@ class DataRefreshManager: ObservableObject {
         formatter.timeZone = TimeZone.current
         Logger.menuBar.debug("安排重置验证 - 重置时间: \(formatter.string(from: resetsAt))")
 
-        // 重置后1秒验证
+        // Verify 1 second after reset
         timerManager.schedule(TimerID.resetVerify1, interval: timeUntilReset + 1, repeats: false) { [weak self] in
             Logger.menuBar.debug("重置验证 +1秒 - 开始刷新")
             self?.fetchUsage()
         }
 
-        // 重置后10秒验证
+        // Verify 10 seconds after reset
         timerManager.schedule(TimerID.resetVerify2, interval: timeUntilReset + 10, repeats: false) { [weak self] in
             Logger.menuBar.debug("重置验证 +10秒 - 开始刷新")
             self?.fetchUsage()
         }
 
-        // 重置后30秒验证
+        // Verify 30 seconds after reset
         timerManager.schedule(TimerID.resetVerify3, interval: timeUntilReset + 30, repeats: false) { [weak self] in
             Logger.menuBar.debug("重置验证 +30秒 - 开始刷新")
             self?.fetchUsage()
@@ -366,16 +366,16 @@ class DataRefreshManager: ObservableObject {
 
     // MARK: - Update Checking
 
-    /// 安排每日更新检查
+    /// Schedule daily update check
     private func scheduleDailyUpdateCheck() {
         #if DEBUG
-        // 🧪 调试模式：检查是否启用模拟更新
+        // Debug mode: check if simulated update is enabled
         if settings.simulateUpdateAvailable {
             hasAvailableUpdate = true
             latestVersion = "2.0.0"
             Logger.menuBar.debug("模拟更新已启用，显示更新通知")
         } else {
-            // 即使在 Debug 模式，也进行真实的更新检查
+            // Even in Debug mode, perform real update checks
             checkForUpdatesInBackground()
 
             timerManager.schedule(TimerID.dailyUpdate, interval: 24 * 60 * 60, repeats: true) { [weak self] in
@@ -385,10 +385,10 @@ class DataRefreshManager: ObservableObject {
             Logger.menuBar.info("Debug 模式：真实更新检查已启动")
         }
         #else
-        // Release 模式：始终进行真实更新检查
+        // Release mode: always perform real update checks
         checkForUpdatesInBackground()
 
-        // 每24小时检查一次
+        // Check every 24 hours
         timerManager.schedule(TimerID.dailyUpdate, interval: 24 * 60 * 60, repeats: true) { [weak self] in
             self?.checkForUpdatesInBackground()
         }
@@ -397,11 +397,11 @@ class DataRefreshManager: ObservableObject {
         #endif
     }
 
-    /// 后台静默检查更新（无UI提示）
+    /// Check for updates silently in the background (no UI prompt)
     private func checkForUpdatesInBackground() {
         let now = Date()
 
-        // 防止重复检查：距离上次检查 < 12小时则跳过
+        // Prevent duplicate checks: skip if less than 12 hours since last check
         if let lastCheck = lastUpdateCheckTime,
            now.timeIntervalSince(lastCheck) < 12 * 60 * 60 {
             return
@@ -419,15 +419,15 @@ class DataRefreshManager: ObservableObject {
         }
     }
 
-    /// 用户手动检查更新
+    /// User-initiated manual update check
     func checkForUpdatesManually() {
-        // 手动检查更新（会弹出对话框）
+        // Manual update check (will show a dialog)
         updateChecker.checkForUpdates(manually: true)
     }
 
     // MARK: - Cleanup
 
-    /// 清理所有资源
+    /// Clean up all resources
     func cleanup() {
         timerManager.invalidateAll()
         endRefreshActivity()

@@ -8,8 +8,8 @@
 
 import SwiftUI
 
-/// 诊断视图组件
-/// 显示在认证设置页面底部，提供连接测试和报告导出功能
+/// Diagnostics view component
+/// Displayed at the bottom of the authentication settings page, providing connection test and report export functionality
 struct DiagnosticsView: View {
 
     @StateObject private var diagnosticManager = DiagnosticManager()
@@ -18,7 +18,7 @@ struct DiagnosticsView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
 
-            // 测试按钮和状态
+            // Test button and status
             HStack {
                 Button(action: {
                     Task {
@@ -48,7 +48,7 @@ struct DiagnosticsView: View {
                     }
                 }
 
-                // 日志文件夹访问按钮
+                // Log folder access button
                 Button(L.Diagnostic.openLogFolder) {
                     if let logPath = DiagnosticLogger.shared.getLogFilePath() {
                         let folderURL = URL(fileURLWithPath: logPath).deletingLastPathComponent()
@@ -57,19 +57,19 @@ struct DiagnosticsView: View {
                 }
             }
 
-            // 状态消息
+            // Status message
             if !diagnosticManager.statusMessage.isEmpty {
                 Text(diagnosticManager.statusMessage)
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
 
-            // 简要测试结果
+            // Brief test results
             if let report = diagnosticManager.latestReport {
                 Divider()
 
                 VStack(alignment: .leading, spacing: 8) {
-                    // 状态指示
+                    // Status indicator
                     HStack {
                         Image(systemName: report.success ? "checkmark.circle.fill" : "xmark.circle.fill")
                             .foregroundColor(report.success ? .green : .red)
@@ -79,7 +79,7 @@ struct DiagnosticsView: View {
                             .fontWeight(.semibold)
                     }
 
-                    // 关键信息
+                    // Key information
                     if let statusCode = report.httpStatusCode {
                         DetailRow(
                             label: L.Diagnostic.httpStatus,
@@ -109,7 +109,7 @@ struct DiagnosticsView: View {
                         }
                     }
 
-                    // 诊断结果
+                    // Diagnostic results
                     if !report.success {
                         Divider()
 
@@ -147,7 +147,7 @@ struct DiagnosticsView: View {
                 )
             }
 
-            // 隐私说明
+            // Privacy notice
             HStack(spacing: 4) {
                 Image(systemName: "lock.shield")
                     .font(.system(size: 10))
@@ -200,8 +200,8 @@ struct DiagnosticsView: View {
     }
 }
 
-/// 详细报告视图
-/// 以弹窗形式显示完整的 Markdown 格式诊断报告
+/// Detailed report view
+/// Displays the full Markdown-formatted diagnostic report in a sheet
 struct DetailedReportView: View {
 
     let report: DiagnosticReport?
@@ -209,7 +209,7 @@ struct DetailedReportView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // 标题栏
+            // Title bar
             HStack {
                 Text(L.Diagnostic.detailedReportTitle)
                     .font(.headline)
@@ -229,7 +229,7 @@ struct DetailedReportView: View {
 
             Divider()
 
-            // 报告内容
+            // Report content
             if let report = report {
                 ScrollView {
                     Text(report.toMarkdown())
@@ -246,7 +246,7 @@ struct DetailedReportView: View {
 
             Divider()
 
-            // 底部按钮
+            // Bottom buttons
             HStack {
                 Spacer()
 

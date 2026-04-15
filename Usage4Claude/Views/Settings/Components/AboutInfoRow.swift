@@ -8,7 +8,7 @@
 
 import SwiftUI
 
-/// 关于页面信息行组件
+/// About page info row component
 struct AboutInfoRow: View {
     let icon: String
     let title: String

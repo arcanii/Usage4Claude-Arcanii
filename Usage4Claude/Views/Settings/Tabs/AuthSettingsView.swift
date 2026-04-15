@@ -8,8 +8,8 @@
 
 import SwiftUI
 
-/// 认证设置页面
-/// 使用卡片式布局，用于管理多账户
+/// Authentication settings page
+/// Uses card layout for managing multiple accounts
 struct AuthSettingsView: View {
     @ObservedObject private var settings = UserSettings.shared
     @State private var isAddingAccount = false
@@ -26,10 +26,10 @@ struct AuthSettingsView: View {
         ScrollView {
             VStack(spacing: 16) {
                 if isAddingAccount {
-                    // 添加账户视图
+                    // Add account view
                     addAccountView
                 } else {
-                    // 多组织添加成功提示
+                    // Multi-organization add success message
                     if let message = successMessage {
                         HStack(spacing: 8) {
                             Image(systemName: "info.circle.fill")
@@ -49,18 +49,18 @@ struct AuthSettingsView: View {
                         .cornerRadius(8)
                     }
 
-                    // 账户列表视图
+                    // Account list view
                     accountListView
 
-                    // 当前账户详情
+                    // Current account details
                     if let currentAccount = settings.currentAccount {
                         currentAccountDetailView(account: currentAccount)
                     }
 
-                    // 说明卡片
+                    // How-to card
                     howToCard
 
-                    // 诊断卡片
+                    // Diagnostics card
                     diagnosticsCard
                 }
             }
@@ -89,7 +89,7 @@ struct AuthSettingsView: View {
         ) {
             VStack(alignment: .leading, spacing: 12) {
                 if settings.accounts.isEmpty {
-                    // 无账户时的提示
+                    // Prompt when no accounts exist
                     VStack(spacing: 12) {
                         Image(systemName: "person.crop.circle.badge.plus")
                             .font(.system(size: 40))
@@ -101,13 +101,13 @@ struct AuthSettingsView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 20)
                 } else {
-                    // 账户列表
+                    // Account list
                     ForEach(settings.accounts) { account in
                         accountRow(account: account)
                     }
                 }
 
-                // 添加账户按钮
+                // Add account button
                 HStack(spacing: 10) {
                     Button(action: {
                         WebLoginWindowManager.shared.showLoginWindow()
@@ -146,7 +146,7 @@ struct AuthSettingsView: View {
             settings.switchToAccount(account)
         }) {
             HStack(spacing: 12) {
-                // 选中状态指示器
+                // Selection state indicator
                 Circle()
                     .fill(account.id == settings.currentAccountId ? Color.blue : Color.clear)
                     .frame(width: 8, height: 8)
@@ -155,7 +155,7 @@ struct AuthSettingsView: View {
                             .stroke(Color.secondary.opacity(0.5), lineWidth: 1)
                     )
 
-                // 账户信息
+                // Account info
                 VStack(alignment: .leading, spacing: 2) {
                     HStack {
                         Text(account.displayName)
@@ -170,7 +170,7 @@ struct AuthSettingsView: View {
                         }
                     }
 
-                    // 如果有别名，显示原始名称作为副标题
+                    // If alias exists, show original name as subtitle
                     if account.alias != nil && !account.alias!.isEmpty {
                         Text(account.organizationName)
                             .font(.caption)
@@ -201,7 +201,7 @@ struct AuthSettingsView: View {
             hint: ""
         ) {
             VStack(alignment: .leading, spacing: 16) {
-                // 别名编辑
+                // Alias editing
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 6) {
                         Image(systemName: "tag.fill")
@@ -234,7 +234,7 @@ struct AuthSettingsView: View {
                     }
                 }
 
-                // Session Key 显示
+                // Session Key display
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 6) {
                         Image(systemName: "key.fill")
@@ -271,7 +271,7 @@ struct AuthSettingsView: View {
                     }
                 }
 
-                // Organization ID 显示
+                // Organization ID display
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 6) {
                         Image(systemName: "building.2.fill")
@@ -303,7 +303,7 @@ struct AuthSettingsView: View {
                     }
                 }
 
-                // 删除按钮
+                // Delete button
                 if settings.accounts.count > 0 {
                     Divider()
 
@@ -333,7 +333,7 @@ struct AuthSettingsView: View {
             hint: ""
         ) {
             VStack(alignment: .leading, spacing: 16) {
-                // Session Key 输入
+                // Session Key input
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 6) {
                         Image(systemName: "key.fill")
@@ -348,7 +348,7 @@ struct AuthSettingsView: View {
                         .textFieldStyle(.roundedBorder)
                         .font(.system(.body, design: .monospaced))
 
-                    // 验证状态提示
+                    // Validation status hint
                     if !newSessionKey.isEmpty {
                         if settings.isValidSessionKey(newSessionKey) {
                             HStack(spacing: 4) {
@@ -381,7 +381,7 @@ struct AuthSettingsView: View {
                     }
                 }
 
-                // 别名输入（可选）
+                // Alias input (optional)
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 6) {
                         Image(systemName: "tag.fill")
@@ -396,7 +396,7 @@ struct AuthSettingsView: View {
                         .textFieldStyle(.roundedBorder)
                 }
 
-                // 错误提示
+                // Error message
                 if let error = validationError {
                     HStack(spacing: 4) {
                         Image(systemName: "exclamationmark.triangle.fill")
@@ -408,7 +408,7 @@ struct AuthSettingsView: View {
                     }
                 }
 
-                // 操作按钮
+                // Action buttons
                 HStack {
                     Button(action: {
                         withAnimation {
@@ -493,7 +493,7 @@ struct AuthSettingsView: View {
                     .foregroundColor(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
 
-                // 诊断组件
+                // Diagnostics component
                 DiagnosticsView()
                     .padding(.top, 4)
             }
@@ -502,7 +502,7 @@ struct AuthSettingsView: View {
 
     // MARK: - Private Methods
 
-    /// 验证并添加账户
+    /// Validate and add account
     private func validateAndAddAccount() {
         isValidating = true
         validationError = nil
@@ -524,16 +524,16 @@ struct AuthSettingsView: View {
                                 alias: (useAlias && !newAlias.isEmpty) ? newAlias : nil
                             )
                             settings.addAccount(newAccount)
-                            // 切换到第一个新添加的账户
+                            // Switch to the first newly added account
                             if index == 0 {
                                 settings.switchToAccount(newAccount)
                             }
                         }
-                        // 多组织时显示提示
+                        // Show hint for multiple organizations
                         if organizations.count > 1 {
                             successMessage = String(format: L.Account.multiOrgAdded, organizations.count)
                         }
-                        // 关闭添加界面
+                        // Close add account interface
                         withAnimation {
                             isAddingAccount = false
                         }
@@ -552,5 +552,5 @@ struct AuthSettingsView: View {
     }
 }
 
-/// 关于页面
-/// 显示应用信息、版本号和相关链接
+/// About page
+/// Displays app information, version number, and related links

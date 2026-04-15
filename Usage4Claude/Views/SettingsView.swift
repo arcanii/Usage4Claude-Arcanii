@@ -8,8 +8,8 @@
 
 import SwiftUI
 
-/// 设置视图
-/// 使用 Toolbar 风格布局，包含通用设置、认证信息和关于三个标签页
+/// Settings view
+/// Uses toolbar-style layout with three tabs: General, Authentication, and About
 struct SettingsView: View {
     @ObservedObject private var settings = UserSettings.shared
     @State private var selectedTab: Int
@@ -22,9 +22,9 @@ struct SettingsView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Toolbar 风格的标签导航
+            // Toolbar-style tab navigation
             HStack(spacing: 0) {
-                // 通用设置按钮
+                // General settings button
                 ToolbarButton(
                     icon: "gearshape",
                     title: L.SettingsTab.general,
@@ -33,10 +33,10 @@ struct SettingsView: View {
                     selectedTab = 0
                 }
 
-                // 分隔符
+                // Divider
                 TabDivider()
 
-                // 认证设置按钮
+                // Authentication settings button
                 ToolbarButton(
                     icon: "key.horizontal",
                     title: L.SettingsTab.auth,
@@ -45,10 +45,10 @@ struct SettingsView: View {
                     selectedTab = 1
                 }
 
-                // 分隔符
+                // Divider
                 TabDivider()
 
-                // 关于按钮
+                // About button
                 ToolbarButton(
                     icon: "info.circle",
                     title: L.SettingsTab.about,
@@ -64,7 +64,7 @@ struct SettingsView: View {
 
             Divider()
 
-            // 内容区域
+            // Content area
             Group {
                 switch selectedTab {
                 case 0:
@@ -79,11 +79,11 @@ struct SettingsView: View {
             }
         }
         .frame(width: 500, height: 550)
-        .id(localization.updateTrigger)  // 语言变化时重新创建视图
+        .id(localization.updateTrigger)  // Recreate view when language changes
     }
 }
 
-// MARK: - 预览
+// MARK: - Preview
 struct SettingsView_Previews: PreviewProvider {
     static var previews: some View {
         SettingsView()

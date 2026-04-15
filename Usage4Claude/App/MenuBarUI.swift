@@ -10,37 +10,37 @@ import SwiftUI
 import AppKit
 import Combine
 
-/// 菜单栏 UI 管理器
-/// 负责管理菜单栏图标、弹出窗口、菜单创建以及图标绘制
-/// 包含完整的 UI 层逻辑，实现从 MenuBarManager 中抽取的所有 UI 相关职责
+/// Menu bar UI manager
+/// Manages the menu bar icon, popover, menu creation, and icon rendering
+/// Contains the complete UI layer logic, implementing all UI-related responsibilities extracted from MenuBarManager
 class MenuBarUI {
 
     // MARK: - UI Components
 
-    /// 系统菜单栏状态项
+    /// System menu bar status item
     private(set) var statusItem: NSStatusItem!
-    /// 详情弹出窗口
+    /// Detail popover
     private(set) var popover: NSPopover!
-    /// 弹出窗口关闭监听器 - 监听鼠标点击事件
+    /// Popover close observer - monitors mouse click events
     private var popoverCloseObserver: Any?
-    /// 应用失焦观察者 - 用于在应用失去焦点时关闭 popover
+    /// App resign active observer - used to close popover when app loses focus
     private var appResignActiveObserver: NSObjectProtocol?
 
     // MARK: - Icon Cache
 
-    /// 图标缓存：键为 "mode_style_percentage_appearance"，值为缓存的图标
+    /// Icon cache: key is "mode_style_percentage_appearance", value is the cached icon
     private var iconCache: [String: NSImage] = [:]
-    /// 缓存的最大条目数
+    /// Maximum cache entries
     private let maxCacheSize = 50
 
     // MARK: - Settings Reference
 
-    /// 用户设置实例（从外部传入）
+    /// User settings instance
     private let settings = UserSettings.shared
 
     // MARK: - Icon Renderer
 
-    /// 图标渲染器 - 负责所有图标绘制逻辑
+    /// Icon renderer - handles all icon drawing logic
     private let iconRenderer = MenuBarIconRenderer()
 
     // MARK: - Initialization
@@ -52,21 +52,21 @@ class MenuBarUI {
 
     // MARK: - Status Item Setup
 
-    /// 初始化菜单栏状态项
-    /// 设置点击事件处理
+    /// Initialize the menu bar status item
+    /// Set up click event handling
     private func setupStatusItem() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
         if let button = statusItem.button {
-            // 初始图标
+            // Initial icon
             button.image = createSimpleCircleIcon()
         }
     }
 
-    /// 配置状态项点击处理
+    /// Configure the status item click handler
     /// - Parameters:
-    ///   - target: 目标对象
-    ///   - action: 点击响应方法
+    ///   - target: Target object
+    ///   - action: Click response method
     func configureClickHandler(target: AnyObject?, action: Selector) {
         guard let button = statusItem.button else { return }
         button.action = action
@@ -76,18 +76,18 @@ class MenuBarUI {
 
     // MARK: - Popover Setup
 
-    /// 初始化弹出窗口
-    /// 设置窗口尺寸和外观
+    /// Initialize the popover
+    /// Set up window size and appearance
     private func setupPopover() {
         popover = NSPopover()
-        // 固定尺寸以避免布局跳动
+        // Fixed size to avoid layout jumps
         popover.contentSize = NSSize(width: 280, height: 240)
-        // 设置行为，允许自定义外观
+        // Set behavior, allowing custom appearance
         popover.behavior = .semitransient
     }
 
-    /// 设置 Popover 内容视图
-    /// - Parameter contentView: SwiftUI 视图
+    /// Set the popover content view
+    /// - Parameter contentView: SwiftUI view
     func setPopoverContent<Content: View>(_ contentView: Content) {
         let hostingController = NSHostingController(rootView: contentView)
         popover.contentViewController = hostingController
@@ -95,14 +95,14 @@ class MenuBarUI {
 
     // MARK: - Popover Control
 
-    /// 打开弹出窗口
-    /// - Parameter button: 菜单栏按钮
+    /// Open the popover
+    /// - Parameter button: Menu bar button
     func openPopover(relativeTo button: NSStatusBarButton) {
-        // 激活应用，使 popover 能够正确响应焦点变化
+        // Activate the app so popover can properly respond to focus changes
         NSApp.activate(ignoringOtherApps: true)
 
-        // Popover 挂在系统状态栏上，继承状态栏外观而非 NSApp.appearance
-        // 需要在每次打开时显式设置，确保与用户偏好同步
+        // Popover is attached to the system status bar, inheriting status bar appearance instead of NSApp.appearance
+        // Must be explicitly set each time it opens to stay in sync with user preferences
         switch settings.appearance {
         case .system:
             let isDark = UserDefaults.standard.string(forKey: "AppleInterfaceStyle") == "Dark"
@@ -113,43 +113,43 @@ class MenuBarUI {
             popover.appearance = NSAppearance(named: .darkAqua)
         }
 
-        // 显示 popover
+        // Show popover
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
 
-        // 配置 popover 窗口
+        // Configure popover window
         configurePopoverWindow()
 
-        // 设置监听器
+        // Set up observers
         setupPopoverCloseObserver()
         setupAppResignActiveObserver()
     }
 
-    /// 配置 popover 窗口属性
+    /// Configure popover window properties
     private func configurePopoverWindow() {
         guard let popoverWindow = popover.contentViewController?.view.window else { return }
 
-        // 设置窗口level，确保显示在其他窗口之上
+        // Set window level to ensure it appears above other windows
         popoverWindow.level = .popUpMenu
 
-        // 让窗口成为 key window，显示 Focus 状态
+        // Make the window key window, showing focus state
         popoverWindow.makeKey()
 
         #if DEBUG
-        // 根据调试开关设置背景颜色
+        // Set background color based on debug toggle
         if settings.debugKeepDetailWindowOpen {
-            // 开启时：纯白色不透明背景
+            // When enabled: Solid white opaque background
             popoverWindow.backgroundColor = NSColor.white
             popoverWindow.isOpaque = true
-            // 设置内容视图的背景
+            // Set the content view's background
             if let contentView = popover.contentViewController?.view {
                 contentView.wantsLayer = true
                 contentView.layer?.backgroundColor = NSColor.white.cgColor
             }
         } else {
-            // 关闭时：使用默认透明背景
+            // When disabled: Use default transparent background
             popoverWindow.backgroundColor = NSColor.clear
             popoverWindow.isOpaque = false
-            // 恢复内容视图的透明背景
+            // Restore the content view's transparent background
             if let contentView = popover.contentViewController?.view {
                 contentView.wantsLayer = true
                 contentView.layer?.backgroundColor = NSColor.clear.cgColor
@@ -158,30 +158,30 @@ class MenuBarUI {
         #endif
     }
 
-    /// 关闭弹出窗口
+    /// Close the popover
     func closePopover() {
-        // 确保 popover 关闭
+        // Ensure popover is closed
         if popover.isShown {
             popover.performClose(nil)
         }
 
-        // 移除事件监听器
+        // Remove event observers
         removePopoverCloseObserver()
         removeAppResignActiveObserver()
     }
 
-    /// 设置弹出窗口外部点击监听
-    /// 点击 popover 外部时自动关闭
+    /// Set up popover outside click observer
+    /// Automatically closes when clicking outside the popover
     private func setupPopoverCloseObserver() {
-        // 先移除旧的观察者，防止累积
+        // Remove old observer first to prevent accumulation
         removePopoverCloseObserver()
 
-        // 使用全局事件监听器监听鼠标点击事件
+        // Use global event monitor to listen for mouse click events
         popoverCloseObserver = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
             guard let self = self, self.popover.isShown else { return }
 
             #if DEBUG
-            // Debug模式：如果开启了"保持详情窗口打开"，则不自动关闭
+            // Debug mode: If "Keep detail window open" is enabled, do not auto-close
             if UserSettings.shared.debugKeepDetailWindowOpen {
                 return
             }
@@ -191,7 +191,7 @@ class MenuBarUI {
         }
     }
 
-    /// 移除弹出窗口监听器
+    /// Remove popover close observer
     private func removePopoverCloseObserver() {
         if let observer = popoverCloseObserver {
             NSEvent.removeMonitor(observer)
@@ -199,13 +199,13 @@ class MenuBarUI {
         }
     }
 
-    /// 设置应用失焦监听
-    /// 当应用失去焦点时自动关闭 popover
+    /// Set up app resign active observer
+    /// Automatically closes popover when the app loses focus
     private func setupAppResignActiveObserver() {
-        // 先移除旧的观察者，防止累积
+        // Remove old observer first to prevent accumulation
         removeAppResignActiveObserver()
 
-        // 监听应用失去焦点事件
+        // Listen for app resign active events
         appResignActiveObserver = NotificationCenter.default.addObserver(
             forName: NSApplication.didResignActiveNotification,
             object: NSApp,
@@ -214,7 +214,7 @@ class MenuBarUI {
             guard let self = self, self.popover.isShown else { return }
 
             #if DEBUG
-            // Debug模式：如果开启了"保持详情窗口打开"，则不自动关闭
+            // Debug mode: If "Keep detail window open" is enabled, do not auto-close
             if UserSettings.shared.debugKeepDetailWindowOpen {
                 return
             }
@@ -224,7 +224,7 @@ class MenuBarUI {
         }
     }
 
-    /// 移除应用失焦监听器
+    /// Remove app resign active observer
     private func removeAppResignActiveObserver() {
         if let observer = appResignActiveObserver {
             NotificationCenter.default.removeObserver(observer)
@@ -234,17 +234,17 @@ class MenuBarUI {
 
     // MARK: - Menu Management
 
-    /// 创建标准菜单
-    /// 用于右键菜单和弹出窗口中的三点菜单
+    /// Create the standard menu
+    /// Used for the right-click menu and the three-dot menu in the popover
     /// - Parameters:
-    ///   - hasUpdate: 是否有可用更新
-    ///   - shouldShowBadge: 是否显示更新徽章
-    ///   - target: 菜单项目标对象
-    /// - Returns: 配置好的 NSMenu 实例
+    ///   - hasUpdate: Whether an update is available
+    ///   - shouldShowBadge: Whether to show the update badge
+    ///   - target: Menu item target object
+    /// - Returns: Configured NSMenu instance
     func createStandardMenu(hasUpdate: Bool, shouldShowBadge: Bool, target: AnyObject?) -> NSMenu {
         let menu = NSMenu()
 
-        // 账户选择子菜单（仅当有多个账户时显示）
+        // Account selection submenu (only shown when there are multiple accounts)
         if settings.accounts.count > 1 {
             let accountSubmenu = createAccountSubmenu(target: target)
             let currentAccountName = settings.currentAccountName ?? L.Menu.account
@@ -261,7 +261,7 @@ class MenuBarUI {
             menu.addItem(NSMenuItem.separator())
         }
 
-        // 通用设置
+        // General settings
         let generalItem = NSMenuItem(
             title: L.Menu.generalSettings,
             action: #selector(MenuBarManager.openGeneralSettings),
@@ -271,7 +271,7 @@ class MenuBarUI {
         setMenuItemIcon(generalItem, systemName: "gearshape")
         menu.addItem(generalItem)
 
-        // 认证信息
+        // Authentication
         let authItem = NSMenuItem(
             title: L.Menu.authSettings,
             action: #selector(MenuBarManager.openAuthSettings),
@@ -282,7 +282,7 @@ class MenuBarUI {
         setMenuItemIcon(authItem, systemName: "key.horizontal")
         menu.addItem(authItem)
 
-        // 检查更新
+        // Check for updates
         let updateItem = NSMenuItem(
             title: "",
             action: #selector(MenuBarManager.checkForUpdates),
@@ -290,9 +290,9 @@ class MenuBarUI {
         )
         updateItem.target = target
 
-        // 根据是否有更新设置不同的样式
+        // Set different styles based on whether an update is available
         if hasUpdate {
-            // 有更新：显示彩虹文字
+            // Update available: Show rainbow text
             let baseText = L.Menu.checkUpdates
             let highlightText = L.Update.Notification.badgeMenu
             let title = "\(baseText)\t\(highlightText)"
@@ -304,7 +304,7 @@ class MenuBarUI {
             let attributedTitle = createRainbowText(title, highlightRange: highlightRange)
             updateItem.attributedTitle = attributedTitle
 
-            // 徽章图标：仅在用户未确认时显示
+            // Badge icon: Only shown when user has not acknowledged
             if shouldShowBadge {
                 if let badgeImage = createBadgeIcon() {
                     updateItem.image = badgeImage
@@ -313,14 +313,14 @@ class MenuBarUI {
                 setMenuItemIcon(updateItem, systemName: "arrow.triangle.2.circlepath")
             }
         } else {
-            // 无更新：普通样式
+            // No update: Normal style
             updateItem.title = L.Menu.checkUpdates
             setMenuItemIcon(updateItem, systemName: "arrow.triangle.2.circlepath")
         }
 
         menu.addItem(updateItem)
 
-        // 关于
+        // About
         let aboutItem = NSMenuItem(
             title: L.Menu.about,
             action: #selector(MenuBarManager.openAbout),
@@ -332,7 +332,7 @@ class MenuBarUI {
 
         menu.addItem(NSMenuItem.separator())
 
-        // 访问 Claude 用量
+        // Visit Claude usage
         let webItem = NSMenuItem(
             title: L.Menu.webUsage,
             action: #selector(MenuBarManager.openWebUsage),
@@ -353,19 +353,9 @@ class MenuBarUI {
         setMenuItemIcon(coffeeItem, systemName: "cup.and.saucer")
         menu.addItem(coffeeItem)
 
-        // GitHub Sponsor
-        let sponsorItem = NSMenuItem(
-            title: L.Menu.githubSponsor,
-            action: #selector(MenuBarManager.openGithubSponsor),
-            keyEquivalent: ""
-        )
-        sponsorItem.target = target
-        setMenuItemIcon(sponsorItem, systemName: "heart")
-        menu.addItem(sponsorItem)
-
         menu.addItem(NSMenuItem.separator())
 
-        // 退出
+        // Quit
         let quitItem = NSMenuItem(
             title: L.Menu.quit,
             action: #selector(MenuBarManager.quitApp),
@@ -378,10 +368,10 @@ class MenuBarUI {
         return menu
     }
 
-    /// 为菜单项设置图标
+    /// Set icon for a menu item
     /// - Parameters:
-    ///   - item: 菜单项
-    ///   - systemName: SF Symbol 图标名称
+    ///   - item: Menu item
+    ///   - systemName: SF Symbol icon name
     private func setMenuItemIcon(_ item: NSMenuItem, systemName: String) {
         if let image = NSImage(systemSymbolName: systemName, accessibilityDescription: nil) {
             image.size = NSSize(width: 16, height: 16)
@@ -390,9 +380,9 @@ class MenuBarUI {
         }
     }
 
-    /// 创建账户选择子菜单
-    /// - Parameter target: 菜单项目标对象
-    /// - Returns: 账户选择子菜单
+    /// Create the account selection submenu
+    /// - Parameter target: Menu item target object
+    /// - Returns: Account selection submenu
     private func createAccountSubmenu(target: AnyObject?) -> NSMenu {
         let submenu = NSMenu()
 
@@ -405,7 +395,7 @@ class MenuBarUI {
             item.target = target
             item.representedObject = account
 
-            // 当前选中的账户显示勾选标记
+            // Show checkmark for the currently selected account
             if account.id == settings.currentAccountId {
                 item.state = .on
             }
@@ -416,11 +406,11 @@ class MenuBarUI {
         return submenu
     }
 
-    /// 创建彩虹文字 NSAttributedString
+    /// Create a rainbow text NSAttributedString
     /// - Parameters:
-    ///   - text: 完整文本
-    ///   - highlightRange: 需要高亮的范围
-    /// - Returns: 带彩虹效果的属性字符串
+    ///   - text: Complete text
+    ///   - highlightRange: Range to highlight
+    /// - Returns: Attributed string with rainbow effect
     private func createRainbowText(_ text: String, highlightRange: NSRange) -> NSAttributedString {
         let attributedString = NSMutableAttributedString(string: text)
 
@@ -459,8 +449,8 @@ class MenuBarUI {
         return attributedString
     }
 
-    /// 创建徽章图标（小红点）
-    /// - Returns: 带徽章的图标
+    /// Create a badge icon (red dot)
+    /// - Returns: Icon with badge
     private func createBadgeIcon() -> NSImage? {
         let size = NSSize(width: 16, height: 16)
         let image = NSImage(size: size)
@@ -481,34 +471,34 @@ class MenuBarUI {
 
     // MARK: - Icon Management
 
-    /// 更新菜单栏图标
+    /// Update the menu bar icon
     /// - Parameters:
-    ///   - usageData: 用量数据
-    ///   - hasUpdate: 是否有可用更新
-    ///   - shouldShowBadge: 是否显示更新徽章
+    ///   - usageData: Usage data
+    ///   - hasUpdate: Whether an update is available
+    ///   - shouldShowBadge: Whether to show the update badge
     func updateMenuBarIcon(usageData: UsageData?, hasUpdate: Bool, shouldShowBadge: Bool) {
         guard let button = statusItem.button else { return }
 
-        // 确定是否实际显示徽章
+        // Determine whether to actually show the badge
         let showBadge = hasUpdate && shouldShowBadge
 
-        // 生成缓存键
+        // Generate cache key
         let cacheKey = generateCacheKey(usageData: usageData, hasUpdate: showBadge)
 
-        // 尝试从缓存获取
+        // Try to get from cache
         if let cachedImage = iconCache[cacheKey] {
             button.image = cachedImage
             return
         }
 
-        // 缓存未命中，使用 IconRenderer 创建新图标
+        // Cache miss, create new icon using IconRenderer
         let icon = iconRenderer.createIcon(
             usageData: usageData,
             hasUpdate: showBadge,
             button: button
         )
 
-        // 存入缓存
+        // Store in cache
         if iconCache.count >= maxCacheSize {
             iconCache.removeValue(forKey: iconCache.keys.first!)
         }
@@ -517,24 +507,24 @@ class MenuBarUI {
         button.image = icon
     }
 
-    /// 清除图标缓存
+    /// Clear the icon cache
     func clearIconCache() {
         iconCache.removeAll()
     }
 
-    /// 生成图标缓存键
+    /// Generate an icon cache key
     /// - Parameters:
-    ///   - usageData: 用量数据
-    ///   - hasUpdate: 是否有更新徽章
-    /// - Returns: 缓存键字符串
+    ///   - usageData: Usage data
+    ///   - hasUpdate: Whether there is an update badge
+    /// - Returns: Cache key string
     private func generateCacheKey(usageData: UsageData?, hasUpdate: Bool) -> String {
         guard let data = usageData else {
             return "no_data_\(settings.iconStyleMode.rawValue)_\(hasUpdate)"
         }
 
-        var key = "\(settings.iconDisplayMode.rawValue)_\(settings.iconStyleMode.rawValue)"
+        var key = "\(settings.iconDisplayMode.rawValue)_\(settings.iconStyleMode.rawValue)_num\(settings.showIconNumbers)"
 
-        // 包含所有限制类型的百分比，确保形状图标也能正确缓存
+        // Include percentages for all limit types to ensure shape icons are also correctly cached
         if let fiveHour = data.fiveHour {
             key += "_5h\(Int(fiveHour.percentage))"
         }
@@ -560,8 +550,8 @@ class MenuBarUI {
 
     // MARK: - Utility Icons
 
-    /// 创建简单圆形图标（备用）
-    /// 用于初始化状态栏按钮
+    /// Create a simple circle icon (fallback)
+    /// Used to initialize the status bar button
     private func createSimpleCircleIcon() -> NSImage {
         let size = NSSize(width: 18, height: 18)
         let image = NSImage(size: size)
@@ -581,7 +571,7 @@ class MenuBarUI {
 
     // MARK: - Cleanup
 
-    /// 清理所有资源
+    /// Clean up all resources
     func cleanup() {
         removePopoverCloseObserver()
         removeAppResignActiveObserver()

@@ -14,15 +14,17 @@ import OSLog
 
 // MARK: - Display Modes
 
-/// 菜单栏图标显示模式
+/// Menu bar icon display mode
 enum IconDisplayMode: String, CaseIterable, Codable {
-    /// 仅显示百分比圆环
+    /// Show percentage ring only
     case percentageOnly = "percentage_only"
-    /// 仅显示应用图标
+    /// Show app icon only
     case iconOnly = "icon_only"
-    /// 同时显示图标和百分比
+    /// Show both icon and percentage
     case both = "both"
-    
+    /// Unified concentric ring display combining 5h and 7d
+    case unified = "unified"
+
     var localizedName: String {
         switch self {
         case .percentageOnly:
@@ -31,17 +33,19 @@ enum IconDisplayMode: String, CaseIterable, Codable {
             return L.Display.iconOnly
         case .both:
             return L.Display.both
+        case .unified:
+            return L.Display.unified
         }
     }
 }
 
-/// 菜单栏图标样式模式
+/// Menu bar icon style mode
 enum IconStyleMode: String, CaseIterable, Codable {
-    /// 彩色通透（默认，彩色无背景）
+    /// Color translucent (default, colored without background)
     case colorTranslucent = "color_translucent"
-    /// 彩色带背景
+    /// Color with background
     case colorWithBackground = "color_with_background"
-    /// 单色（Template模式，跟随系统主题）
+    /// Monochrome (Template mode, follows system theme)
     case monochrome = "monochrome"
     
     var localizedName: String {
@@ -69,11 +73,11 @@ enum IconStyleMode: String, CaseIterable, Codable {
 
 // MARK: - Refresh Modes
 
-/// 刷新模式
+/// Refresh mode
 enum RefreshMode: String, CaseIterable, Codable {
-    /// 智能频率（根据使用情况自动调整）
+    /// Smart frequency (auto-adjusts based on usage)
     case smart = "smart"
-    /// 固定频率（用户手动设置）
+    /// Fixed frequency (manually set by user)
     case fixed = "fixed"
     
     var localizedName: String {
@@ -86,15 +90,15 @@ enum RefreshMode: String, CaseIterable, Codable {
     }
 }
 
-/// 数据刷新频率
+/// Data refresh frequency
 enum RefreshInterval: Int, CaseIterable, Codable {
-    /// 1分钟刷新一次
+    /// Refresh every 1 minute
     case oneMinute = 60
-    /// 3分钟刷新一次
+    /// Refresh every 3 minutes
     case threeMinutes = 180
-    /// 5分钟刷新一次
+    /// Refresh every 5 minutes
     case fiveMinutes = 300
-    /// 10分钟刷新一次
+    /// Refresh every 10 minutes
     case tenMinutes = 600
     
     var localizedName: String {
@@ -111,63 +115,63 @@ enum RefreshInterval: Int, CaseIterable, Codable {
     }
 }
 
-/// 监控模式（内部使用，智能频率下的4级模式）
+/// Monitoring mode (internal use, 4-tier modes under smart frequency)
 enum MonitoringMode: String, Codable {
-    /// 活跃模式 - 1分钟刷新
+    /// Active mode - 1 minute refresh
     case active = "active"
-    /// 短期静默 - 3分钟刷新
+    /// Short idle - 3 minute refresh
     case idleShort = "idle_short"
-    /// 中期静默 - 5分钟刷新
+    /// Medium idle - 5 minute refresh
     case idleMedium = "idle_medium"
-    /// 长期静默 - 10分钟刷新
+    /// Long idle - 10 minute refresh
     case idleLong = "idle_long"
-    
-    /// 获取对应的刷新间隔（秒）
+
+    /// Get the corresponding refresh interval (seconds)
     var interval: Int {
         switch self {
         case .active:
-            return 60      // 1分钟
+            return 60      // 1 minute
         case .idleShort:
-            return 180     // 3分钟
+            return 180     // 3 minutes
         case .idleMedium:
-            return 300     // 5分钟
+            return 300     // 5 minutes
         case .idleLong:
-            return 600     // 10分钟
+            return 600     // 10 minutes
         }
     }
 }
 
 // MARK: - Limit Types
 
-/// 限制类型
+/// Limit type
 enum LimitType: String, CaseIterable, Codable {
-    /// 5小时限制
+    /// 5-hour limit
     case fiveHour = "five_hour"
-    /// 7天限制
+    /// 7-day limit
     case sevenDay = "seven_day"
-    /// Extra Usage 额外付费额度
+    /// Extra Usage paid overage allowance
     case extraUsage = "extra_usage"
-    /// Opus 每周限制
+    /// Opus weekly limit
     case opusWeekly = "seven_day_opus"
-    /// Sonnet 每周限制
+    /// Sonnet weekly limit
     case sonnetWeekly = "seven_day_sonnet"
 
-    /// 是否为圆形图标（5小时和7天）
+    /// Whether this is a circular icon (5-hour and 7-day)
     var isCircular: Bool {
         return self == .fiveHour || self == .sevenDay
     }
 
-    /// 是否为矩形图标（Opus和Sonnet）
+    /// Whether this is a rectangular icon (Opus and Sonnet)
     var isRectangular: Bool {
         return self == .opusWeekly || self == .sonnetWeekly
     }
 
-    /// 是否为六边形图标（Extra Usage）
+    /// Whether this is a hexagonal icon (Extra Usage)
     var isHexagonal: Bool {
         return self == .extraUsage
     }
 
-    /// 显示名称
+    /// Display name
     var displayName: String {
         switch self {
         case .fiveHour:
@@ -186,11 +190,11 @@ enum LimitType: String, CaseIterable, Codable {
 
 // MARK: - Display Mode
 
-/// 显示模式（智能显示 vs 自定义显示）
+/// Display mode (smart display vs custom display)
 enum DisplayMode: String, CaseIterable, Codable {
-    /// 智能显示 - 自动显示有数据的限制类型
+    /// Smart display - automatically shows limit types with data
     case smart = "smart"
-    /// 自定义显示 - 用户手动选择要显示的限制类型
+    /// Custom display - user manually selects which limit types to show
     case custom = "custom"
 
     var localizedName: String {
@@ -203,13 +207,13 @@ enum DisplayMode: String, CaseIterable, Codable {
     }
 }
 
-/// 时间格式偏好
+/// Time format preference
 enum TimeFormatPreference: String, CaseIterable, Codable {
-    /// 跟随系统
+    /// Follow system
     case system = "system"
-    /// 12 小时制
+    /// 12-hour format
     case twelveHour = "twelve_hour"
-    /// 24 小时制
+    /// 24-hour format
     case twentyFourHour = "twenty_four_hour"
 
     var localizedName: String {
@@ -224,13 +228,13 @@ enum TimeFormatPreference: String, CaseIterable, Codable {
     }
 }
 
-/// 应用外观模式
+/// App appearance mode
 enum AppAppearance: String, CaseIterable, Codable {
-    /// 跟随系统
+    /// Follow system
     case system = "system"
-    /// 浅色
+    /// Light
     case light = "light"
-    /// 深色
+    /// Dark
     case dark = "dark"
 
     var localizedName: String {
@@ -244,7 +248,7 @@ enum AppAppearance: String, CaseIterable, Codable {
         }
     }
 
-    /// 对应的 SwiftUI ColorScheme（system 返回 nil，表示跟随系统）
+    /// Corresponding SwiftUI ColorScheme (system returns nil, meaning follow system)
     var colorScheme: ColorScheme? {
         switch self {
         case .system:
@@ -257,17 +261,17 @@ enum AppAppearance: String, CaseIterable, Codable {
     }
 }
 
-/// 应用语言选项
+/// App language options
 enum AppLanguage: String, CaseIterable, Codable {
-    /// 英语
+    /// English
     case english = "en"
-    /// 日语
+    /// Japanese
     case japanese = "ja"
-    /// 简体中文
+    /// Simplified Chinese
     case chinese = "zh-Hans"
-    /// 繁体中文
+    /// Traditional Chinese
     case chineseTraditional = "zh-Hant"
-    /// 韩语
+    /// Korean
     case korean = "ko"
 
     var localizedName: String {
@@ -287,7 +291,7 @@ enum AppLanguage: String, CaseIterable, Codable {
 }
 
 extension AppLanguage {
-    /// 将应用语言转换为对应的 Locale
+    /// Convert app language to the corresponding Locale
     var locale: Locale {
         switch self {
         case .english:
@@ -306,14 +310,14 @@ extension AppLanguage {
 
 // MARK: - User Settings
 
-/// 用户设置管理类
-/// 负责管理应用的所有用户配置，包括认证信息、显示设置、语言等
-/// 敏感信息（Organization ID 和 Session Key）存储在 Keychain 中
-/// 非敏感设置存储在 UserDefaults 中
+/// User settings management class
+/// Manages all user configuration for the app, including authentication, display settings, language, etc.
+/// Sensitive information (Organization ID and Session Key) is stored in Keychain
+/// Non-sensitive settings are stored in UserDefaults
 class UserSettings: ObservableObject {
     // MARK: - Singleton
     
-    /// 单例实例
+    /// Singleton instance
     static let shared = UserSettings()
     
     // MARK: - Properties
@@ -321,16 +325,16 @@ class UserSettings: ObservableObject {
     private let defaults = UserDefaults.standard
     private let keychain = KeychainManager.shared
     
-    // MARK: - 多账户支持（v2.1.0）
+    // MARK: - Multi-Account Support (v2.1.0)
 
-    /// 账户列表（存储在 Keychain 中）
+    /// Account list (stored in Keychain)
     @Published var accounts: [Account] = [] {
         didSet {
             saveAccounts()
         }
     }
 
-    /// 当前激活账户的 ID（存储在 UserDefaults 中）
+    /// Currently active account ID (stored in UserDefaults)
     @Published var currentAccountId: UUID? {
         didSet {
             if let id = currentAccountId {
@@ -341,13 +345,13 @@ class UserSettings: ObservableObject {
         }
     }
 
-    /// 当前激活的账户
+    /// Currently active account
     var currentAccount: Account? {
         guard let id = currentAccountId else { return accounts.first }
         return accounts.first { $0.id == id }
     }
 
-    /// Claude Session Key（计算属性，指向当前账户）
+    /// Claude Session Key (computed property, points to current account)
     var sessionKey: String {
         get { currentAccount?.sessionKey ?? "" }
         set {
@@ -357,7 +361,7 @@ class UserSettings: ObservableObject {
         }
     }
 
-    /// Claude Organization ID（计算属性，指向当前账户）
+    /// Claude Organization ID (computed property, points to current account)
     var organizationId: String {
         get { currentAccount?.organizationId ?? "" }
         set {
@@ -367,17 +371,17 @@ class UserSettings: ObservableObject {
         }
     }
 
-    // MARK: - 非敏感设置（存储在UserDefaults中）
+    // MARK: - Non-Sensitive Settings (stored in UserDefaults)
 
-    /// 组织列表（保留用于向后兼容，现已废弃）
-    /// 从 v2.1.0 开始，组织信息包含在 Account 中
+    /// Organization list (kept for backward compatibility, now deprecated)
+    /// Since v2.1.0, organization info is included in Account
     @Published var organizations: [Organization] = [] {
         didSet {
             saveOrganizations()
         }
     }
     
-    /// 菜单栏图标显示模式
+    /// Menu bar icon display mode
     @Published var iconDisplayMode: IconDisplayMode {
         didSet {
             defaults.set(iconDisplayMode.rawValue, forKey: "iconDisplayMode")
@@ -385,7 +389,15 @@ class UserSettings: ObservableObject {
         }
     }
     
-    /// 菜单栏图标样式模式
+    /// Whether to show percentage numbers inside menu bar icons
+    @Published var showIconNumbers: Bool {
+        didSet {
+            defaults.set(showIconNumbers, forKey: "showIconNumbers")
+            NotificationCenter.default.post(name: .settingsChanged, object: nil)
+        }
+    }
+
+    /// Menu bar icon style mode
     @Published var iconStyleMode: IconStyleMode {
         didSet {
             defaults.set(iconStyleMode.rawValue, forKey: "iconStyleMode")
@@ -393,7 +405,7 @@ class UserSettings: ObservableObject {
         }
     }
     
-    /// 刷新模式（智能/固定）
+    /// Refresh mode (smart/fixed)
     @Published var refreshMode: RefreshMode {
         didSet {
             defaults.set(refreshMode.rawValue, forKey: "refreshMode")
@@ -401,7 +413,7 @@ class UserSettings: ObservableObject {
         }
     }
     
-    /// 数据刷新间隔（秒）- 仅在固定模式下使用
+    /// Data refresh interval (seconds) - only used in fixed mode
     @Published var refreshInterval: Int {
         didSet {
             defaults.set(refreshInterval, forKey: "refreshInterval")
@@ -409,7 +421,7 @@ class UserSettings: ObservableObject {
         }
     }
     
-    /// 应用界面语言
+    /// App interface language
     @Published var language: AppLanguage {
         didSet {
             defaults.set(language.rawValue, forKey: "language")
@@ -417,7 +429,7 @@ class UserSettings: ObservableObject {
         }
     }
 
-    /// 应用外观模式
+    /// App appearance mode
     @Published var appearance: AppAppearance {
         didSet {
             defaults.set(appearance.rawValue, forKey: "appearance")
@@ -426,7 +438,7 @@ class UserSettings: ObservableObject {
         }
     }
 
-    /// 时间格式偏好
+    /// Time format preference
     @Published var timeFormatPreference: TimeFormatPreference {
         didSet {
             defaults.set(timeFormatPreference.rawValue, forKey: "timeFormatPreference")
@@ -434,7 +446,7 @@ class UserSettings: ObservableObject {
         }
     }
 
-    /// 显示模式（智能显示/自定义显示）
+    /// Display mode (smart display/custom display)
     @Published var displayMode: DisplayMode {
         didSet {
             defaults.set(displayMode.rawValue, forKey: "displayMode")
@@ -442,7 +454,7 @@ class UserSettings: ObservableObject {
         }
     }
 
-    /// 自定义显示的限制类型集合（仅在自定义模式下使用）
+    /// Custom display limit type set (only used in custom mode)
     @Published var customDisplayTypes: Set<LimitType> {
         didSet {
             let rawValues = customDisplayTypes.map { $0.rawValue }
@@ -451,24 +463,24 @@ class UserSettings: ObservableObject {
         }
     }
 
-    /// 是否为首次启动标记
+    /// First launch flag
     @Published var isFirstLaunch: Bool {
         didSet {
             defaults.set(isFirstLaunch, forKey: "isFirstLaunch")
         }
     }
     
-    /// 是否启用用量通知
+    /// Whether usage notifications are enabled
     @Published var notificationsEnabled: Bool {
         didSet {
             defaults.set(notificationsEnabled, forKey: "notificationsEnabled")
         }
     }
 
-    /// 开机启动设置
+    /// Launch at login setting
     @Published var launchAtLogin: Bool {
         didSet {
-            // 在同步状态时不触发启用/禁用操作，避免无限循环
+            // Do not trigger enable/disable during sync, to avoid infinite loop
             guard !isSyncingLaunchStatus else { return }
 
             if launchAtLogin {
@@ -479,16 +491,16 @@ class UserSettings: ObservableObject {
         }
     }
     
-    /// 开机启动状态（用于UI显示）
+    /// Launch at login status (for UI display)
     @Published var launchAtLoginStatus: SMAppService.Status = .notRegistered
 
-    /// 防止同步状态时触发递归调用的标志
+    /// Flag to prevent recursive calls during sync
     private var isSyncingLaunchStatus: Bool = false
 
-    // MARK: - Debug Mode (仅Debug编译时可用)
+    // MARK: - Debug Mode (only available in Debug builds)
 
     #if DEBUG
-    /// 是否启用调试模式（模拟不同数据场景）
+    /// Whether debug mode is enabled (simulates different data scenarios)
     @Published var debugModeEnabled: Bool {
         didSet {
             defaults.set(debugModeEnabled, forKey: "debugModeEnabled")
@@ -496,7 +508,7 @@ class UserSettings: ObservableObject {
         }
     }
 
-    /// 调试场景类型
+    /// Debug scenario type
     @Published var debugScenario: DebugScenario {
         didSet {
             defaults.set(debugScenario.rawValue, forKey: "debugScenario")
@@ -504,7 +516,7 @@ class UserSettings: ObservableObject {
         }
     }
 
-    /// 调试用的5小时限制百分比（0-100）
+    /// Debug 5-hour limit percentage (0-100)
     @Published var debugFiveHourPercentage: Double {
         didSet {
             defaults.set(debugFiveHourPercentage, forKey: "debugFiveHourPercentage")
@@ -512,7 +524,7 @@ class UserSettings: ObservableObject {
         }
     }
 
-    /// 调试用的7天限制百分比（0-100）
+    /// Debug 7-day limit percentage (0-100)
     @Published var debugSevenDayPercentage: Double {
         didSet {
             defaults.set(debugSevenDayPercentage, forKey: "debugSevenDayPercentage")
@@ -520,7 +532,7 @@ class UserSettings: ObservableObject {
         }
     }
 
-    /// 调试用的 Opus 限制百分比（0-100）
+    /// Debug Opus limit percentage (0-100)
     @Published var debugOpusPercentage: Double {
         didSet {
             defaults.set(debugOpusPercentage, forKey: "debugOpusPercentage")
@@ -528,7 +540,7 @@ class UserSettings: ObservableObject {
         }
     }
 
-    /// 调试用的 Sonnet 限制百分比（0-100）
+    /// Debug Sonnet limit percentage (0-100)
     @Published var debugSonnetPercentage: Double {
         didSet {
             defaults.set(debugSonnetPercentage, forKey: "debugSonnetPercentage")
@@ -536,47 +548,47 @@ class UserSettings: ObservableObject {
         }
     }
 
-    /// 调试用的 Extra Usage 是否启用
+    /// Debug Extra Usage enabled state
     @Published var debugExtraUsageEnabled: Bool {
         didSet {
             defaults.set(debugExtraUsageEnabled, forKey: "debugExtraUsageEnabled")
         }
     }
 
-    /// 调试用的 Extra Usage 已使用金额（美元）
+    /// Debug Extra Usage amount used (USD)
     @Published var debugExtraUsageUsed: Double {
         didSet {
             defaults.set(debugExtraUsageUsed, forKey: "debugExtraUsageUsed")
         }
     }
 
-    /// 调试用的 Extra Usage 总限额（美元）
+    /// Debug Extra Usage total limit (USD)
     @Published var debugExtraUsageLimit: Double {
         didSet {
             defaults.set(debugExtraUsageLimit, forKey: "debugExtraUsageLimit")
         }
     }
 
-    /// 调试用的 Extra Usage 百分比（0-100），会同步更新 used 值
+    /// Debug Extra Usage percentage (0-100), syncs the used value
     @Published var debugExtraUsagePercentage: Double {
         didSet {
             defaults.set(debugExtraUsagePercentage, forKey: "debugExtraUsagePercentage")
-            // 同步更新 used 值
+            // Sync update the used value
             debugExtraUsageUsed = debugExtraUsageLimit * (debugExtraUsagePercentage / 100.0)
             NotificationCenter.default.post(name: .settingsChanged, object: nil)
         }
     }
 
-    /// 是否模拟有可用更新（调试用）
+    /// Whether to simulate an available update (debug)
     @Published var simulateUpdateAvailable: Bool {
         didSet {
             defaults.set(simulateUpdateAvailable, forKey: "simulateUpdateAvailable")
-            // 发送通知让 MenuBarManager 重新检查更新状态
+            // Post notification for MenuBarManager to recheck update status
             NotificationCenter.default.post(name: .settingsChanged, object: nil)
         }
     }
 
-    /// 是否在菜单栏单独显示所有形状图标（调试用，方便截图）
+    /// Whether to show all shape icons individually in menu bar (debug, for screenshots)
     @Published var debugShowAllShapesIndividually: Bool {
         didSet {
             defaults.set(debugShowAllShapesIndividually, forKey: "debugShowAllShapesIndividually")
@@ -584,57 +596,57 @@ class UserSettings: ObservableObject {
         }
     }
 
-    /// 是否保持详情窗口始终打开（调试用，方便录制动画）
+    /// Whether to keep the detail window always open (debug, for recording animations)
     @Published var debugKeepDetailWindowOpen: Bool {
         didSet {
             defaults.set(debugKeepDetailWindowOpen, forKey: "debugKeepDetailWindowOpen")
         }
     }
 
-    /// 调试场景枚举
+    /// Debug scenario enum
     enum DebugScenario: String, CaseIterable {
-        case realData = "real"              // 真实API数据
-        case fiveHourOnly = "five_hour"     // 仅5小时限制
-        case sevenDayOnly = "seven_day"     // 仅7天限制
-        case both = "both"                  // 同时有两种限制
-        case allFive = "all_five"           // 全部5种限制（v2.0测试）
+        case realData = "real"              // Real API data
+        case fiveHourOnly = "five_hour"     // 5-hour limit only
+        case sevenDayOnly = "seven_day"     // 7-day limit only
+        case both = "both"                  // Both limits
+        case allFive = "all_five"           // All 5 limit types (v2.0 test)
 
         var displayName: String {
             switch self {
             case .realData:
-                return "真实数据"
+                return "Real Data"
             case .fiveHourOnly:
-                return "仅5小时限制"
+                return "5-Hour Limit Only"
             case .sevenDayOnly:
-                return "仅7天限制"
+                return "7-Day Limit Only"
             case .both:
-                return "双限制"
+                return "Both Limits"
             case .allFive:
-                return "全部5种限制"
+                return "All 5 Limit Types"
             }
         }
     }
     #endif
 
-    // MARK: - 智能模式内部状态（不持久化）
+    // MARK: - Smart Mode Internal State (not persisted)
     
-    /// 上次检测的百分比（用于检测变化）
+    /// Last detected percentage (used to detect changes)
     var lastUtilization: Double?
     
-    /// 连续无变化次数
+    /// Consecutive unchanged count
     var unchangedCount: Int = 0
     
-    /// 当前监控模式（智能模式下使用）
+    /// Current monitoring mode (used in smart mode)
     var currentMonitoringMode: MonitoringMode = .active
     
     // MARK: - Initialization
     
-    /// 检测系统语言并映射到应用支持的语言
-    /// - Returns: 与系统语言最匹配的 AppLanguage
+    /// Detect system language and map to app-supported language
+    /// - Returns: AppLanguage that best matches the system language
     private static func detectSystemLanguage() -> AppLanguage {
         let systemLanguage = Locale.preferredLanguages.first ?? "en"
 
-        // 根据系统语言前缀匹配应用支持的语言
+        // Match app-supported languages by system language prefix
         if systemLanguage.hasPrefix("zh-Hans") {
             return .chinese
         } else if systemLanguage.hasPrefix("zh-Hant") || systemLanguage.hasPrefix("zh-HK") || systemLanguage.hasPrefix("zh-TW") {
@@ -644,44 +656,44 @@ class UserSettings: ObservableObject {
         } else if systemLanguage.hasPrefix("ko") {
             return .korean
         } else {
-            return .english  // 默认英语
+            return .english  // Default to English
         }
     }
     
-    /// 私有初始化方法（单例模式）
-    /// 从 Keychain 加载敏感信息，从 UserDefaults 加载其他设置
+    /// Private initializer (singleton pattern)
+    /// Loads sensitive info from Keychain and other settings from UserDefaults
     private init() {
-        // MARK: - 加载多账户数据（v2.1.0）
+        // MARK: - Load Multi-Account Data (v2.1.0)
 
-        // 从 Keychain 加载账户列表（使用局部变量避免初始化顺序问题）
+        // Load account list from Keychain (using local variables to avoid initialization order issues)
         var loadedAccounts = keychain.loadAccounts() ?? []
         var loadedCurrentAccountId: UUID? = nil
 
-        // 加载当前账户 ID
+        // Load current account ID
         if let idString = defaults.string(forKey: "currentAccountId"),
            let id = UUID(uuidString: idString) {
             loadedCurrentAccountId = id
         } else if let firstAccount = loadedAccounts.first {
-            // 如果没有保存当前账户 ID，默认使用第一个账户
+            // If no current account ID saved, default to the first account
             loadedCurrentAccountId = firstAccount.id
         }
 
-        // MARK: - 数据迁移（v2.0.x → v2.1.0 多账户）
+        // MARK: - Data Migration (v2.0.x to v2.1.0 multi-account)
 
-        // 检查是否需要从单账户迁移到多账户
+        // Check if migration from single-account to multi-account is needed
         if loadedAccounts.isEmpty && !defaults.bool(forKey: "multiAccountMigrated") {
-            // 尝试从旧的单账户数据迁移
+            // Attempt to migrate from old single-account data
             let oldSessionKey = keychain.loadSessionKey() ?? ""
             let oldOrgId = defaults.string(forKey: "organizationId") ?? ""
 
             if !oldSessionKey.isEmpty && !oldOrgId.isEmpty {
                 Logger.settings.notice("[Migration] Migrating single account to multi-account system")
 
-                // 获取组织名称（如果有缓存）
+                // Get organization name (if cached)
                 let cachedOrgs = Self.loadOrganizations(from: defaults)
                 let orgName = cachedOrgs.first { $0.uuid == oldOrgId }?.name ?? "Account 1"
 
-                // 创建第一个账户
+                // Create the first account
                 let migratedAccount = Account(
                     sessionKey: oldSessionKey,
                     organizationId: oldOrgId,
@@ -690,7 +702,7 @@ class UserSettings: ObservableObject {
                 loadedAccounts = [migratedAccount]
                 loadedCurrentAccountId = migratedAccount.id
 
-                // 清理旧的单账户数据
+                // Clean up old single-account data
                 keychain.deleteSessionKey()
                 defaults.removeObject(forKey: "organizationId")
 
@@ -700,13 +712,13 @@ class UserSettings: ObservableObject {
             defaults.set(true, forKey: "multiAccountMigrated")
         }
 
-        // 设置 accounts 和 currentAccountId
+        // Set accounts and currentAccountId
         self.accounts = loadedAccounts
         self.currentAccountId = loadedCurrentAccountId
 
-        // MARK: - 旧版迁移（v1.x → v2.0.0，保留向后兼容）
+        // MARK: - Legacy Migration (v1.x to v2.0.0, backward compatible)
 
-        // 迁移 Organization ID 从 Keychain 到 UserDefaults（旧版迁移，现已包含在上面的多账户迁移中）
+        // Migrate Organization ID from Keychain to UserDefaults (legacy migration, now included in multi-account migration above)
         if !defaults.bool(forKey: "organizationIdMigrated") {
             if let oldOrgId = keychain.loadOrganizationId(), !oldOrgId.isEmpty {
                 Logger.settings.notice("[Migration] Found Organization ID in old Keychain location")
@@ -715,9 +727,9 @@ class UserSettings: ObservableObject {
             defaults.set(true, forKey: "organizationIdMigrated")
         }
 
-        // MARK: - 从UserDefaults加载非敏感设置
+        // MARK: - Load Non-Sensitive Settings from UserDefaults
 
-        // 加载缓存的组织列表（保留向后兼容）
+        // Load cached organization list (backward compatible)
         self.organizations = Self.loadOrganizations(from: defaults)
         
         if let modeString = defaults.string(forKey: "iconDisplayMode"),
@@ -727,14 +739,16 @@ class UserSettings: ObservableObject {
             self.iconDisplayMode = .percentageOnly
         }
         
+        self.showIconNumbers = defaults.bool(forKey: "showIconNumbers")
+
         if let styleString = defaults.string(forKey: "iconStyleMode"),
            let style = IconStyleMode(rawValue: styleString) {
             self.iconStyleMode = style
         } else {
-            self.iconStyleMode = .colorTranslucent  // 默认彩色通透
+            self.iconStyleMode = .colorTranslucent  // Default: color translucent
         }
         
-        // 加载刷新模式，默认为智能模式
+        // Load refresh mode, default to smart mode
         if let modeString = defaults.string(forKey: "refreshMode"),
            let mode = RefreshMode(rawValue: modeString) {
             self.refreshMode = mode
@@ -743,17 +757,17 @@ class UserSettings: ObservableObject {
         }
         
         let savedRefreshInterval = defaults.integer(forKey: "refreshInterval")
-        self.refreshInterval = savedRefreshInterval > 0 ? savedRefreshInterval : 180 // 默认3分钟
+        self.refreshInterval = savedRefreshInterval > 0 ? savedRefreshInterval : 180 // Default: 3 minutes
         
         if let langString = defaults.string(forKey: "language"),
            let lang = AppLanguage(rawValue: langString) {
             self.language = lang
         } else {
-            // 首次启动时使用系统语言
+            // Use system language on first launch
             self.language = Self.detectSystemLanguage()
         }
 
-        // 加载外观模式，默认跟随系统
+        // Load appearance mode, default to follow system
         if let appearanceString = defaults.string(forKey: "appearance"),
            let loadedAppearance = AppAppearance(rawValue: appearanceString) {
             self.appearance = loadedAppearance
@@ -761,7 +775,7 @@ class UserSettings: ObservableObject {
             self.appearance = .system
         }
 
-        // 加载时间格式偏好，默认跟随系统
+        // Load time format preference, default to follow system
         if let timeFormatString = defaults.string(forKey: "timeFormatPreference"),
            let timeFormat = TimeFormatPreference(rawValue: timeFormatString) {
             self.timeFormatPreference = timeFormat
@@ -769,7 +783,7 @@ class UserSettings: ObservableObject {
             self.timeFormatPreference = .system
         }
 
-        // 加载显示模式，默认为智能模式
+        // Load display mode, default to smart mode
         if let modeString = defaults.string(forKey: "displayMode"),
            let mode = DisplayMode(rawValue: modeString) {
             self.displayMode = mode
@@ -777,14 +791,14 @@ class UserSettings: ObservableObject {
             self.displayMode = .smart
         }
 
-        // 加载自定义显示类型，默认为 5 小时和 7 天限制
+        // Load custom display types, default to 5-hour and 7-day limits
         if let rawValues = defaults.array(forKey: "customDisplayTypes") as? [String] {
             self.customDisplayTypes = Set(rawValues.compactMap { LimitType(rawValue: $0) })
         } else {
             self.customDisplayTypes = [.fiveHour, .sevenDay]
         }
 
-        // 检查是否首次启动（如果没有保存过认证信息，就是首次启动）
+        // Check if this is the first launch (first launch if credentials were never saved)
         if !defaults.bool(forKey: "hasLaunched") {
             self.isFirstLaunch = true
             defaults.set(true, forKey: "hasLaunched")
@@ -792,13 +806,13 @@ class UserSettings: ObservableObject {
             self.isFirstLaunch = false
         }
         
-        // 加载通知设置，默认开启
+        // Load notification settings, default to enabled
         self.notificationsEnabled = defaults.object(forKey: "notificationsEnabled") as? Bool ?? true
 
-        // 初始化开机启动设置
+        // Initialize launch at login setting
         self.launchAtLogin = defaults.bool(forKey: "launchAtLogin")
 
-        // MARK: - 初始化调试模式设置
+        // MARK: - Initialize Debug Mode Settings
 
         #if DEBUG
         self.debugModeEnabled = defaults.bool(forKey: "debugModeEnabled")
@@ -818,13 +832,13 @@ class UserSettings: ObservableObject {
         self.debugKeepDetailWindowOpen = defaults.bool(forKey: "debugKeepDetailWindowOpen")
         #endif
 
-        // 同步系统实际状态
+        // Sync actual system state
         syncLaunchAtLoginStatus()
 
-        // 应用外观设置到 NSApp
+        // Apply appearance settings to NSApp
         applyAppearance()
 
-        // 监听系统外观变化，「跟随系统」模式下自动更新
+        // Listen for system appearance changes, auto-update in "Follow System" mode
         DistributedNotificationCenter.default().addObserver(
             forName: NSNotification.Name("AppleInterfaceThemeChangedNotification"),
             object: nil,
@@ -837,38 +851,38 @@ class UserSettings: ObservableObject {
     
     // MARK: - Computed Properties
 
-    /// 当前应用使用的 Locale（基于用户选择的语言）
+    /// Current app Locale (based on user-selected language)
     var appLocale: Locale {
         return language.locale
     }
 
-    /// 检查认证信息是否已配置
-    /// - Returns: 如果 Organization ID 和 Session Key 都不为空则返回 true
+    /// Check if authentication credentials are configured
+    /// - Returns: true if both Organization ID and Session Key are non-empty
     var hasValidCredentials: Bool {
         return !organizationId.isEmpty && !sessionKey.isEmpty
     }
 
-    /// 验证 Organization ID 格式
-    /// - Parameter id: 要验证的 Organization ID
-    /// - Returns: 如果格式有效（UUID 格式）返回 true
+    /// Validate Organization ID format
+    /// - Parameter id: Organization ID to validate
+    /// - Returns: true if the format is valid (UUID format)
     func isValidOrganizationId(_ id: String) -> Bool {
-        // Organization ID 应该是 UUID 格式
+        // Organization ID should be in UUID format
         let uuidRegex = "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
         let predicate = NSPredicate(format: "SELF MATCHES %@", uuidRegex)
         return predicate.evaluate(with: id)
     }
 
-    /// 验证 Session Key 格式
-    /// - Parameter key: 要验证的 Session Key
-    /// - Returns: 如果格式有效返回 true
+    /// Validate Session Key format
+    /// - Parameter key: Session Key to validate
+    /// - Returns: true if the format is valid
     func isValidSessionKey(_ key: String) -> Bool {
-        // Session Key 应该是非空的，并且有合理的长度
-        // 典型的 session key 长度在 20-200 字符之间
+        // Session Key should be non-empty and have a reasonable length
+        // Typical session key length is between 20-200 characters
         return !key.isEmpty && key.count >= 20 && key.count <= 500
     }
     
-    /// 获取当前生效的刷新间隔（秒）
-    /// - Returns: 智能模式返回当前监控模式的间隔，固定模式返回用户设置的间隔
+    /// Get the currently effective refresh interval (seconds)
+    /// - Returns: Smart mode returns current monitoring mode interval, fixed mode returns user-set interval
     var effectiveRefreshInterval: Int {
         switch refreshMode {
         case .smart:
@@ -880,9 +894,9 @@ class UserSettings: ObservableObject {
     
     // MARK: - Public Methods
     
-    /// 将当前外观设置应用到 NSApp，全局生效
-    /// 注意：对于菜单栏应用（accessory 激活策略），NSApp.appearance = nil 不能可靠地跟随系统外观
-    /// 因此「跟随系统」模式下主动读取系统外观并显式设置
+    /// Apply current appearance settings to NSApp globally
+    /// Note: For menu bar apps (accessory activation policy), NSApp.appearance = nil cannot reliably follow system appearance
+    /// Therefore in "Follow System" mode we actively read the system appearance and set it explicitly
     func applyAppearance() {
         DispatchQueue.main.async {
             switch self.appearance {
@@ -897,28 +911,29 @@ class UserSettings: ObservableObject {
         }
     }
 
-    /// 重置为默认设置
-    /// 只重置非敏感设置，不影响认证信息
+    /// Reset to default settings
+    /// Only resets non-sensitive settings, does not affect authentication credentials
     func resetToDefaults() {
         appearance = .system
         iconDisplayMode = .percentageOnly
+        showIconNumbers = false
         iconStyleMode = .colorTranslucent
         refreshMode = .smart
-        refreshInterval = 180  // 固定模式默认3分钟
+        refreshInterval = 180  // Fixed mode default: 3 minutes
         language = Self.detectSystemLanguage()
         timeFormatPreference = .system
         displayMode = .smart
         customDisplayTypes = [.fiveHour, .sevenDay, .extraUsage]
         notificationsEnabled = true
 
-        // 重置智能模式状态
+        // Reset smart mode state
         lastUtilization = nil
         unchangedCount = 0
         currentMonitoringMode = .active
     }
     
-    /// 清除所有认证信息
-    /// 从 Keychain 中删除 Organization ID 和 Session Key
+    /// Clear all authentication credentials
+    /// Delete Organization ID and Session Key from Keychain
     func clearCredentials() {
         keychain.deleteCredentials()
         organizationId = ""
@@ -926,33 +941,33 @@ class UserSettings: ObservableObject {
         Logger.settings.notice("已清除所有认证信息")
     }
     
-    /// 更新智能监控模式
-    /// 根据用量百分比变化智能调整刷新频率
-    /// - Parameter currentUtilization: 当前用量百分比
+    /// Update smart monitoring mode
+    /// Intelligently adjusts refresh frequency based on usage percentage changes
+    /// - Parameter currentUtilization: Current usage percentage
     func updateSmartMonitoringMode(currentUtilization: Double) {
-        // 只在智能模式下工作
+        // Only works in smart mode
         guard refreshMode == .smart else { return }
 
-        // 检查是否有变化
+        // Check for changes
         if hasUtilizationChanged(currentUtilization) {
             switchToActiveMode()
         } else {
             handleNoChange()
         }
 
-        // 更新上次的百分比
+        // Update last percentage
         lastUtilization = currentUtilization
     }
 
-    /// 检查用量百分比是否有变化
-    /// - Parameter current: 当前用量百分比
-    /// - Returns: 如果变化超过 0.01 返回 true
+    /// Check if usage percentage has changed
+    /// - Parameter current: Current usage percentage
+    /// - Returns: true if the change exceeds 0.01
     private func hasUtilizationChanged(_ current: Double) -> Bool {
         guard let last = lastUtilization else { return false }
         return abs(current - last) > 0.01
     }
 
-    /// 切换到活跃模式
+    /// Switch to active mode
     private func switchToActiveMode() {
         guard currentMonitoringMode != .active else { return }
 
@@ -962,7 +977,7 @@ class UserSettings: ObservableObject {
         NotificationCenter.default.post(name: .refreshIntervalChanged, object: nil)
     }
 
-    /// 处理无变化情况
+    /// Handle no-change scenario
     private func handleNoChange() {
         unchangedCount += 1
 
@@ -977,29 +992,29 @@ class UserSettings: ObservableObject {
         }
     }
 
-    /// 根据当前模式和无变化次数计算新模式
-    /// - Returns: 如果需要切换，返回新模式；否则返回 nil
+    /// Calculate new mode based on current mode and unchanged count
+    /// - Returns: New mode if switching is needed; otherwise nil
     private func calculateNewMode() -> MonitoringMode? {
         switch currentMonitoringMode {
         case .active:
-            // 活跃模式：连续3次无变化（3分钟） -> 短期静默
+            // Active mode: 3 consecutive unchanged (3 minutes) -> short idle
             return unchangedCount >= 3 ? .idleShort : nil
         case .idleShort:
-            // 短期静默：连续6次无变化（18分钟） -> 中期静默
+            // Short idle: 6 consecutive unchanged (18 minutes) -> medium idle
             return unchangedCount >= 6 ? .idleMedium : nil
         case .idleMedium:
-            // 中期静默：连续12次无变化（60分钟） -> 长期静默
+            // Medium idle: 12 consecutive unchanged (60 minutes) -> long idle
             return unchangedCount >= 12 ? .idleLong : nil
         case .idleLong:
-            // 长期静默：保持当前模式
+            // Long idle: Maintain current mode
             return nil
         }
     }
 
-    /// 记录模式切换日志
+    /// Log mode transition
     /// - Parameters:
-    ///   - from: 原模式
-    ///   - to: 新模式
+    ///   - from: Previous mode
+    ///   - to: New mode
     private func logModeTransition(from: MonitoringMode, to: MonitoringMode) {
         let modeNames: [MonitoringMode: String] = [
             .active: "活跃 (1分钟)",
@@ -1010,8 +1025,8 @@ class UserSettings: ObservableObject {
         Logger.settings.debug("监控模式切换: \(modeNames[from] ?? "") -> \(modeNames[to] ?? "")")
     }
     
-    /// 重置智能监控模式状态
-    /// 在切换到固定模式或用户手动刷新时调用
+    /// Reset smart monitoring mode state
+    /// Called when switching to fixed mode or on manual refresh
     func resetSmartMonitoringState() {
         lastUtilization = nil
         unchangedCount = 0
@@ -1020,7 +1035,7 @@ class UserSettings: ObservableObject {
 
     // MARK: - Account Management (v2.1.0)
 
-    /// 保存账户列表到 Keychain
+    /// Save account list to Keychain
     private func saveAccounts() {
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             guard let self = self else { return }
@@ -1028,42 +1043,42 @@ class UserSettings: ObservableObject {
         }
     }
 
-    /// 添加新账户
-    /// - Parameter account: 要添加的账户
+    /// Add a new account
+    /// - Parameter account: Account to add
     func addAccount(_ account: Account) {
-        // 检查是否已存在相同 organizationId 的账户
+        // Check if an account with the same organizationId already exists
         if accounts.contains(where: { $0.organizationId == account.organizationId }) {
             Logger.settings.notice("账户已存在，跳过: \(account.displayName)")
             return
         }
         accounts.append(account)
-        // 如果是第一个账户，自动设为当前账户
+        // If this is the first account, automatically set it as current
         if accounts.count == 1 {
             currentAccountId = account.id
         }
         Logger.settings.notice("添加账户: \(account.displayName)")
     }
 
-    /// 删除账户
-    /// - Parameter account: 要删除的账户
+    /// Delete an account
+    /// - Parameter account: Account to delete
     func removeAccount(_ account: Account) {
         guard let index = accounts.firstIndex(where: { $0.id == account.id }) else { return }
 
         let wasCurrentAccount = (currentAccountId == account.id)
         accounts.remove(at: index)
 
-        // 如果删除的是当前账户，切换到第一个账户
+        // If the deleted account was the current one, switch to the first account
         if wasCurrentAccount {
             currentAccountId = accounts.first?.id
-            // 发送账户变更通知
+            // Post account change notification
             NotificationCenter.default.post(name: .accountChanged, object: nil)
         }
 
         Logger.settings.notice("删除账户: \(account.displayName)")
     }
 
-    /// 切换到指定账户
-    /// - Parameter account: 要切换到的账户
+    /// Switch to the specified account
+    /// - Parameter account: Account to switch to
     func switchToAccount(_ account: Account) {
         guard account.id != currentAccountId else { return }
         guard accounts.contains(where: { $0.id == account.id }) else { return }
@@ -1071,14 +1086,14 @@ class UserSettings: ObservableObject {
         currentAccountId = account.id
         Logger.settings.notice("切换到账户: \(account.displayName)")
 
-        // 发送账户变更通知
+        // Post account change notification
         NotificationCenter.default.post(name: .accountChanged, object: nil)
     }
 
-    /// 更新账户信息
+    /// Update account information
     /// - Parameters:
-    ///   - account: 要更新的账户
-    ///   - alias: 新的别名（可选）
+    ///   - account: Account to update
+    ///   - alias: New alias (optional)
     func updateAccount(_ account: Account, alias: String?) {
         guard let index = accounts.firstIndex(where: { $0.id == account.id }) else { return }
         accounts[index].alias = alias
@@ -1086,20 +1101,20 @@ class UserSettings: ObservableObject {
         Logger.settings.notice("更新账户别名: \(displayName)")
     }
 
-    /// 用于显示的账户列表
-    /// - Returns: 账户列表
+    /// Account list for display
+    /// - Returns: Account list
     var displayAccounts: [Account] {
         return accounts
     }
 
-    /// 当前账户的显示名称
+    /// Display name of the current account
     var currentAccountName: String? {
         return currentAccount?.displayName
     }
 
-    // MARK: - Organization Management (保留向后兼容)
+    // MARK: - Organization Management (backward compatible)
 
-    /// 保存组织列表到 UserDefaults（保留向后兼容）
+    /// Save organization list to UserDefaults (backward compatible)
     private func saveOrganizations() {
         let encoder = JSONEncoder()
         if let data = try? encoder.encode(organizations) {
@@ -1107,9 +1122,9 @@ class UserSettings: ObservableObject {
         }
     }
 
-    /// 从 UserDefaults 加载组织列表（保留向后兼容）
-    /// - Parameter defaults: UserDefaults 实例
-    /// - Returns: 组织列表，如果加载失败则返回空数组
+    /// Load organization list from UserDefaults (backward compatible)
+    /// - Parameter defaults: UserDefaults instance
+    /// - Returns: Organization list, returns empty array if loading fails
     private static func loadOrganizations(from defaults: UserDefaults) -> [Organization] {
         guard let data = defaults.data(forKey: "cachedOrganizations") else {
             return []
@@ -1120,7 +1135,7 @@ class UserSettings: ObservableObject {
 
     // MARK: - Launch at Login Management
     
-    /// 启用开机启动
+    /// Enable launch at login
     private func enableLaunchAtLogin() {
         do {
             try SMAppService.mainApp.register()
@@ -1129,16 +1144,16 @@ class UserSettings: ObservableObject {
             Logger.settings.notice("开机启动已启用")
         } catch {
             Logger.settings.error("启用开机启动失败: \(error.localizedDescription)")
-            // 注册失败，恢复状态（避免触发didSet）
+            // Registration failed, restore state (avoid triggering didSet)
             isSyncingLaunchStatus = true
             DispatchQueue.main.async {
                 self.launchAtLogin = false
-                // 在异步块内重置标志，避免 race condition
+                // Reset flag inside async block to avoid race condition
                 self.isSyncingLaunchStatus = false
                 self.syncLaunchAtLoginStatus()
             }
 
-            // 发送错误通知
+            // Post error notification
             NotificationCenter.default.post(
                 name: .launchAtLoginError,
                 object: nil,
@@ -1147,11 +1162,11 @@ class UserSettings: ObservableObject {
         }
     }
     
-    /// 禁用开机启动
+    /// Disable launch at login
     private func disableLaunchAtLogin() {
         let currentStatus = SMAppService.mainApp.status
 
-        // 如果服务未注册或未找到，直接更新设置，不执行unregister操作
+        // If service is not registered or not found, just update settings without unregister
         if currentStatus == .notRegistered || currentStatus == .notFound {
             defaults.set(false, forKey: "launchAtLogin")
             syncLaunchAtLoginStatus()
@@ -1166,16 +1181,16 @@ class UserSettings: ObservableObject {
             Logger.settings.notice("开机启动已禁用")
         } catch {
             Logger.settings.error("禁用开机启动失败: \(error.localizedDescription)")
-            // 取消注册失败，恢复状态（避免触发didSet）
+            // Unregister failed, restore state (avoid triggering didSet)
             isSyncingLaunchStatus = true
             DispatchQueue.main.async {
                 self.launchAtLogin = true
-                // 在异步块内重置标志，避免 race condition
+                // Reset flag inside async block to avoid race condition
                 self.isSyncingLaunchStatus = false
                 self.syncLaunchAtLoginStatus()
             }
 
-            // 发送错误通知
+            // Post error notification
             NotificationCenter.default.post(
                 name: .launchAtLoginError,
                 object: nil,
@@ -1184,17 +1199,17 @@ class UserSettings: ObservableObject {
         }
     }
     
-    /// 同步开机启动状态
-    /// 从系统读取实际状态并更新UI
+    /// Sync launch at login status
+    /// Read actual state from system and update UI
     func syncLaunchAtLoginStatus() {
         let status = SMAppService.mainApp.status
         DispatchQueue.main.async {
             self.launchAtLoginStatus = status
 
-            // 同步实际状态到设置
+            // Sync actual state to settings
             let isActuallyEnabled = (status == .enabled)
             if self.launchAtLogin != isActuallyEnabled {
-                // 设置同步标志，避免触发 didSet 中的启用/禁用操作
+                // Set sync flag to avoid triggering enable/disable in didSet
                 self.isSyncingLaunchStatus = true
                 self.defaults.set(isActuallyEnabled, forKey: "launchAtLogin")
                 self.launchAtLogin = isActuallyEnabled
@@ -1207,20 +1222,20 @@ class UserSettings: ObservableObject {
 
     // MARK: - Display Logic Helper Methods (v2.0)
 
-    /// 获取当前应该显示的限制类型列表
-    /// - Parameter usageData: 用量数据
-    /// - Returns: 要显示的限制类型数组，按显示顺序排列
+    /// Get the list of limit types that should currently be displayed
+    /// - Parameter usageData: Usage data
+    /// - Returns: Array of limit types to display, in display order
     func getActiveDisplayTypes(usageData: UsageData?) -> [LimitType] {
         switch displayMode {
         case .smart:
-            // 智能模式：显示所有有数据的类型
+            // Smart mode: Show all types that have data
             guard let data = usageData else {
                 return []
             }
 
             var types: [LimitType] = []
 
-            // 按规范顺序: fiveHour → sevenDay → extraUsage → opus → sonnet
+            // In canonical order: fiveHour -> sevenDay -> extraUsage -> opus -> sonnet
             if data.fiveHour != nil {
                 types.append(.fiveHour)
             }
@@ -1240,25 +1255,25 @@ class UserSettings: ObservableObject {
             return types
 
         case .custom:
-            // 自定义模式：按用户选择排序，无论数据是否存在都显示
+            // Custom mode: Sort by user selection, show regardless of whether data exists
             let orderedTypes: [LimitType] = [.fiveHour, .sevenDay, .extraUsage, .opusWeekly, .sonnetWeekly]
             return orderedTypes.filter { customDisplayTypes.contains($0) }
         }
     }
 
-    /// 判断当前配置是否可以使用彩色主题
-    /// - Returns: true 表示可以使用彩色主题
+    /// Determine if the current configuration can use the colored theme
+    /// - Returns: true means the colored theme can be used
     func canUseColoredTheme(usageData: UsageData?) -> Bool {
         let activeTypes = getActiveDisplayTypes(usageData: usageData)
 
-        // 现在所有限制类型都支持彩色显示
-        // 只要有图标就可以使用彩色主题
+        // All limit types now support colored display
+        // Colored theme can be used as long as there are icons
         return !activeTypes.isEmpty
     }
 }
 
 // MARK: - Notification Names
 
-/// 设置相关通知名称扩展
-// 注意：通知名称现已迁移到 NotificationNames.swift
-// 保持向后兼容性的导入
+/// Settings-related notification name extensions
+// Note: Notification names have been migrated to NotificationNames.swift
+// Import kept for backward compatibility

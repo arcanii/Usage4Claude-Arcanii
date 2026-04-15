@@ -10,7 +10,7 @@ import SwiftUI
 
 // MARK: - Mini Progress Icon Component
 
-/// 迷你进度图标（带百分比数字和进度弧，与菜单栏图标风格一致）
+/// Mini progress icon (with percentage number and progress arc, consistent with menu bar icon style)
 struct MiniProgressIcon: View {
     let type: LimitType
     let color: Color
@@ -23,10 +23,10 @@ struct MiniProgressIcon: View {
             let rect = CGRect(origin: .zero, size: canvasSize)
             let fullPath = IconShapePaths.pathForLimitType(type, in: rect)
 
-            // 1. 形状边框（彩色）
+            // 1. Shape border (colored)
             context.stroke(fullPath, with: .color(color), lineWidth: lineWidth)
 
-            // 2. 百分比数字（居中）
+            // 2. Percentage number (centered)
             let fontSize = percentage >= 100 ? canvasSize.width * 0.28 : canvasSize.width * 0.38
             let text = Text("\(Int(percentage))")
                 .font(.system(size: fontSize, weight: .bold))
@@ -39,7 +39,7 @@ struct MiniProgressIcon: View {
 
 // MARK: - Unified Limit Row Component
 
-/// 统一的限制行组件（支持所有5种限制类型）
+/// Unified limit row component (supports all 5 limit types)
 struct UnifiedLimitRow: View {
     let type: LimitType
     let data: UsageData
@@ -47,21 +47,21 @@ struct UnifiedLimitRow: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            // 图标（含百分比数字和进度弧）
+            // Icon (with percentage number and progress arc)
             MiniProgressIcon(type: type, color: iconColor, percentage: percentageValue ?? 0)
 
-            // 限制类型名称
+            // Limit type name
             Text(limitName)
                 .font(.system(size: 12))
                 .foregroundColor(.secondary)
 
             Spacer()
 
-            // 右侧：重置时间或剩余额度
+            // Right side: reset time or remaining quota
             Text(displayValue)
                 .font(.system(size: 12))
                 .fontWeight(.medium)
-                .id(showRemainingMode ? "remaining" : "reset")  // 强制识别为不同视图
+                .id(showRemainingMode ? "remaining" : "reset")  // Force recognition as different views
                 .transition(.asymmetric(
                     insertion: .move(edge: .top).combined(with: .opacity),
                     removal: .move(edge: .bottom).combined(with: .opacity)
@@ -93,13 +93,13 @@ struct UnifiedLimitRow: View {
     private var iconColor: Color {
         switch type {
         case .fiveHour:
-            return .green  // 5小时用绿色
+            return .green  // Green for 5-hour
         case .sevenDay:
             return .purple
         case .opusWeekly:
             return .orange
         case .sonnetWeekly:
-            return .blue  // 7天Sonnet用蓝色
+            return .blue  // Blue for 7-day Sonnet
         case .extraUsage:
             return .pink
         }

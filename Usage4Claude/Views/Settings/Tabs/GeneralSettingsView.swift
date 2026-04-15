@@ -9,8 +9,8 @@
 import SwiftUI
 import ServiceManagement
 
-/// 通用设置页面
-/// 使用卡片式布局，包含开机启动、显示设置、刷新设置和语言设置
+/// General settings page
+/// Uses card layout with launch at login, display settings, refresh settings, and language settings
 struct GeneralSettingsView: View {
     @ObservedObject private var settings = UserSettings.shared
     @State private var showErrorAlert = false
@@ -19,7 +19,7 @@ struct GeneralSettingsView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 16) {
-                // 显示设置卡片
+                // Display settings card
                 SettingCard(
                     icon: "gauge.with.dots.needle.0percent",
                     iconColor: .blue,
@@ -27,7 +27,7 @@ struct GeneralSettingsView: View {
                     hint: L.SettingsGeneral.menubarHint
                 ) {
                     VStack(alignment: .leading, spacing: 16) {
-                        // 图标样式选择
+                        // Icon style selection
                         VStack(alignment: .leading, spacing: 8) {
                             Text(L.SettingsGeneral.menubarTheme)
                                 .font(.subheadline)
@@ -43,7 +43,7 @@ struct GeneralSettingsView: View {
                             .labelsHidden()
                             .focusable(false)
                             
-                            // 描述文字
+                            // Description text
                             if !settings.iconStyleMode.description.isEmpty {
                                 HStack(alignment: .top, spacing: 4) {
                                     Image(systemName: "info.circle.fill")
@@ -60,7 +60,7 @@ struct GeneralSettingsView: View {
                         
                         Divider()
                         
-                        // 显示内容选择
+                        // Display content selection
                         VStack(alignment: .leading, spacing: 8) {
                             Text(L.SettingsGeneral.displayContent)
                                 .font(.subheadline)
@@ -79,7 +79,6 @@ struct GeneralSettingsView: View {
                                         } else if showPercentage {
                                             settings.iconDisplayMode = .percentageOnly
                                         } else {
-                                            // 至少保留一个
                                             settings.iconDisplayMode = .percentageOnly
                                         }
                                     }
@@ -88,6 +87,7 @@ struct GeneralSettingsView: View {
                                 }
                                 .toggleStyle(.checkbox)
                                 .focusable(false)
+                                .disabled(settings.iconDisplayMode == .unified)
 
                                 Toggle(isOn: Binding(
                                     get: { settings.iconDisplayMode == .percentageOnly || settings.iconDisplayMode == .both },
@@ -100,7 +100,6 @@ struct GeneralSettingsView: View {
                                         } else if showIcon {
                                             settings.iconDisplayMode = .iconOnly
                                         } else {
-                                            // 至少保留一个
                                             settings.iconDisplayMode = .iconOnly
                                         }
                                     }
@@ -109,12 +108,34 @@ struct GeneralSettingsView: View {
                                 }
                                 .toggleStyle(.checkbox)
                                 .focusable(false)
+                                .disabled(settings.iconDisplayMode == .unified)
+
+                                Toggle(isOn: $settings.showIconNumbers) {
+                                    Text(L.Display.showNumber)
+                                }
+                                .toggleStyle(.checkbox)
+                                .focusable(false)
+
+                                Toggle(isOn: Binding(
+                                    get: { settings.iconDisplayMode == .unified },
+                                    set: { isUnified in
+                                        if isUnified {
+                                            settings.iconDisplayMode = .unified
+                                        } else {
+                                            settings.iconDisplayMode = .percentageOnly
+                                        }
+                                    }
+                                )) {
+                                    Text(L.Display.unified)
+                                }
+                                .toggleStyle(.checkbox)
+                                .focusable(false)
                             }
                         }
                     }
                 }
 
-                // 显示选项卡片
+                // Display options card
                 SettingCard(
                     icon: "rectangle.3.group",
                     iconColor: .purple,
@@ -122,7 +143,7 @@ struct GeneralSettingsView: View {
                     hint: settings.displayMode == .smart ? L.DisplayOptions.smartDisplayDescription : L.DisplayOptions.customDisplayDescription
                 ) {
                     VStack(alignment: .leading, spacing: 16) {
-                        // 显示模式选择
+                        // Display mode selection
                         VStack(alignment: .leading, spacing: 8) {
                             Text(L.DisplayOptions.displayModeLabel)
                                 .font(.subheadline)
@@ -138,7 +159,7 @@ struct GeneralSettingsView: View {
                             .focusable(false)
                         }
 
-                        // 自定义选择（仅在自定义模式时显示）
+                        // Custom selection (only shown in custom mode)
                         if settings.displayMode == .custom {
                             Divider()
 
@@ -161,7 +182,7 @@ struct GeneralSettingsView: View {
                                 }
                                 .padding(.leading, 20)
 
-                                // 约束提示信息
+                                // Constraint hint info
                                 if hasOnlyOneCircularIcon {
                                     HStack(alignment: .top, spacing: 4) {
                                         Image(systemName: "info.circle.fill")
@@ -175,7 +196,7 @@ struct GeneralSettingsView: View {
                                     .padding(.leading, 20)
                                 }
 
-                                // 主题可用性提示
+                                // Theme availability hint
                                 if !canUseColoredTheme {
                                     HStack(alignment: .top, spacing: 4) {
                                         Image(systemName: "exclamationmark.circle.fill")
@@ -193,7 +214,7 @@ struct GeneralSettingsView: View {
                     }
                 }
 
-                // 刷新设置卡片
+                // Refresh settings card
                 SettingCard(
                     icon: "clock.arrow.trianglehead.2.counterclockwise.rotate.90",
                     iconColor: .green,
@@ -201,7 +222,7 @@ struct GeneralSettingsView: View {
                     hint: settings.refreshMode == .smart ? L.SettingsGeneral.refreshHintSmart : L.SettingsGeneral.refreshHintFixed
                 ) {
                     VStack(alignment: .leading, spacing: 12) {
-                        // 刷新模式选择
+                        // Refresh mode selection
                         Picker("", selection: $settings.refreshMode) {
                             ForEach(RefreshMode.allCases, id: \.self) { mode in
                                 Text(mode.localizedName).tag(mode)
@@ -211,7 +232,7 @@ struct GeneralSettingsView: View {
                         .labelsHidden()
                         .focusable(false)
                         
-                        // 固定频率选择（仅在选择固定模式时显示）
+                        // Fixed frequency selection (only shown when fixed mode is selected)
                         if settings.refreshMode == .fixed {
                             HStack {
                                 Text(L.SettingsGeneral.refreshInterval)
@@ -230,7 +251,7 @@ struct GeneralSettingsView: View {
                     }
                 }
                 
-                // 通知设置卡片
+                // Notification settings card
                 SettingCard(
                     icon: "bell.badge",
                     iconColor: .red,
@@ -259,7 +280,7 @@ struct GeneralSettingsView: View {
                     }
                 }
 
-                // 外观设置卡片
+                // Appearance settings card
                 SettingCard(
                     icon: "circle.lefthalf.filled",
                     iconColor: .indigo,
@@ -276,7 +297,7 @@ struct GeneralSettingsView: View {
                     .focusable(false)
                 }
 
-                // 时间格式设置卡片
+                // Time format settings card
                 SettingCard(
                     icon: "clock",
                     iconColor: .cyan,
@@ -293,7 +314,7 @@ struct GeneralSettingsView: View {
                         .labelsHidden()
                         .focusable(false)
 
-                        // 当前时间预览
+                        // Current time preview
                         HStack(spacing: 4) {
                             Text(L.SettingsGeneralTimeFormat.preview + ":")
                                 .font(.caption)
@@ -307,7 +328,7 @@ struct GeneralSettingsView: View {
                     }
                 }
 
-                // 语言设置卡片
+                // Language settings card
                 SettingCard(
                     icon: "globe",
                     iconColor: .orange,
@@ -324,7 +345,7 @@ struct GeneralSettingsView: View {
                     .focusable(false)
                 }
 
-                // 开机启动设置卡片
+                // Launch at login settings card
                 SettingCard(
                     icon: "power",
                     iconColor: .orange,
@@ -353,7 +374,7 @@ struct GeneralSettingsView: View {
                     }
                 }
 
-                // 重置按钮
+                // Reset button
                 HStack {
                     Spacer()
                     Button(L.SettingsGeneral.resetButton) {
@@ -363,10 +384,10 @@ struct GeneralSettingsView: View {
                 }
                 .padding(.top, 8)
 
-                // MARK: - 调试模式区域（仅Debug编译可见）
+                // MARK: - Debug mode section (only visible in Debug builds)
 
                 #if DEBUG
-                // 调试设置卡片
+                // Debug settings card
                 SettingCard(
                     icon: "ladybug.fill",
                     iconColor: .orange,
@@ -374,7 +395,7 @@ struct GeneralSettingsView: View {
                     hint: "切换场景后，点击刷新按钮查看效果"
                 ) {
                     VStack(alignment: .leading, spacing: 12) {
-                        // 启用调试模式开关
+                        // Enable debug mode switch
                         HStack {
                             Toggle("", isOn: $settings.debugModeEnabled)
                                 .toggleStyle(.switch)
@@ -391,13 +412,13 @@ struct GeneralSettingsView: View {
                                 .foregroundColor(.secondary)
                         }
 
-                        // 百分比滑块（仅在启用调试模式时显示）
+                        // Percentage sliders (only shown when debug mode is enabled)
                         if settings.debugModeEnabled {
                             Divider()
                                 .padding(.vertical, 4)
 
                             VStack(alignment: .leading, spacing: 12) {
-                                // 5小时限制
+                                // 5-hour limit
                                 VStack(alignment: .leading, spacing: 4) {
                                     HStack {
                                         Text("5小时限制百分比：")
@@ -413,7 +434,7 @@ struct GeneralSettingsView: View {
                                         .tint(.green)
                                 }
 
-                                // 7天限制
+                                // 7-day limit
                                 VStack(alignment: .leading, spacing: 4) {
                                     HStack {
                                         Text("7天限制百分比：")
@@ -429,7 +450,7 @@ struct GeneralSettingsView: View {
                                         .tint(.purple)
                                 }
 
-                                // Extra Usage 限制
+                                // Extra Usage limit
                                 VStack(alignment: .leading, spacing: 4) {
                                     HStack {
                                         Text("Extra Usage 百分比：")
@@ -445,7 +466,7 @@ struct GeneralSettingsView: View {
                                         .tint(.pink)
                                 }
 
-                                // Opus Weekly 限制
+                                // Opus Weekly limit
                                 VStack(alignment: .leading, spacing: 4) {
                                     HStack {
                                         Text("Opus Weekly 百分比：")
@@ -461,7 +482,7 @@ struct GeneralSettingsView: View {
                                         .tint(.orange)
                                 }
 
-                                // Sonnet Weekly 限制
+                                // Sonnet Weekly limit
                                 VStack(alignment: .leading, spacing: 4) {
                                     HStack {
                                         Text("Sonnet Weekly 百分比：")
@@ -480,7 +501,7 @@ struct GeneralSettingsView: View {
                             .padding(.leading, 20)
                         }
 
-                        // 模拟更新开关
+                        // Simulate update switch
                         Divider()
                             .padding(.vertical, 4)
 
@@ -501,7 +522,7 @@ struct GeneralSettingsView: View {
                                 .foregroundColor(.secondary)
                         }
 
-                        // 单独显示所有形状图标开关
+                        // Show all shape icons individually switch
                         Divider()
                             .padding(.vertical, 4)
 
@@ -522,7 +543,7 @@ struct GeneralSettingsView: View {
                                 .foregroundColor(.secondary)
                         }
 
-                        // 保持详情窗口打开开关
+                        // Keep detail window open switch
                         Divider()
                             .padding(.vertical, 4)
 
@@ -550,10 +571,10 @@ struct GeneralSettingsView: View {
             .padding()
         }
         .onAppear {
-            // 设置页面打开时同步状态
+            // Sync status when settings page opens
             settings.syncLaunchAtLoginStatus()
             
-            // 监听错误通知
+            // Listen for error notifications
             NotificationCenter.default.addObserver(
                 forName: .launchAtLoginError,
                 object: nil,
@@ -573,13 +594,13 @@ struct GeneralSettingsView: View {
     
     // MARK: - Computed Properties
 
-    /// 时间预览字符串
+    /// Time preview string
     private var timePreviewString: String {
         let now = Date()
         return TimeFormatHelper.formatTimeOnly(now)
     }
 
-    /// 状态图标
+    /// Status icon
     private var statusIcon: String {
         switch settings.launchAtLoginStatus {
         case .enabled:
@@ -591,12 +612,12 @@ struct GeneralSettingsView: View {
         case .notFound:
             return "xmark.circle.fill"
         @unknown default:
-            // 未知状态按未启用处理，会在 onAppear 时同步真实状态
+            // Treat unknown status as disabled; real status will be synced on onAppear
             return "circle"
         }
     }
     
-    /// 状态颜色
+    /// Status color
     private var statusColor: Color {
         switch settings.launchAtLoginStatus {
         case .enabled:
@@ -608,12 +629,12 @@ struct GeneralSettingsView: View {
         case .notFound:
             return .red
         @unknown default:
-            // 未知状态按未启用处理
+            // Treat unknown status as disabled
             return .secondary
         }
     }
     
-    /// 状态文本
+    /// Status text
     private var statusText: String {
         switch settings.launchAtLoginStatus {
         case .enabled:
@@ -625,14 +646,14 @@ struct GeneralSettingsView: View {
         case .notFound:
             return L.LaunchAtLogin.statusNotFound
         @unknown default:
-            // 未知状态按未启用处理
+            // Treat unknown status as disabled
             return L.LaunchAtLogin.statusDisabled
         }
     }
     
     // MARK: - Error Handling
 
-    /// 处理开机启动错误
+    /// Handle launch at login error
     private func handleLaunchError(_ notification: Notification) {
         guard let userInfo = notification.userInfo,
               let error = userInfo["error"] as? Error,
@@ -647,24 +668,24 @@ struct GeneralSettingsView: View {
 
     // MARK: - Display Options Helpers
 
-    /// 判断是否只剩一个圆形图标
+    /// Check if only one circular icon remains
     private var hasOnlyOneCircularIcon: Bool {
         let circularTypes: Set<LimitType> = [.fiveHour, .sevenDay]
         let selectedCircular = settings.customDisplayTypes.intersection(circularTypes)
         return selectedCircular.count == 1
     }
 
-    /// 判断是否可以使用彩色主题
+    /// Check if colored theme can be used
     private var canUseColoredTheme: Bool {
-        // 现在所有限制类型都支持彩色显示
-        // 只要有选择任何限制类型就可以使用彩色主题
+        // All limit types now support colored display
+        // Colored theme can be used as long as any limit type is selected
         return !settings.customDisplayTypes.isEmpty
     }
 
-    /// 判断是否应该禁用某个复选框
+    /// Determine if a checkbox should be disabled
     private func shouldDisableCheckbox(for limitType: LimitType) -> Bool {
         #if DEBUG
-        // Debug模式下如果开启了"单独显示所有形状"，允许取消所有限制
+        // In Debug mode, if "show all shapes individually" is enabled, allow unchecking all limits
         if settings.debugShowAllShapesIndividually {
             return false
         }
@@ -672,7 +693,7 @@ struct GeneralSettingsView: View {
 
         let circularTypes: Set<LimitType> = [.fiveHour, .sevenDay]
 
-        // 如果这是最后一个选中的圆形图标，则禁用
+        // Disable if this is the last selected circular icon
         if circularTypes.contains(limitType) {
             let selectedCircular = settings.customDisplayTypes.intersection(circularTypes)
             return selectedCircular.count == 1 && selectedCircular.contains(limitType)
@@ -681,10 +702,10 @@ struct GeneralSettingsView: View {
         return false
     }
 
-    /// 切换限制类型的选中状态
+    /// Toggle limit type selection state
     private func toggleLimitType(_ limitType: LimitType) {
         if settings.customDisplayTypes.contains(limitType) {
-            // 检查是否可以取消选择
+            // Check if deselection is allowed
             if !shouldDisableCheckbox(for: limitType) {
                 settings.customDisplayTypes.remove(limitType)
             }
@@ -696,7 +717,7 @@ struct GeneralSettingsView: View {
 
 // MARK: - Limit Type Checkbox Component
 
-/// 限制类型复选框组件
+/// Limit type checkbox component
 struct LimitTypeCheckbox: View {
     let limitType: LimitType
     let isSelected: Bool
@@ -715,11 +736,11 @@ struct LimitTypeCheckbox: View {
                     .font(.body)
 
                 HStack(spacing: 6) {
-                    // 限制类型图标
+                    // Limit type icon
                     limitTypeIcon
                         .font(.caption)
 
-                    // 限制类型名称
+                    // Limit type name
                     Text(limitType.displayName)
                         .foregroundColor(isDisabled ? .secondary : .primary)
                 }
@@ -733,15 +754,15 @@ struct LimitTypeCheckbox: View {
 
     @ViewBuilder
     private var limitTypeIcon: some View {
-        // 使用与详情界面相同的Canvas绘制图标
+        // Draw icon using Canvas, same as the detail view
         Canvas { context, canvasSize in
             let lineWidth: CGFloat = 1.8
             let path = shapePath(for: limitType, in: CGRect(origin: .zero, size: canvasSize))
 
-            // 绘制背景边框
+            // Draw background border
             context.stroke(path, with: .color(Color.gray.opacity(0.3)), lineWidth: lineWidth)
 
-            // 绘制满进度环（100%）
+            // Draw full progress ring (100%)
             context.stroke(path, with: .color(iconColor(for: limitType)), lineWidth: lineWidth)
         }
         .frame(width: 14, height: 14)
@@ -762,5 +783,5 @@ struct LimitTypeCheckbox: View {
     }
 }
 
-/// 认证设置页面
-/// 使用卡片式布局，用于配置 Organization ID 和 Session Key
+/// Authentication settings page
+/// Uses card layout for configuring Organization ID and Session Key

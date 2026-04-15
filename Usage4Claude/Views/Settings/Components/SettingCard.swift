@@ -8,8 +8,8 @@
 
 import SwiftUI
 
-/// 可复用的设置卡片组件
-/// 提供统一的卡片式布局，包含图标、标题、内容和提示信息
+/// Reusable settings card component
+/// Provides a unified card layout with icon, title, content, and hint
 struct SettingCard<Content: View>: View {
     let icon: String
     let iconColor: Color
@@ -33,7 +33,7 @@ struct SettingCard<Content: View>: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            // 标题行：图标 + 标题
+            // Title row: icon + title
             HStack(spacing: 8) {
                 Image(systemName: icon)
                     .font(.title3)
@@ -47,13 +47,13 @@ struct SettingCard<Content: View>: View {
 
             Divider()
 
-            // 内容区域
+            // Content area
             VStack(alignment: .leading, spacing: 8) {
                 content
             }
             .padding(.leading, 32)
 
-            // 提示信息
+            // Hint info
             if !hint.isEmpty {
                 HStack(alignment: .top, spacing: 4) {
                     Image(systemName: "lightbulb.fill")

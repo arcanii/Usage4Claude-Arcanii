@@ -8,56 +8,56 @@
 
 import Foundation
 
-/// Claude API HTTP 请求头构建器
-/// 提供统一的请求头构建逻辑，用于绕过 Cloudflare 防护
-/// 包含完整的浏览器模拟 Headers
+/// Claude API HTTP request header builder
+/// Provides unified header building logic for bypassing Cloudflare protection
+/// Contains complete browser simulation headers
 class ClaudeAPIHeaderBuilder {
     // MARK: - Public Methods
 
-    /// 构建 Claude API 请求的标准 HTTP Headers
+    /// Build standard HTTP headers for Claude API requests
     /// - Parameters:
-    ///   - organizationId: 组织 ID（可选，某些 API 不需要）
-    ///   - sessionKey: 会话密钥
-    /// - Returns: HTTP Headers 字典
-    /// - Note: 这些 Headers 用于绕过 Cloudflare 反机器人检测
-    /// - Important: 请求头必须与真实浏览器请求保持一致，避免触发 Cloudflare Challenge
+    ///   - organizationId: Organization ID (optional, not needed for some APIs)
+    ///   - sessionKey: Session key
+    /// - Returns: HTTP headers dictionary
+    /// - Note: These headers are used to bypass Cloudflare anti-bot detection
+    /// - Important: Headers must match real browser requests to avoid triggering Cloudflare Challenge
     static func buildHeaders(
         organizationId: String?,
         sessionKey: String
     ) -> [String: String] {
         return [
-            // 基础 Headers
+            // Basic headers
             "accept": "*/*",
             "accept-language": "zh-CN,zh;q=0.9,en;q=0.8",
             "content-type": "application/json",
 
-            // Anthropic 平台标识
+            // Anthropic platform identifier
             "anthropic-client-platform": "web_claude_ai",
             "anthropic-client-version": "1.0.0",
 
-            // 浏览器标识（Chrome 131 on macOS）
+            // Browser identifier (Chrome 131 on macOS)
             "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
 
-            // 来源和引用信息
+            // Origin and referrer information
             "origin": "https://claude.ai",
             "referer": "https://claude.ai/settings/usage",
 
-            // Fetch API 相关（重要：Cloudflare 检测这些字段）
+            // Fetch API related (important: Cloudflare checks these fields)
             "sec-fetch-dest": "empty",
             "sec-fetch-mode": "cors",
             "sec-fetch-site": "same-origin",
 
-            // 认证 Cookie
+            // Authentication cookie
             "Cookie": "sessionKey=\(sessionKey)"
         ]
     }
 
-    /// 为 URLRequest 应用标准 Headers
+    /// Apply standard headers to a URLRequest
     /// - Parameters:
-    ///   - request: 要设置 Headers 的 URLRequest（传入传出参数）
-    ///   - organizationId: 组织 ID（可选，某些 API 不需要）
-    ///   - sessionKey: 会话密钥
-    /// - Note: 直接修改传入的 request 对象
+    ///   - request: URLRequest to set headers on (inout parameter)
+    ///   - organizationId: Organization ID (optional, not needed for some APIs)
+    ///   - sessionKey: Session key
+    /// - Note: Directly modifies the passed-in request object
     static func applyHeaders(
         to request: inout URLRequest,
         organizationId: String?,

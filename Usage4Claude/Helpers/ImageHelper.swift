@@ -8,14 +8,14 @@
 
 import AppKit
 
-/// 图像处理辅助工具
-/// 提供应用图标创建、缓存等功能
+/// Image processing helper utility
+/// Provides app icon creation, caching, and related functionality
 enum ImageHelper {
     // MARK: - App Icon
 
-    /// 创建应用图标（非模板模式）
-    /// - Parameter size: 图标大小
-    /// - Returns: 指定大小的应用图标，如果无法加载则返回 nil
+    /// Create app icon (non-template mode)
+    /// - Parameter size: Icon size
+    /// - Returns: App icon at the specified size, or nil if unable to load
     static func createAppIcon(size: CGFloat) -> NSImage? {
         guard let appIcon = NSImage(named: "AppIcon") else { return nil }
         guard let iconCopy = appIcon.copy() as? NSImage else { return nil }
@@ -24,11 +24,11 @@ enum ImageHelper {
         return iconCopy
     }
 
-    /// 创建应用图标（非模板模式，指定宽高）
+    /// Create app icon (non-template mode, with specified width and height)
     /// - Parameters:
-    ///   - width: 图标宽度
-    ///   - height: 图标高度
-    /// - Returns: 指定尺寸的应用图标，如果无法加载则返回 nil
+    ///   - width: Icon width
+    ///   - height: Icon height
+    /// - Returns: App icon at the specified dimensions, or nil if unable to load
     static func createAppIcon(width: CGFloat, height: CGFloat) -> NSImage? {
         guard let appIcon = NSImage(named: "AppIcon") else { return nil }
         guard let iconCopy = appIcon.copy() as? NSImage else { return nil }
@@ -39,12 +39,12 @@ enum ImageHelper {
 
     // MARK: - System Images
 
-    /// 创建系统符号图像
+    /// Create system symbol image
     /// - Parameters:
-    ///   - systemName: SF Symbols 名称
-    ///   - size: 图像大小
-    ///   - weight: 符号粗细
-    /// - Returns: 创建的系统图像，如果无法加载则返回 nil
+    ///   - systemName: SF Symbols name
+    ///   - size: Image size
+    ///   - weight: Symbol weight
+    /// - Returns: Created system image, or nil if unable to load
     static func createSystemImage(
         systemName: String,
         size: CGFloat,

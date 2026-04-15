@@ -14,18 +14,18 @@ extension UsageDetailView {
 
     // MARK: - Animation Methods
 
-    /// 启动旋转动画
+    /// Start rotation animation
     func startRotationAnimation() {
-        // 清除旧的定时器
+        // Clear old timer
         stopRotationAnimation()
 
-        // 重置角度
+        // Reset angle
         rotationAngle = 0
 
-        // 创建新的定时器，每 0.016 秒更新一次（约 60fps）
+        // Create new timer, updating every 0.016 seconds (~60fps)
         animationTimer = Timer.scheduledTimer(withTimeInterval: 0.016, repeats: true) { _ in
             withAnimation(.linear(duration: 0.016)) {
-                rotationAngle += 6  // 每帧旋转 6 度，1秒完成一圈
+                rotationAngle += 6  // Rotate 6 degrees per frame, completing one full rotation per second
                 if rotationAngle >= 360 {
                     rotationAngle -= 360
                 }
@@ -33,7 +33,7 @@ extension UsageDetailView {
         }
     }
 
-    /// 停止旋转动画
+    /// Stop rotation animation
     func stopRotationAnimation() {
         animationTimer?.invalidate()
         animationTimer = nil
@@ -42,8 +42,8 @@ extension UsageDetailView {
         }
     }
 
-    /// 加载动画视图
-    /// 根据animationType返回不同的加载效果
+    /// Loading animation view
+    /// Returns different loading effects based on animationType
     @ViewBuilder
     func loadingAnimation() -> some View {
         switch animationType {
@@ -56,7 +56,7 @@ extension UsageDetailView {
         }
     }
 
-    /// 效果1：彩虹渐变旋转（推荐）
+    /// Effect 1: Rainbow gradient rotation (recommended)
     func rainbowLoadingAnimation() -> some View {
         Circle()
             .trim(from: 0, to: 0.7)
@@ -71,7 +71,7 @@ extension UsageDetailView {
             .rotationEffect(.degrees(rotationAngle))
     }
 
-    /// 效果2：虚线旋转
+    /// Effect 2: Dashed rotation
     func dashedLoadingAnimation() -> some View {
         Circle()
             .trim(from: 0, to: 1)
@@ -83,10 +83,10 @@ extension UsageDetailView {
             .rotationEffect(.degrees(rotationAngle))
     }
 
-    /// 效果3：脉冲效果
+    /// Effect 3: Pulse effect
     func pulseLoadingAnimation() -> some View {
         ZStack {
-            // 内圈 - 快速脉冲
+            // Inner ring - fast pulse
             Circle()
                 .trim(from: 0, to: 0.6)
                 .stroke(
@@ -96,7 +96,7 @@ extension UsageDetailView {
                 .frame(width: 90, height: 90)
                 .rotationEffect(.degrees(rotationAngle))
 
-            // 外圈 - 慢速脉冲
+            // Outer ring - slow pulse
             Circle()
                 .trim(from: 0, to: 0.4)
                 .stroke(
@@ -108,7 +108,7 @@ extension UsageDetailView {
         }
     }
 
-    /// 外侧圆环的彩虹加载动画（逆时针旋转）
+    /// Outer ring rainbow loading animation (counter-clockwise rotation)
     func outerRainbowLoadingAnimation() -> some View {
         Circle()
             .trim(from: 0, to: 0.7)
@@ -120,34 +120,34 @@ extension UsageDetailView {
                 style: StrokeStyle(lineWidth: 3, lineCap: .round)
             )
             .frame(width: 114, height: 114)
-            .rotationEffect(.degrees(-rotationAngle))  // 逆时针旋转
+            .rotationEffect(.degrees(-rotationAngle))  // Counter-clockwise rotation
     }
 
-    /// 外侧圆环的虚线加载动画（逆时针旋转）
+    /// Outer ring dashed loading animation (counter-clockwise rotation)
     func outerDashedLoadingAnimation() -> some View {
         Circle()
             .trim(from: 0, to: 1)
             .stroke(
-                Color.purple,  // 使用紫色系与7天限制主题一致
+                Color.purple,  // Use purple theme consistent with 7-day limit
                 style: StrokeStyle(lineWidth: 3, lineCap: .round, dash: [8, 6])
             )
             .frame(width: 114, height: 114)
-            .rotationEffect(.degrees(-rotationAngle))  // 逆时针旋转
+            .rotationEffect(.degrees(-rotationAngle))  // Counter-clockwise rotation
     }
 
-    /// 外侧圆环的脉冲加载动画（逆时针旋转）
+    /// Outer ring pulse loading animation (counter-clockwise rotation)
     func outerPulseLoadingAnimation() -> some View {
         Circle()
             .trim(from: 0, to: 0.4)
             .stroke(
-                Color.purple.opacity(0.6),  // 使用紫色系与7天限制主题一致
+                Color.purple.opacity(0.6),  // Use purple theme consistent with 7-day limit
                 style: StrokeStyle(lineWidth: 3, lineCap: .round)
             )
             .frame(width: 114, height: 114)
-            .rotationEffect(.degrees(-rotationAngle * 0.7))  // 慢速逆时针旋转
+            .rotationEffect(.degrees(-rotationAngle * 0.7))  // Slow counter-clockwise rotation
     }
 
-    /// 外侧圆环加载动画视图（根据animationType返回对应效果）
+    /// Outer ring loading animation view (returns corresponding effect based on animationType)
     @ViewBuilder
     func outerLoadingAnimation() -> some View {
         switch animationType {
@@ -162,17 +162,17 @@ extension UsageDetailView {
 
     // MARK: - Primary Limit Selection
 
-    /// 根据用户选择的显示类型确定主要限制数据
+    /// Determine primary limit data based on user-selected display types
     /// - Parameters:
-    ///   - data: 用量数据
-    ///   - activeTypes: 当前激活的显示类型
-    /// - Returns: 主要限制的数据
+    ///   - data: Usage data
+    ///   - activeTypes: Currently active display types
+    /// - Returns: Primary limit data
     func getPrimaryLimitData(data: UsageData, activeTypes: [LimitType]) -> UsageData.LimitData? {
-        // 在自定义模式下，即使数据为 nil 也显示占位数据（0%）
+        // In custom mode, show placeholder data (0%) even when data is nil
         let showPlaceholder = UserSettings.shared.displayMode == .custom
         let placeholderData = UsageData.LimitData(percentage: 0, resetsAt: nil)
 
-        // 从激活的类型中找到第一个圆形类型
+        // Find the first circular type from active types
         if activeTypes.contains(.fiveHour) {
             if let fiveHour = data.fiveHour {
                 return fiveHour
@@ -186,22 +186,22 @@ extension UsageDetailView {
                 return placeholderData
             }
         }
-        // 如果没有圆形类型，返回nil
+        // If no circular type found, return nil
         return nil
     }
 
-    /// 根据用户选择的显示类型确定主要限制的颜色
+    /// Determine primary limit color based on user-selected display types
     /// - Parameters:
-    ///   - data: 用量数据
-    ///   - activeTypes: 当前激活的显示类型
-    /// - Returns: 主要限制的颜色
+    ///   - data: Usage data
+    ///   - activeTypes: Currently active display types
+    /// - Returns: Primary limit color
     func colorForPrimaryByActiveTypes(data: UsageData, activeTypes: [LimitType]) -> Color {
-        // 从激活的类型中找到第一个圆形类型并返回对应颜色
+        // Find the first circular type from active types and return its color
         if activeTypes.contains(.fiveHour) {
             if let fiveHour = data.fiveHour {
                 return colorForPercentage(fiveHour.percentage)
             } else {
-                // 数据为 nil 时返回灰色
+                // Return gray when data is nil
                 return .gray
             }
         } else if activeTypes.contains(.sevenDay) {
@@ -216,33 +216,33 @@ extension UsageDetailView {
 
     // MARK: - Color Methods
 
-    /// 根据使用百分比返回对应的颜色
-    /// - 0-70%: 绿色（安全）
-    /// - 70-90%: 橙色（警告）
-    /// - 90-100%: 红色（危险）
-    /// 根据5小时限制使用百分比返回对应的颜色
-    /// - Parameter percentage: 当前使用百分比
-    /// - Returns: 对应的状态颜色
-    /// - Note: 使用统一配色方案 (绿→橙→红)
+    /// Return color based on usage percentage
+    /// - 0-70%: Green (safe)
+    /// - 70-90%: Orange (warning)
+    /// - 90-100%: Red (danger)
+    /// Return color based on 5-hour limit usage percentage
+    /// - Parameter percentage: Current usage percentage
+    /// - Returns: Corresponding status color
+    /// - Note: Uses unified color scheme (green -> orange -> red)
     func colorForPercentage(_ percentage: Double) -> Color {
         return UsageColorScheme.fiveHourColorSwiftUI(percentage)
     }
 
-    /// 根据7天限制使用百分比返回配色
-    /// - Parameter percentage: 当前使用百分比
-    /// - Returns: 对应的状态颜色
-    /// - Note: 使用统一配色方案 (青蓝→蓝紫→深紫)
+    /// Return color based on 7-day limit usage percentage
+    /// - Parameter percentage: Current usage percentage
+    /// - Returns: Corresponding status color
+    /// - Note: Uses unified color scheme (cyan-blue -> blue-purple -> deep purple)
     func colorForSevenDay(_ percentage: Double) -> Color {
         return UsageColorScheme.sevenDayColorSwiftUI(percentage)
     }
 
-    /// 获取主要限制的颜色（根据数据类型自动选择绿/橙/红或紫色系）
+    /// Get primary limit color (automatically selects green/orange/red or purple theme based on data type)
     func colorForPrimary(_ data: UsageData) -> Color {
         if let fiveHour = data.fiveHour {
-            // 有5小时限制数据，使用绿/橙/红
+            // Has 5-hour limit data, use green/orange/red
             return colorForPercentage(fiveHour.percentage)
         } else if let sevenDay = data.sevenDay {
-            // 只有7天限制数据，使用紫色系
+            // Only 7-day limit data, use purple theme
             return colorForSevenDay(sevenDay.percentage)
         }
         return .gray
@@ -250,9 +250,9 @@ extension UsageDetailView {
 
     // MARK: - Text Helper Methods
 
-    /// 创建彩虹文字
-    /// - Parameter text: 要显示的文本
-    /// - Returns: 带彩虹效果的文本视图
+    /// Create rainbow text
+    /// - Parameter text: The text to display
+    /// - Returns: Text view with rainbow effect
     @ViewBuilder
     func rainbowText(_ text: String) -> some View {
         Text(text)
@@ -265,8 +265,8 @@ extension UsageDetailView {
             )
     }
 
-    /// 创建菜单更新文本（部分文字带颜色）
-    /// - Returns: 带颜色的AttributedString
+    /// Create menu update text (with partial colored text)
+    /// - Returns: Colored AttributedString
     func createUpdateMenuText() -> AttributedString {
         let baseText = L.Menu.checkUpdates
         let badgeText = L.Update.Notification.badgeShort
@@ -274,7 +274,7 @@ extension UsageDetailView {
 
         var attributedString = AttributedString(fullText)
 
-        // 找到徽章文本的范围并设置颜色
+        // Find the range of badge text and set color
         if let range = attributedString.range(of: badgeText) {
             attributedString[range].foregroundColor = .orange
         }

@@ -8,9 +8,9 @@
 
 import Foundation
 
-/// 本地化字符串访问器
-/// 提供类型安全的本地化字符串访问方式
-/// 支持动态语言切换，根据用户设置返回对应语言的字符串
+/// Localization string accessor
+/// Provides type-safe access to localized strings
+/// Supports dynamic language switching, returning strings in the language matching user settings
 enum L {
     
     // MARK: - Menu Items
@@ -207,6 +207,8 @@ enum L {
         static var percentageOnly: String { localized("display.percentage_only") }
         static var iconOnly: String { localized("display.icon_only") }
         static var both: String { localized("display.both") }
+        static var unified: String { localized("display.unified") }
+        static var showNumber: String { localized("display.show_number") }
         static var showIcon: String { localized("display.show_icon") }
         static var showPercentage: String { localized("display.show_percentage") }
     }
@@ -478,18 +480,18 @@ enum L {
 
     // MARK: - Helper Methods
     
-    /// 本地化字符串辅助方法
-    /// 根据用户设置的语言返回对应的本地化字符串
-    /// - Parameter key: 本地化字符串的键名
-    /// - Returns: 对应语言的本地化字符串
+    /// Localization string helper method
+    /// Returns the localized string matching the user's language setting
+    /// - Parameter key: Localization string key
+    /// - Returns: Localized string in the corresponding language
     private static func localized(_ key: String) -> String {
-        // 从UserSettings获取用户选择的语言
+        // Get the user's selected language from UserSettings
         let language = UserSettings.shared.language.rawValue
         
-        // 获取对应语言的bundle
+        // Get the bundle for the corresponding language
         guard let path = Bundle.main.path(forResource: language, ofType: "lproj"),
               let bundle = Bundle(path: path) else {
-            // 如果找不到对应语言，使用系统默认
+            // If the corresponding language is not found, use system default
             return NSLocalizedString(key, comment: "")
         }
         

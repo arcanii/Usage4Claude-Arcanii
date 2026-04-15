@@ -8,20 +8,20 @@
 
 import SwiftUI
 
-/// 极简信息行组件（用于双模式两行显示）
-/// 使用图标代替文字标签，所有信息在一行内紧凑显示
+/// Compact info row component (for dual-mode two-row display)
+/// Uses icons instead of text labels, displaying all info compactly in one row
 struct CompactInfoRow: View {
-    let limitIcon: String      // 限制类型图标（⏱ 或 📅）
-    let limitLabel: String     // 限制标签（5h 或 7d）
-    let remainingIcon: String  // 剩余时间图标（⏳）
-    let remaining: String      // 剩余时间（1h48m 或 3d12h）
-    let resetIcon: String      // 重置图标（↻）
-    let resetTime: String      // 重置时间（15:07 或 11/29-12h）
+    let limitIcon: String      // Limit type icon (timer or calendar)
+    let limitLabel: String     // Limit label (5h or 7d)
+    let remainingIcon: String  // Remaining time icon (hourglass)
+    let remaining: String      // Remaining time (1h48m or 3d12h)
+    let resetIcon: String      // Reset icon (refresh)
+    let resetTime: String      // Reset time (15:07 or 11/29-12h)
     var tintColor: Color = .blue
 
     var body: some View {
         HStack(spacing: 6) {
-            // 限制类型
+            // Limit type
             HStack(spacing: 3) {
                 Text(limitIcon)
                     .font(.system(size: 14))
@@ -30,7 +30,7 @@ struct CompactInfoRow: View {
                     .foregroundColor(tintColor)
             }
 
-            // 剩余时间
+            // Remaining time
             HStack(spacing: 3) {
                 Text(remainingIcon)
                     .font(.system(size: 12))
@@ -38,7 +38,7 @@ struct CompactInfoRow: View {
                     .font(.system(size: 13, weight: .medium))
             }
 
-            // 重置时间
+            // Reset time
             HStack(spacing: 3) {
                 Text(resetIcon)
                     .font(.system(size: 12))

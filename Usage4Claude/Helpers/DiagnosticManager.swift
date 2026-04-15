@@ -11,20 +11,20 @@ import AppKit
 import Combine
 import UniformTypeIdentifiers
 
-/// 诊断管理器
-/// 负责执行连接测试、生成诊断报告、导出报告等功能
+/// Diagnostic manager
+/// Responsible for executing connection tests, generating diagnostic reports, exporting reports, etc.
 @MainActor
 class DiagnosticManager: ObservableObject {
 
     // MARK: - Published Properties
 
-    /// 是否正在进行诊断测试
+    /// Whether a diagnostic test is in progress
     @Published var isTesting: Bool = false
 
-    /// 最新的诊断报告
+    /// Latest diagnostic report
     @Published var latestReport: DiagnosticReport?
 
-    /// 测试状态消息
+    /// Test status message
     @Published var statusMessage: String = ""
 
     // MARK: - Private Properties
@@ -33,14 +33,14 @@ class DiagnosticManager: ObservableObject {
 
     // MARK: - Public Methods
 
-    /// 执行完整的诊断测试
+    /// Execute a full diagnostic test
     func runDiagnosticTest() async {
         await MainActor.run {
             isTesting = true
             statusMessage = L.Diagnostic.testingConnection
         }
 
-        // 检查凭据
+        // Check credentials
         guard settings.hasValidCredentials else {
             let report = createReportForMissingCredentials()
             await MainActor.run {
@@ -51,10 +51,10 @@ class DiagnosticManager: ObservableObject {
             return
         }
 
-        // 记录开始时间
+        // Record start time
         let startTime = Date()
 
-        // 构建请求
+        // Build request
         guard let request = buildDiagnosticRequest() else {
             let report = createReportForInvalidURL()
             await MainActor.run {
@@ -65,14 +65,14 @@ class DiagnosticManager: ObservableObject {
             return
         }
 
-        // 执行请求
+        // Execute request
         let session = URLSession(configuration: .default)
 
         do {
             let (data, response) = try await session.data(for: request)
-            let responseTime = Date().timeIntervalSince(startTime) * 1000 // 毫秒
+            let responseTime = Date().timeIntervalSince(startTime) * 1000 // milliseconds
 
-            // 分析响应
+            // Analyze response
             let report = analyzeResponse(data: data, response: response, responseTime: responseTime)
 
             await MainActor.run {
@@ -93,17 +93,17 @@ class DiagnosticManager: ObservableObject {
         }
     }
 
-    /// 导出诊断报告到文件
-    /// - Returns: 导出的文件路径，失败返回 nil
+    /// Export diagnostic report to file
+    /// - Returns: Exported file path, or nil on failure
     func exportReport() -> URL? {
         guard let report = latestReport else {
             return nil
         }
 
-        // 生成 Markdown 内容
+        // Generate Markdown content
         let markdown = report.toMarkdown()
 
-        // 创建临时文件
+        // Create temporary file
         let tempDir = FileManager.default.temporaryDirectory
         let filename = "Usage4Claude_Diagnostic_\(formatFilenameDate()).md"
         let fileURL = tempDir.appendingPathComponent(filename)
@@ -117,7 +117,7 @@ class DiagnosticManager: ObservableObject {
         }
     }
 
-    /// 显示保存对话框并导出报告
+    /// Show save dialog and export report
     func saveReportWithDialog() {
         guard let report = latestReport else {
             return
@@ -140,17 +140,17 @@ class DiagnosticManager: ObservableObject {
             do {
                 try markdown.write(to: url, atomically: true, encoding: .utf8)
 
-                // 显示成功通知
+                // Show success notification
                 self.showSuccessNotification(url: url)
 
             } catch {
-                // 显示错误通知
+                // Show error notification
                 self.showErrorNotification(error: error)
             }
         }
     }
 
-    // MARK: - Private Methods - 请求构建
+    // MARK: - Private Methods - Request Building
 
     private func buildDiagnosticRequest() -> URLRequest? {
         let urlString = "https://claude.ai/api/organizations/\(settings.organizationId)/usage"
@@ -163,7 +163,7 @@ class DiagnosticManager: ObservableObject {
         request.httpMethod = "GET"
         request.timeoutInterval = 30
 
-        // 使用统一的 Header 构建器添加完整的浏览器 Headers
+        // Use the unified header builder to add complete browser headers
         ClaudeAPIHeaderBuilder.applyHeaders(
             to: &request,
             organizationId: settings.organizationId,
@@ -173,7 +173,7 @@ class DiagnosticManager: ObservableObject {
         return request
     }
 
-    // MARK: - Private Methods - 响应分析
+    // MARK: - Private Methods - Response Analysis
 
     private func analyzeResponse(data: Data, response: URLResponse, responseTime: Double) -> DiagnosticReport {
         guard let httpResponse = response as? HTTPURLResponse else {
@@ -183,7 +183,7 @@ class DiagnosticManager: ObservableObject {
         let statusCode = httpResponse.statusCode
         let headers = extractSafeHeaders(from: httpResponse)
 
-        // 检查是否是 HTML 响应（Cloudflare challenge）
+        // Check if it's an HTML response (Cloudflare challenge)
         if let bodyString = String(data: data, encoding: .utf8) {
             let isHTML = bodyString.contains("<!DOCTYPE html>") || bodyString.contains("<html")
             let containsCloudflare = bodyString.localizedCaseInsensitiveContains("cloudflare") ||
@@ -199,7 +199,7 @@ class DiagnosticManager: ObservableObject {
                 )
             }
 
-            // 尝试解析 JSON
+            // Try to parse JSON
             if let json = try? JSONDecoder().decode(UsageResponse.self, from: data) {
                 return createReportForSuccess(
                     statusCode: statusCode,
@@ -209,7 +209,7 @@ class DiagnosticManager: ObservableObject {
                 )
             }
 
-            // JSON 解析失败
+            // JSON parsing failed
             return createReportForDecodingError(
                 statusCode: statusCode,
                 headers: headers,
@@ -218,7 +218,7 @@ class DiagnosticManager: ObservableObject {
             )
         }
 
-        // 无法读取响应体
+        // Unable to read response body
         return createReportForUnknownResponse(
             data: data,
             responseTime: responseTime,
@@ -227,7 +227,7 @@ class DiagnosticManager: ObservableObject {
         )
     }
 
-    // MARK: - Private Methods - 报告生成
+    // MARK: - Private Methods - Report Generation
 
     private func createReportForSuccess(
         statusCode: Int,
@@ -468,27 +468,27 @@ class DiagnosticManager: ObservableObject {
         )
     }
 
-    // MARK: - Private Methods - 数据脱敏
+    // MARK: - Private Methods - Data Redaction
 
-    /// 脱敏 Organization ID
-    /// 例如: "12345678-abcd-ef90-1234-567890abcdef" -> "1234...cdef"
-    /// 脱敏 Organization ID
-    /// 使用统一的脱敏工具
+    /// Redact Organization ID
+    /// Example: "12345678-abcd-ef90-1234-567890abcdef" -> "1234...cdef"
+    /// Redact Organization ID
+    /// Uses the unified redaction utility
     private func redactOrganizationId(_ orgId: String) -> String {
         return SensitiveDataRedactor.redactOrganizationId(orgId)
     }
 
-    /// 脱敏 Session Key
-    /// 使用统一的脱敏工具
+    /// Redact Session Key
+    /// Uses the unified redaction utility
     private func redactSessionKey(_ sessionKey: String) -> String {
         return SensitiveDataRedactor.redactSessionKey(sessionKey)
     }
 
-    /// 从 HTTP 响应中提取安全的头信息（过滤敏感数据）
+    /// Extract safe headers from HTTP response (filter out sensitive data)
     private func extractSafeHeaders(from response: HTTPURLResponse) -> [String: String] {
         var safeHeaders: [String: String] = [:]
 
-        // 允许的头信息列表
+        // Allowed headers list
         let allowedHeaders = [
             "content-type",
             "content-length",
@@ -510,7 +510,7 @@ class DiagnosticManager: ObservableObject {
         return safeHeaders
     }
 
-    // MARK: - Private Methods - 系统信息
+    // MARK: - Private Methods - System Information
 
     private func getAppVersion() -> String {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown"
@@ -537,7 +537,7 @@ class DiagnosticManager: ObservableObject {
         return formatter.string(from: Date())
     }
 
-    // MARK: - Private Methods - 通知
+    // MARK: - Private Methods - Notifications
 
     private func showSuccessNotification(url: URL) {
         let alert = NSAlert()

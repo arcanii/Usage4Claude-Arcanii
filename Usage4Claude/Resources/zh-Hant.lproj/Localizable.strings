@@ -12,7 +12,7 @@
 "menu.check_updates" = "檢查更新";
 "menu.about" = "關於";
 "menu.web_usage" = "檢視 Claude 用量";
-"menu.coffee" = "Buy Me A Coffee";
+"menu.coffee" = "Buy f-is-h a Coffee";
 "menu.github_sponsor" = "GitHub Sponsor";
 "menu.quit" = "結束 Usage4Claude";
 "menu.account" = "帳戶";
@@ -95,7 +95,7 @@
 "settings.about.license" = "授權條款";
 "settings.about.license_value" = "MIT License";
 "settings.about.github" = "造訪 GitHub 儲存庫";
-"settings.about.coffee" = "Buy Me A Coffee";
+"settings.about.coffee" = "Buy f-is-h a Coffee";
 "settings.about.github_sponsor" = "GitHub Sponsor";
 "settings.about.copyright" = "© 2025 All Rights Reserved";
 
@@ -133,6 +133,8 @@
 "display.percentage_only" = "僅顯示百分比";
 "display.icon_only" = "僅顯示圖示";
 "display.both" = "圖示和百分比";
+"display.unified" = "統一";
+"display.show_number" = "顯示數字";
 "display.show_icon" = "顯示圖示";
 "display.show_percentage" = "顯示百分比";
 
@@ -238,7 +240,7 @@
 "diagnostic.suggestion_configure_auth" = "請在上方欄位中設定組織 ID 和工作階段金鑰";
 "diagnostic.suggestion_check_org_id" = "檢查組織 ID 格式是否正確(應該是 UUID 格式)";
 "diagnostic.suggestion_export_and_share" = "匯出此診斷報告並在 GitHub Issues 上分享";
-"diagnostic.suggestion_contact_support" = "在 github.com/f-is-h/Usage4Claude/issues 聯絡開發者尋求協助";
+"diagnostic.suggestion_contact_support" = "在 github.com/arcanii/Usage4Claude-Arcanii/issues 聯絡開發者尋求協助";
 "diagnostic.open_log_folder" = "開啟日誌資料夾";
 
 // MARK: - Limit Types (v2.0.0)

@@ -8,16 +8,16 @@
 
 import Foundation
 
-/// 敏感数据脱敏工具
-/// 提供统一的敏感信息脱敏方法，用于日志记录和诊断报告
-/// 支持 Organization ID、Session Key 和文本中的敏感信息脱敏
+/// Sensitive data redaction utility
+/// Provides unified sensitive information redaction methods for logging and diagnostic reports
+/// Supports redaction of Organization IDs, Session Keys, and sensitive information in text
 class SensitiveDataRedactor {
     // MARK: - Public Methods
 
-    /// 脱敏 Organization ID
-    /// - Parameter id: 原始 Organization ID
-    /// - Returns: 脱敏后的字符串
-    /// - Note: 对于短于8位的ID，全部替换为星号；否则保留前4位和后4位
+    /// Redact Organization ID
+    /// - Parameter id: Original Organization ID
+    /// - Returns: Redacted string
+    /// - Note: For IDs shorter than 8 characters, all characters are replaced with asterisks; otherwise the first 4 and last 4 characters are preserved
     /// - Example: "12345678-1234-1234-1234-123456789012" -> "1234...9012"
     static func redactOrganizationId(_ id: String) -> String {
         guard id.count > 8 else {
@@ -28,35 +28,35 @@ class SensitiveDataRedactor {
         return "\(prefix)...\(suffix)"
     }
 
-    /// 脱敏 Session Key
-    /// - Parameter key: 原始 Session Key
-    /// - Returns: 脱敏后的字符串
-    /// - Note: 对于 sk-ant- 开头的 key，保留前缀并显示长度；其他情况返回 "***"
+    /// Redact Session Key
+    /// - Parameter key: Original Session Key
+    /// - Returns: Redacted string
+    /// - Note: For keys starting with sk-ant-, the prefix is preserved and the length is shown; otherwise returns "***"
     /// - Example: "sk-ant-sid01-XXXXX..." -> "sk-ant-***...*** (128 chars)"
     static func redactSessionKey(_ key: String) -> String {
         guard key.count > 20 else {
             return "***"
         }
 
-        // 保留前缀 "sk-ant-"
+        // Preserve prefix "sk-ant-"
         if key.hasPrefix("sk-ant-") {
             return "sk-ant-***...*** (\(key.count) chars)"
         }
 
-        // 其他格式的 key
+        // Other key formats
         return "***...*** (\(key.count) chars)"
     }
 
-    /// 脱敏文本中的敏感信息
-    /// 使用正则表达式查找并替换文本中的 Organization ID 和 Session Key
-    /// - Parameter text: 包含敏感信息的原始文本
-    /// - Returns: 脱敏后的文本
-    /// - Note: 用于日志和诊断输出，自动识别并脱敏常见格式
+    /// Redact sensitive information in text
+    /// Uses regular expressions to find and replace Organization IDs and Session Keys in text
+    /// - Parameter text: Original text containing sensitive information
+    /// - Returns: Redacted text
+    /// - Note: Used for log and diagnostic output, automatically identifies and redacts common formats
     static func redactText(_ text: String) -> String {
         var sanitized = text
 
-        // 脱敏 Session Key (保留前4位和后4位)
-        // 匹配模式: sessionKey=xxx 或 sessionKey: xxx
+        // Redact Session Key (preserve first 4 and last 4 characters)
+        // Match pattern: sessionKey=xxx or sessionKey: xxx
         let sessionKeyPattern = "sessionKey[=:]\\s*[\"']?([a-zA-Z0-9-]{20,})[\"']?"
         if let regex = try? NSRegularExpression(pattern: sessionKeyPattern, options: .caseInsensitive) {
             let range = NSRange(sanitized.startIndex..., in: sanitized)
@@ -68,8 +68,8 @@ class SensitiveDataRedactor {
             )
         }
 
-        // 脱敏 Organization ID (UUID 格式)
-        // 匹配模式: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+        // Redact Organization ID (UUID format)
+        // Match pattern: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
         let orgIdPattern = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
         if let regex = try? NSRegularExpression(pattern: orgIdPattern, options: .caseInsensitive) {
             let range = NSRange(sanitized.startIndex..., in: sanitized)
@@ -81,8 +81,8 @@ class SensitiveDataRedactor {
             )
         }
 
-        // 脱敏 Cookie 中的 sessionKey
-        // 匹配模式: Cookie: sessionKey=xxx
+        // Redact sessionKey in Cookie
+        // Match pattern: Cookie: sessionKey=xxx
         let cookiePattern = "Cookie:\\s*sessionKey=([a-zA-Z0-9-]{20,})"
         if let regex = try? NSRegularExpression(pattern: cookiePattern, options: .caseInsensitive) {
             let range = NSRange(sanitized.startIndex..., in: sanitized)

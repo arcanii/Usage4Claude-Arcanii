@@ -9,44 +9,44 @@
 import Foundation
 import AppKit
 
-/// 应用更新检查器
-/// 负责检查 GitHub Release 上的新版本并提示用户更新
-/// 支持自动检查和手动检查两种模式
+/// App update checker
+/// Checks for new versions on GitHub Releases and prompts user to update
+/// Supports both automatic and manual check modes
 class UpdateChecker {
     // MARK: - Properties
     
-    /// GitHub 仓库所有者
-    private let repoOwner = "f-is-h"
-    /// GitHub 仓库名称
-    private let repoName = "Usage4Claude"
+    /// GitHub repository owner
+    private let repoOwner = "arcanii"
+    /// GitHub repository name
+    private let repoName = "Usage4Claude-Arcanii"
     
-    /// 当前应用版本号
-    /// - Returns: 从 Bundle 中读取的版本号，默认为 "1.0.0"
+    /// Current app version number
+    /// - Returns: Version number read from Bundle, defaults to "1.0.0"
     private var currentVersion: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0.0"
     }
     
     // MARK: - Data Models
     
-    /// GitHub Release 数据模型
-    /// 对应 GitHub API 返回的 Release JSON 结构
+    /// GitHub Release data model
+    /// Corresponds to the Release JSON structure returned by GitHub API
     struct GitHubRelease: Codable {
-        /// 版本标签（如 "v1.0.0"）
+        /// Version tag (e.g., "v1.0.0")
         let tagName: String
-        /// Release 名称
+        /// Release name
         let name: String
-        /// Release 说明内容
+        /// Release notes content
         let body: String?
-        /// Release 页面 URL
+        /// Release page URL
         let htmlUrl: String
-        /// Release 附件列表
+        /// Release assets list
         let assets: [Asset]
         
-        /// Release 附件（如 DMG 文件）
+        /// Release asset (e.g., DMG file)
         struct Asset: Codable {
-            /// 附件文件名
+            /// Asset filename
             let name: String
-            /// 下载 URL
+            /// Download URL
             let browserDownloadUrl: String
             
             enum CodingKeys: String, CodingKey {
@@ -66,8 +66,8 @@ class UpdateChecker {
     
     // MARK: - Public Methods
     
-    /// 🆕 后台静默检查更新（无UI提示）
-    /// - Parameter completion: 完成回调，返回是否有更新和最新版本号
+    /// Background silent update check (no UI prompt)
+    /// - Parameter completion: Completion callback, returns whether an update is available and the latest version
     func checkForUpdatesInBackground(completion: @escaping (Bool, String?) -> Void) {
         let urlString = "https://api.github.com/repos/\(repoOwner)/\(repoName)/releases/latest"
         
@@ -113,8 +113,8 @@ class UpdateChecker {
         task.resume()
     }
     
-    /// 检查应用更新
-    /// - Parameter manually: 是否为手动检查。手动检查会显示所有结果（包括无更新和错误），自动检查只在有更新时提示
+    /// Check for app updates
+    /// - Parameter manually: Whether this is a manual check. Manual checks show all results (including no-update and errors); automatic checks only prompt when an update is available
     func checkForUpdates(manually: Bool = false) {
         let urlString = "https://api.github.com/repos/\(repoOwner)/\(repoName)/releases/latest"
         
@@ -135,7 +135,7 @@ class UpdateChecker {
             DispatchQueue.main.async {
                 if error != nil {
                     if manually {
-                        // 只显示自定义错误消息，不显示系统错误描述
+                        // Only show custom error message, not system error description
                         self.showError(message: L.Update.Error.network)
                     }
                     return
@@ -162,7 +162,7 @@ class UpdateChecker {
                     }
                 } catch {
                     if manually {
-                        // 只显示自定义错误消息，不显示系统错误描述
+                        // Only show custom error message, not system error description
                         self.showError(message: L.Update.Error.parseFailed)
                     }
                 }
@@ -174,24 +174,24 @@ class UpdateChecker {
     
     // MARK: - Private Methods
     
-    /// 解析版本号字符串
-    /// - Parameter string: 原始版本号字符串（可能包含 "v" 前缀）
-    /// - Returns: 纯数字版本号（如 "1.0.0"）
+    /// Parse version number string
+    /// - Parameter string: Raw version string (may contain "v" prefix)
+    /// - Returns: Numeric version number only (e.g., "1.0.0")
     private func parseVersion(from string: String) -> String {
         return string.lowercased().replacingOccurrences(of: "v", with: "")
     }
     
-    /// 比较版本号大小（语义化版本）
+    /// Compare version numbers (semantic versioning)
     /// - Parameters:
-    ///   - latest: 最新版本号
-    ///   - current: 当前版本号
-    /// - Returns: 如果 latest 比 current 新则返回 true
-    /// - Note: 使用语义化版本比较规则（主版本.次版本.修订号）
+    ///   - latest: Latest version number
+    ///   - current: Current version number
+    /// - Returns: true if latest is newer than current
+    /// - Note: Uses semantic versioning comparison rules (major.minor.patch)
     private func isNewerVersion(latest: String, current: String) -> Bool {
         let latestComponents = latest.split(separator: ".").compactMap { Int($0) }
         let currentComponents = current.split(separator: ".").compactMap { Int($0) }
         
-        // 确保至少有3个版本号组件
+        // Ensure at least 3 version components
         let latestPadded = (latestComponents + [0, 0, 0]).prefix(3)
         let currentPadded = (currentComponents + [0, 0, 0]).prefix(3)
         
@@ -206,8 +206,8 @@ class UpdateChecker {
         return false
     }
     
-    /// 显示更新提示对话框
-    /// - Parameter release: GitHub Release 数据
+    /// Show update prompt dialog
+    /// - Parameter release: GitHub Release data
     private func showUpdateAlert(release: GitHubRelease) {
         let alert = NSAlert()
         alert.messageText = L.Update.newVersionTitle
@@ -231,31 +231,31 @@ class UpdateChecker {
         
         switch response {
         case .alertFirstButtonReturn:
-            // 下载更新 - 打开DMG下载链接
+            // Download update - open DMG download link
             if let dmgAsset = release.assets.first(where: { $0.name.hasSuffix(".dmg") }) {
                 if let url = URL(string: dmgAsset.browserDownloadUrl) {
                     NSWorkspace.shared.open(url)
                 }
             } else {
-                // 如果没有DMG，打开Release页面
+                // If no DMG available, open Release page
                 if let url = URL(string: release.htmlUrl) {
                     NSWorkspace.shared.open(url)
                 }
             }
             
         case .alertThirdButtonReturn:
-            // 查看详情 - 打开Release页面
+            // View details - open Release page
             if let url = URL(string: release.htmlUrl) {
                 NSWorkspace.shared.open(url)
             }
             
         default:
-            // 稍后提醒 - 什么都不做
+            // Remind later - do nothing
             break
         }
     }
     
-    /// 显示已是最新版本的提示对话框
+    /// Show up-to-date dialog
     private func showNoUpdateAvailable() {
         let alert = NSAlert()
         alert.messageText = L.Update.upToDateTitle
@@ -265,8 +265,8 @@ class UpdateChecker {
         alert.runModal()
     }
     
-    /// 显示错误提示对话框
-    /// - Parameter message: 错误消息内容
+    /// Show error dialog
+    /// - Parameter message: Error message content
     private func showError(message: String) {
         let alert = NSAlert()
         alert.messageText = L.Update.checkFailedTitle
@@ -276,10 +276,10 @@ class UpdateChecker {
         alert.runModal()
     }
     
-    /// 格式化 Release Notes 文本
-    /// - Parameter notes: 原始 Release Notes
-    /// - Returns: 格式化后的文本，超过长度限制会截断
-    /// - Note: 最大长度 300 字符
+    /// Format Release Notes text
+    /// - Parameter notes: Raw Release Notes
+    /// - Returns: Formatted text, truncated if exceeding length limit
+    /// - Note: Maximum length 300 characters
     private func formatReleaseNotes(_ notes: String) -> String {
         let maxLength = 300
         if notes.count > maxLength {

@@ -11,64 +11,64 @@ import AppKit
 import Combine
 import OSLog
 
-/// 刷新状态管理器
-/// 用于在视图间同步刷新状态，支持响应式更新
+/// Refresh state manager
+/// Used to synchronize refresh state across views, supporting reactive updates
 class RefreshState: ObservableObject {
-    /// 是否正在刷新
+    /// Whether a refresh is in progress
     @Published var isRefreshing = false
-    /// 是否可以刷新（防抖控制）
+    /// Whether refresh is allowed (debounce control)
     @Published var canRefresh = true
-    /// 通知消息
+    /// Notification message
     @Published var notificationMessage: String?
-    /// 通知类型
+    /// Notification type
     @Published var notificationType: NotificationType = .loading
     
-    /// 通知类型
+    /// Notification type
     enum NotificationType {
-        case loading          // 彩虹加载动画
-        case updateAvailable  // 彩虹文字通知
+        case loading          // Rainbow loading animation
+        case updateAvailable  // Rainbow text notification
     }
 }
 
-/// 菜单栏管理器
-/// 负责协调 UI 和数据层，管理设置窗口
+/// Menu bar manager
+/// Coordinates the UI and data layers, manages the settings window
 class MenuBarManager: ObservableObject {
     // MARK: - Properties
 
-    /// UI 管理器
+    /// UI manager
     private let ui = MenuBarUI()
-    /// 数据刷新管理器
+    /// Data refresh manager
     private let dataManager = DataRefreshManager()
-    /// 设置窗口
+    /// Settings window
     private var settingsWindow: NSWindow?
-    /// 用户设置实例
+    /// User settings instance
     @ObservedObject private var settings = UserSettings.shared
-    /// Combine 订阅集合
+    /// Combine subscription set
     private var cancellables = Set<AnyCancellable>()
-    /// 窗口关闭观察者
+    /// Window close observer
     private var windowCloseObserver: NSObjectProtocol?
-    /// 语言变化观察者
+    /// Language change observer
     private var languageChangeObserver: NSObjectProtocol?
 
-    /// 当前用量数据（从 dataManager 同步）
+    /// Current usage data (synced from dataManager)
     @Published var usageData: UsageData?
-    /// 加载状态（从 dataManager 同步）
+    /// Loading state (synced from dataManager)
     @Published var isLoading = false
-    /// 错误消息（从 dataManager 同步）
+    /// Error message (synced from dataManager)
     @Published var errorMessage: String?
-    /// 是否有可用更新（从 dataManager 同步）
+    /// Whether an update is available (synced from dataManager)
     @Published var hasAvailableUpdate = false
-    /// 最新版本号（从 dataManager 同步）
+    /// Latest version number (synced from dataManager)
     @Published var latestVersion: String?
-    /// 用户已确认的版本号（点击检查更新后记录）
+    /// Version number acknowledged by user (recorded after clicking check for updates)
     private var acknowledgedVersion: String?
 
-    /// 刷新状态管理器（从 dataManager 引用）
+    /// Refresh state manager (referenced from dataManager)
     var refreshState: RefreshState {
         return dataManager.refreshState
     }
 
-    /// 是否应该显示徽章和通知（用户未确认时才显示）
+    /// Whether to show the badge and notification (only when user has not acknowledged)
     var shouldShowUpdateBadge: Bool {
         guard hasAvailableUpdate, let latest = latestVersion else { return false }
         return acknowledgedVersion != latest
@@ -82,8 +82,8 @@ class MenuBarManager: ObservableObject {
         setupSettingsObservers()
     }
 
-    /// 设置数据绑定
-    /// 将 dataManager 的状态同步到 MenuBarManager
+    /// Set up data bindings
+    /// Synchronize dataManager state to MenuBarManager
     private func setupDataBindings() {
         dataManager.$usageData
             .sink { [weak self] data in
@@ -109,11 +109,11 @@ class MenuBarManager: ObservableObject {
             .assign(to: &$latestVersion)
     }
     
-    /// 处理菜单栏图标点击事件
-    /// 左键切换弹出窗口，右键显示菜单
+    /// Handle menu bar icon click event
+    /// Left click toggles the popover, right click shows the menu
     @objc private func handleClick(_ sender: NSStatusBarButton) {
         guard let event = NSApp.currentEvent else {
-            // 如果无法获取当前事件，默认作为左键点击处理
+            // If unable to get the current event, default to left click behavior
             togglePopover()
             return
         }
@@ -125,7 +125,7 @@ class MenuBarManager: ObservableObject {
         }
     }
 
-    /// 显示右键菜单
+    /// Show the right-click menu
     private func showMenu() {
         let menu = ui.createStandardMenu(hasUpdate: hasAvailableUpdate, shouldShowBadge: shouldShowUpdateBadge, target: self)
         ui.statusItem.menu = menu
@@ -146,12 +146,12 @@ class MenuBarManager: ObservableObject {
         NSApplication.shared.terminate(nil)
     }
     
-    /// 处理菜单操作
-    /// 关闭弹出窗口并执行相应的操作
+    /// Handle menu actions
+    /// Close the popover and perform the corresponding action
     private func handleMenuAction(_ action: UsageDetailView.MenuAction) {
         switch action {
         case .refresh:
-            // 处理手动刷新
+            // Handle manual refresh
             dataManager.handleManualRefresh()
         case .generalSettings:
             closePopover()
@@ -173,31 +173,28 @@ class MenuBarManager: ObservableObject {
             if let url = URL(string: "https://ko-fi.com/1atte") {
                 NSWorkspace.shared.open(url)
             }
-        case .githubSponsor:
-            closePopover()
-            openGithubSponsor()
         case .quit:
             quitApp()
         }
     }
     
-    /// 设置设置变更观察者
-    /// 监听设置变更、刷新频率变更等通知
+    /// Set up settings change observers
+    /// Listen for settings changes, refresh interval changes, and other notifications
     private func setupSettingsObservers() {
         NotificationCenter.default.publisher(for: .settingsChanged)
             .sink { [weak self] _ in
                 guard let self = self else { return }
-                // 设置改变时清除图标缓存（显示模式可能改变）
+                // Clear icon cache when settings change (display mode may have changed)
                 self.ui.clearIconCache()
 
-                // 立即更新图标，无需等待
+                // Update icon immediately, no waiting needed
                 self.updateMenuBarIcon()
 
                 #if DEBUG
-                // 调试模式下立即刷新数据（不使用防抖）
+                // In debug mode, refresh data immediately (no debounce)
                 self.dataManager.fetchUsage()
 
-                // 如果模拟更新设置发生变化，重新应用更新状态
+                // If simulated update settings changed, reapply update state
                 if self.settings.simulateUpdateAvailable {
                     self.hasAvailableUpdate = true
                     self.latestVersion = "2.0.0"
@@ -213,7 +210,7 @@ class MenuBarManager: ObservableObject {
 
         NotificationCenter.default.publisher(for: .refreshIntervalChanged)
             .sink { [weak self] _ in
-                // 重启数据刷新定时器
+                // Restart data refresh timer
                 self?.dataManager.stopRefreshing()
                 self?.dataManager.startRefreshing()
             }
@@ -226,16 +223,16 @@ class MenuBarManager: ObservableObject {
             }
             .store(in: &cancellables)
 
-        // 监听账户变更通知
+        // Listen for account change notifications
         NotificationCenter.default.publisher(for: .accountChanged)
             .sink { [weak self] _ in
                 guard let self = self else { return }
                 Logger.menuBar.notice("账户已切换，刷新数据")
-                // 清除图标缓存，确保新数据到达时重新渲染
+                // Clear icon cache to ensure re-rendering when new data arrives
                 self.ui.clearIconCache()
-                // 立即刷新数据
+                // Refresh data immediately
                 self.dataManager.fetchUsage()
-                // 更新菜单栏图标
+                // Update menu bar icon
                 self.updateMenuBarIcon()
             }
             .store(in: &cancellables)
@@ -243,7 +240,7 @@ class MenuBarManager: ObservableObject {
 
     // MARK: - Popover Management
 
-    /// 切换弹出窗口显示状态
+    /// Toggle the popover display state
     @objc func togglePopover() {
         guard let button = ui.statusItem.button else { return }
 
@@ -254,15 +251,15 @@ class MenuBarManager: ObservableObject {
         }
     }
 
-    /// 打开弹出窗口
+    /// Open the popover
     private func openPopover(relativeTo button: NSStatusBarButton) {
-        // 智能刷新数据
+        // Smart data refresh
         dataManager.refreshOnPopoverOpen()
 
-        // 显示更新通知（如果有）
+        // Show update notification (if available)
         showUpdateNotificationIfNeeded()
 
-        // 创建并设置内容视图
+        // Create and set the content view
         ui.setPopoverContent(UsageDetailView(
             usageData: Binding(
                 get: { self.usageData },
@@ -286,14 +283,14 @@ class MenuBarManager: ObservableObject {
             )
         ))
 
-        // 打开 popover
+        // Open popover
         ui.openPopover(relativeTo: button)
 
-        // 启动刷新定时器
+        // Start refresh timer
         startPopoverRefreshTimer()
     }
 
-    /// 显示更新通知（如果需要）
+    /// Show update notification (if needed)
     private func showUpdateNotificationIfNeeded() {
         guard shouldShowUpdateBadge else { return }
 
@@ -305,20 +302,20 @@ class MenuBarManager: ObservableObject {
         }
     }
 
-    /// 关闭弹出窗口
+    /// Close the popover
     private func closePopover() {
         ui.closePopover()
 
-        // 清理刷新定时器
+        // Clean up refresh timer
         dataManager.stopPopoverRefreshTimer()
     }
 
-    /// 更新弹出窗口内容
+    /// Update the popover content
     private func updatePopoverContent() {
         objectWillChange.send()
     }
 
-    /// 启动弹出窗口刷新定时器
+    /// Start the popover refresh timer
     private func startPopoverRefreshTimer() {
         dataManager.startPopoverRefreshTimer { [weak self] in
             self?.updatePopoverContent()
@@ -327,7 +324,7 @@ class MenuBarManager: ObservableObject {
     
     // MARK: - Data Fetching
 
-    /// 开始数据刷新
+    /// Start data refresh
     func startRefreshing() {
         dataManager.startRefreshing()
     }
@@ -356,14 +353,8 @@ class MenuBarManager: ObservableObject {
         }
     }
 
-    @objc func openGithubSponsor() {
-        if let url = URL(string: "https://github.com/sponsors/f-is-h?frequency=one-time") {
-            NSWorkspace.shared.open(url)
-        }
-    }
-
-    /// 切换账户
-    /// - Parameter sender: 发送菜单项，representedObject 包含 Account 对象
+    /// Switch account
+    /// - Parameter sender: Menu item sender, representedObject contains the Account object
     @objc func switchAccount(_ sender: NSMenuItem) {
         guard let account = sender.representedObject as? Account else {
             Logger.menuBar.error("切换账户失败：无法获取账户信息")
@@ -374,24 +365,24 @@ class MenuBarManager: ObservableObject {
     }
 
     @objc func checkForUpdates() {
-        // 记录用户已确认当前版本的更新
+        // Record that the user has acknowledged the current version's update
         if let version = latestVersion {
             acknowledgedVersion = version
-            // 触发UI更新（隐藏徽章和通知）
+            // Trigger UI update (hide badge and notification)
             objectWillChange.send()
-            // 更新菜单栏图标
+            // Update menu bar icon
             updateMenuBarIcon()
         }
 
-        // 手动检查更新（会弹出对话框）
+        // Manually check for updates (will show dialog)
         dataManager.checkForUpdatesManually()
     }
     
-    /// 打开设置窗口
-    /// - Parameter tab: 要显示的标签页索引 (0: 通用, 1: 认证, 2: 关于)
+    /// Open the settings window
+    /// - Parameter tab: Tab index to display (0: General, 1: Authentication, 2: About)
     private func openSettingsWindow(tab: Int) {
         if settingsWindow == nil {
-            // 切换为 regular 模式，使应用显示在 Dock 中
+            // Switch to regular mode so the app appears in the Dock
             NSApp.setActivationPolicy(.regular)
             
             let settingsView = SettingsView(initialTab: tab)
@@ -404,18 +395,18 @@ class MenuBarManager: ObservableObject {
             settingsWindow?.styleMask = [.titled, .closable, .miniaturizable]
             settingsWindow?.setFrameAutosaveName("Usage4Claude.SettingsWindow")
 
-            // 移除旧的观察者（如果存在）
+            // Remove old observer (if it exists)
             if let observer = windowCloseObserver {
                 NotificationCenter.default.removeObserver(observer)
             }
             
-            // 添加窗口关闭观察者
+            // Add window close observer
             windowCloseObserver = NotificationCenter.default.addObserver(
                 forName: NSWindow.willCloseNotification,
                 object: settingsWindow,
                 queue: .main
             ) { [weak self] _ in
-                // 窗口关闭时切换回 accessory 模式（不显示在 Dock）
+                // Switch back to accessory mode when window closes (hidden from Dock)
                 NSApp.setActivationPolicy(.accessory)
 
                 self?.settingsWindow = nil
@@ -424,14 +415,14 @@ class MenuBarManager: ObservableObject {
                 }
             }
 
-            // 添加窗口获得焦点观察者 - 当设置窗口成为 key window 时关闭 popover
+            // Add window focus observer - close popover when settings window becomes key window
             NotificationCenter.default.addObserver(
                 forName: NSWindow.didBecomeKeyNotification,
                 object: settingsWindow,
                 queue: .main
             ) { [weak self] _ in
                 #if DEBUG
-                // Debug模式：如果开启了"保持详情窗口打开"，则不自动关闭
+                // Debug mode: If "Keep detail window open" is enabled, do not auto-close
                 if UserSettings.shared.debugKeepDetailWindowOpen {
                     return
                 }
@@ -442,12 +433,12 @@ class MenuBarManager: ObservableObject {
                 }
             }
 
-            // 移除旧的语言变化观察者（如果存在）
+            // Remove old language change observer (if it exists)
             if let observer = languageChangeObserver {
                 NotificationCenter.default.removeObserver(observer)
             }
 
-            // 添加语言变化观察者 - 当语言切换时更新窗口标题
+            // Add language change observer - update window title when language switches
             languageChangeObserver = NotificationCenter.default.addObserver(
                 forName: .languageChanged,
                 object: nil,
@@ -457,10 +448,10 @@ class MenuBarManager: ObservableObject {
             }
         }
 
-        // 先激活应用，再居中和显示窗口
+        // Activate the app first, then center and show the window
         NSApp.activate(ignoringOtherApps: true)
 
-        // 延迟一小段时间确保应用激活完成后再居中窗口
+        // Delay briefly to ensure app activation completes before centering window
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak self] in
             self?.settingsWindow?.center()
             self?.settingsWindow?.makeKeyAndOrderFront(nil)
@@ -473,41 +464,41 @@ class MenuBarManager: ObservableObject {
     
     // MARK: - Icon Management
 
-    /// 更新菜单栏图标
+    /// Update the menu bar icon
     private func updateMenuBarIcon() {
         ui.updateMenuBarIcon(usageData: usageData, hasUpdate: hasAvailableUpdate, shouldShowBadge: shouldShowUpdateBadge)
     }
     
     // MARK: - Cleanup
     
-    /// 清理所有资源
-    /// 在应用退出时调用，停止所有定时器并移除所有观察者
+    /// Clean up all resources
+    /// Called when the app exits, stops all timers and removes all observers
     func cleanup() {
-        // 停止 popover 刷新定时器
+        // Stop popover refresh timer
         dataManager.stopPopoverRefreshTimer()
 
-        // 清理窗口观察者
+        // Clean up window observer
         if let observer = windowCloseObserver {
             NotificationCenter.default.removeObserver(observer)
             windowCloseObserver = nil
         }
 
-        // 清理语言变化观察者
+        // Clean up language change observer
         if let observer = languageChangeObserver {
             NotificationCenter.default.removeObserver(observer)
             languageChangeObserver = nil
         }
 
-        // 取消所有 Combine 订阅
+        // Cancel all Combine subscriptions
         cancellables.removeAll()
 
-        // 清理 UI
+        // Clean up UI
         ui.cleanup()
 
-        // 清理数据管理器
+        // Clean up data manager
         dataManager.cleanup()
 
-        // 关闭窗口
+        // Close window
         settingsWindow?.close()
         settingsWindow = nil
     }

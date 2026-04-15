@@ -8,8 +8,8 @@
 
 import SwiftUI
 
-/// 对齐的信息行组件（用于双限制场景的垂直对齐）
-/// 使用固定宽度布局确保两行的时间数据垂直对齐
+/// Aligned info row component (for vertical alignment in dual-limit scenarios)
+/// Uses fixed-width layout to ensure time data in both rows is vertically aligned
 struct AlignedInfoRow: View {
     let icon: String
     let title: String
@@ -20,48 +20,48 @@ struct AlignedInfoRow: View {
     var tintColor: Color = .blue
 
     var body: some View {
-        HStack(spacing: 6) {  // 整行宽度
-            // 左侧：图标+标题（固定区域）
-            HStack(spacing: 4) {  // 图标和标题间距
+        HStack(spacing: 6) {  // Full row width
+            // Left: icon + title (fixed area)
+            HStack(spacing: 4) {  // Icon and title spacing
                 Image(systemName: icon)
                     .foregroundColor(tintColor)
-                    .frame(width: 18)  // 宽度
+                    .frame(width: 18)  // Width
 
                 Text(title)
-                    .font(.system(size: 12))  // 字体
+                    .font(.system(size: 12))  // Font
                     .foregroundColor(.secondary)
             }
-            .frame(width: 50, alignment: .leading)  // 左侧整体宽度
+            .frame(width: 50, alignment: .leading)  // Left section total width
 
             Spacer()
 
-            // 右侧：使用固定宽度布局对齐时间数据
+            // Right: use fixed-width layout to align time data
             HStack(spacing: 8) {
-                // 剩余时间
-                HStack(spacing: 3) {  // 图标和文字间距
+                // Remaining time
+                HStack(spacing: 3) {  // Icon and text spacing
                     Image(systemName: remainingIcon)
-                        .font(.system(size: 12))  // 图标大小
+                        .font(.system(size: 12))  // Icon size
                         .foregroundColor(.secondary)
                     Text(remaining)
-                        .font(.system(size: 12))  // 字号
+                        .font(.system(size: 12))  // Font size
                         .fontWeight(.medium)
                 }
-                .frame(width: 75, alignment: .leading)  // 显示宽度
+                .frame(width: 75, alignment: .leading)  // Display width
 
-                // 重置时间
-                HStack(spacing: 3) {  // 图标和文字间距
+                // Reset time
+                HStack(spacing: 3) {  // Icon and text spacing
                     Image(systemName: resetIcon)
-                        .font(.system(size: 12))  // 图标大小
+                        .font(.system(size: 12))  // Icon size
                         .foregroundColor(.secondary)
                     Text(resetTime)
-                        .font(.system(size: 12))  // 显示宽度
+                        .font(.system(size: 12))  // Display width
                         .fontWeight(.medium)
                 }
-                .frame(width: 90, alignment: .leading)  // 显示宽度
+                .frame(width: 90, alignment: .leading)  // Display width
             }
         }
-        .padding(.vertical, 6) // 行高
-        .padding(.horizontal, 12)  // 行宽
+        .padding(.vertical, 6) // Row height
+        .padding(.horizontal, 12)  // Row width
         .background(Color.gray.opacity(0.1))
         .cornerRadius(8)
     }

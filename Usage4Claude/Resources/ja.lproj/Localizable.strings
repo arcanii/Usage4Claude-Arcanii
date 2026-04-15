@@ -12,7 +12,7 @@
 "menu.check_updates" = "アップデートを確認";
 "menu.about" = "このアプリについて";
 "menu.web_usage" = "Claude使用状況を表示";
-"menu.coffee" = "Buy Me A Coffee";
+"menu.coffee" = "Buy f-is-h a Coffee";
 "menu.github_sponsor" = "GitHub Sponsor";
 "menu.quit" = "Usage4Claudeを終了";
 "menu.account" = "アカウント";
@@ -95,7 +95,7 @@
 "settings.about.license" = "ライセンス";
 "settings.about.license_value" = "MIT License";
 "settings.about.github" = "GitHubリポジトリを表示";
-"settings.about.coffee" = "Buy Me A Coffee";
+"settings.about.coffee" = "Buy f-is-h a Coffee";
 "settings.about.github_sponsor" = "GitHub Sponsor";
 "settings.about.copyright" = "© 2025 All Rights Reserved";
 
@@ -133,6 +133,8 @@
 "display.percentage_only" = "パーセンテージのみ";
 "display.icon_only" = "アイコンのみ";
 "display.both" = "アイコンとパーセンテージ";
+"display.unified" = "統合";
+"display.show_number" = "数値を表示";
 "display.show_icon" = "アイコンを表示";
 "display.show_percentage" = "パーセンテージを表示";
 
@@ -238,7 +240,7 @@
 "diagnostic.suggestion_configure_auth" = "上記のフィールドに組織IDとセッションキーを設定してください";
 "diagnostic.suggestion_check_org_id" = "組織IDの形式が正しいか確認してください(UUID形式である必要があります)";
 "diagnostic.suggestion_export_and_share" = "この診断レポートをエクスポートしてGitHub Issuesで共有してください";
-"diagnostic.suggestion_contact_support" = "github.com/f-is-h/Usage4Claude/issuesで開発者にお問い合わせください";
+"diagnostic.suggestion_contact_support" = "github.com/arcanii/Usage4Claude-Arcanii/issuesで開発者にお問い合わせください";
 "diagnostic.open_log_folder" = "ログフォルダを開く";
 
 // MARK: - Limit Types (v2.0.0)

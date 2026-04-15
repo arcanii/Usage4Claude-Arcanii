@@ -8,37 +8,37 @@
 
 import SwiftUI
 
-/// 图标形状路径工具类
-/// 提供所有限制类型图标的形状路径生成方法
-/// 支持 SwiftUI Path 和 NSBezierPath 两种格式
+/// Icon shape path utility class
+/// Provides shape path generation methods for all limit type icons
+/// Supports both SwiftUI Path and NSBezierPath formats
 struct IconShapePaths {
 
     // MARK: - SwiftUI Path Methods
 
-    /// 创建圆形路径（从12点钟位置顺时针绘制，支持 trimmedPath 进度弧）
-    /// - Parameter rect: 绘制区域
-    /// - Returns: 圆形路径
+    /// Create a circle path (drawn clockwise from the 12 o'clock position, supports trimmedPath progress arc)
+    /// - Parameter rect: Drawing area
+    /// - Returns: Circle path
     static func circlePath(in rect: CGRect) -> Path {
         let inset = rect.insetBy(dx: 3, dy: 3)
         let center = CGPoint(x: inset.midX, y: inset.midY)
         let radius = min(inset.width, inset.height) / 2
         return Path { path in
-            // 从12点钟位置（-90°）顺时针绘制整圆
+            // Draw full circle clockwise from 12 o'clock position (-90 degrees)
             path.addArc(center: center, radius: radius,
                         startAngle: .degrees(-90), endAngle: .degrees(270),
                         clockwise: false)
         }
     }
 
-    /// 创建圆角正方形路径（Opus，从顶部中点顺时针绘制，随 rect 动态缩放）
-    /// - Parameter rect: 绘制区域
-    /// - Returns: 圆角正方形路径
+    /// Create a rounded square path (Opus, drawn clockwise from top center, dynamically scales with rect)
+    /// - Parameter rect: Drawing area
+    /// - Returns: Rounded square path
     static func roundedSquarePath(in rect: CGRect) -> Path {
-        let s = (min(rect.width, rect.height) - 8) / 2  // 半边长（留 4pt inset 避免笔画被裁剪）
+        let s = (min(rect.width, rect.height) - 8) / 2  // Half side length (4pt inset to avoid stroke clipping)
         let cx = rect.midX, cy = rect.midY
-        let r = s * 0.4  // 圆角半径（与原始 2/10 比例一致）
+        let r = s * 0.4  // Corner radius (consistent with original 2/10 ratio)
         return Path { path in
-            // 从顶部中点顺时针绘制
+            // Draw clockwise from top center
             path.move(to: CGPoint(x: cx, y: cy - s))
             path.addLine(to: CGPoint(x: cx + s - r, y: cy - s))
             path.addArc(center: CGPoint(x: cx + s - r, y: cy - s + r),
@@ -57,20 +57,20 @@ struct IconShapePaths {
         }
     }
 
-    /// 创建右上角斜切的圆角正方形路径（Sonnet，从顶部中点顺时针绘制，随 rect 动态缩放）
-    /// - Parameter rect: 绘制区域
-    /// - Returns: 斜切圆角正方形路径
+    /// Create a rounded square path with top-right chamfer (Sonnet, drawn clockwise from top center, dynamically scales with rect)
+    /// - Parameter rect: Drawing area
+    /// - Returns: Chamfered rounded square path
     static func chamferedSquarePath(in rect: CGRect) -> Path {
-        let s = (min(rect.width, rect.height) - 8) / 2  // 半边长（留 4pt inset 避免笔画被裁剪）
+        let s = (min(rect.width, rect.height) - 8) / 2  // Half side length (4pt inset to avoid stroke clipping)
         let cx = rect.midX, cy = rect.midY
-        let r = s * 0.4    // 圆角半径
-        let cut = s * 0.5  // 右上角斜切大小（与原始 2.5/5 比例一致）
+        let r = s * 0.4    // Corner radius
+        let cut = s * 0.5  // Top-right chamfer size (consistent with original 2.5/5 ratio)
         return Path { path in
-            // 从顶部中点顺时针绘制
+            // Draw clockwise from top center
             path.move(to: CGPoint(x: cx, y: cy - s))
-            path.addLine(to: CGPoint(x: cx + s - cut, y: cy - s))  // 顶边到斜切起点
-            path.addLine(to: CGPoint(x: cx + s, y: cy - s + cut))  // 斜切
-            path.addLine(to: CGPoint(x: cx + s, y: cy + s - r))    // 右边
+            path.addLine(to: CGPoint(x: cx + s - cut, y: cy - s))  // Top edge to chamfer start
+            path.addLine(to: CGPoint(x: cx + s, y: cy - s + cut))  // Chamfer
+            path.addLine(to: CGPoint(x: cx + s, y: cy + s - r))    // Right edge
             path.addArc(center: CGPoint(x: cx + s - r, y: cy + s - r),
                         radius: r, startAngle: .degrees(0), endAngle: .degrees(90), clockwise: false)
             path.addLine(to: CGPoint(x: cx - s + r, y: cy + s))
@@ -84,14 +84,14 @@ struct IconShapePaths {
         }
     }
 
-    /// 创建平顶六边形路径（Extra Usage，从右上顶点顺时针绘制）
+    /// Create a flat-top hexagon path (Extra Usage, drawn clockwise from top-right vertex)
     /// - Parameters:
-    ///   - center: 六边形中心点
-    ///   - radius: 六边形半径
-    /// - Returns: 六边形路径
+    ///   - center: Hexagon center point
+    ///   - radius: Hexagon radius
+    /// - Returns: Hexagon path
     static func hexagonPath(center: CGPoint, radius: CGFloat) -> Path {
         Path { path in
-            // 从右上顶点（-60°，最接近12点钟方向）顺时针绘制
+            // Draw clockwise from top-right vertex (-60 degrees, closest to 12 o'clock)
             for i in 0..<6 {
                 let angleDeg: CGFloat = -60 + CGFloat(i) * 60
                 let angle = angleDeg * .pi / 180
@@ -107,14 +107,14 @@ struct IconShapePaths {
         }
     }
 
-    /// 根据限制类型获取对应的形状路径（动态随 rect 缩放）
+    /// Get the corresponding shape path for a limit type (dynamically scales with rect)
     /// - Parameters:
-    ///   - type: 限制类型
-    ///   - rect: 绘制区域
-    /// - Returns: 对应的形状路径
+    ///   - type: Limit type
+    ///   - rect: Drawing area
+    /// - Returns: Corresponding shape path
     static func pathForLimitType(_ type: LimitType, in rect: CGRect) -> Path {
         let center = CGPoint(x: rect.midX, y: rect.midY)
-        // 六边形半径：留 3pt inset 保证笔画不被裁剪
+        // Hexagon radius: 3pt inset to ensure stroke is not clipped
         let hexRadius = min(rect.width, rect.height) / 2 - 3
 
         switch type {
@@ -134,10 +134,10 @@ struct IconShapePaths {
 
     // MARK: - NSBezierPath Methods (for MenuBarIconRenderer)
 
-    /// 创建圆角正方形 NSBezierPath（Opus）
+    /// Create a rounded square NSBezierPath (Opus)
     /// - Parameters:
-    ///   - center: 中心点
-    ///   - size: 正方形边长
+    ///   - center: Center point
+    ///   - size: Square side length
     /// - Returns: NSBezierPath
     static func roundedSquareNSPath(center: CGPoint, size: CGFloat) -> NSBezierPath {
         let path = NSBezierPath()
@@ -151,10 +151,10 @@ struct IconShapePaths {
         return path
     }
 
-    /// 创建右上角斜切的圆角正方形 NSBezierPath（Sonnet）
+    /// Create a rounded square NSBezierPath with top-right chamfer (Sonnet)
     /// - Parameters:
-    ///   - center: 中心点
-    ///   - size: 正方形边长
+    ///   - center: Center point
+    ///   - size: Square side length
     /// - Returns: NSBezierPath
     static func chamferedSquareNSPath(center: CGPoint, size: CGFloat) -> NSBezierPath {
         let path = NSBezierPath()
@@ -167,10 +167,10 @@ struct IconShapePaths {
         let cornerRadius: CGFloat = 2.0
         let cutSize: CGFloat = 2.5
 
-        // 从左下角开始
+        // Start from bottom-left corner
         path.move(to: CGPoint(x: rect.minX, y: rect.minY + cornerRadius))
 
-        // 左边到左下圆角
+        // Left edge to bottom-left corner arc
         path.appendArc(
             withCenter: CGPoint(x: rect.minX + cornerRadius, y: rect.minY + cornerRadius),
             radius: cornerRadius,
@@ -179,7 +179,7 @@ struct IconShapePaths {
             clockwise: false
         )
 
-        // 底边到右下圆角
+        // Bottom edge to bottom-right corner arc
         path.line(to: CGPoint(x: rect.maxX - cornerRadius, y: rect.minY))
         path.appendArc(
             withCenter: CGPoint(x: rect.maxX - cornerRadius, y: rect.minY + cornerRadius),
@@ -189,13 +189,13 @@ struct IconShapePaths {
             clockwise: false
         )
 
-        // 右边到斜切位置
+        // Right edge to chamfer position
         path.line(to: CGPoint(x: rect.maxX, y: rect.maxY - cutSize))
 
-        // 斜切线
+        // Chamfer line
         path.line(to: CGPoint(x: rect.maxX - cutSize, y: rect.maxY))
 
-        // 顶边到左上圆角
+        // Top edge to top-left corner arc
         path.line(to: CGPoint(x: rect.minX + cornerRadius, y: rect.maxY))
         path.appendArc(
             withCenter: CGPoint(x: rect.minX + cornerRadius, y: rect.maxY - cornerRadius),
@@ -209,10 +209,10 @@ struct IconShapePaths {
         return path
     }
 
-    /// 创建平顶六边形 NSBezierPath（Extra Usage）
+    /// Create a flat-top hexagon NSBezierPath (Extra Usage)
     /// - Parameters:
-    ///   - center: 中心点
-    ///   - radius: 半径
+    ///   - center: Center point
+    ///   - radius: Radius
     /// - Returns: NSBezierPath
     static func hexagonNSPath(center: CGPoint, radius: CGFloat) -> NSBezierPath {
         let path = NSBezierPath()

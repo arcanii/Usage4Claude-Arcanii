@@ -9,15 +9,15 @@
 import AppKit
 import SwiftUI
 
-/// 形状图标渲染器
-/// 负责绘制非圆形图标（矩形、菱形、六边形）的进度环
+/// Shape icon renderer
+/// Responsible for drawing progress rings for non-circular icons (rectangle, diamond, hexagon)
 class ShapeIconRenderer {
 
     // MARK: - Helper Methods
 
-    /// 计算单色主题下的不透明度（基于百分比）
-    /// - Parameter percentage: 使用百分比 (0-100)
-    /// - Returns: 不透明度 (0.8-1.0)
+    /// Calculate opacity for monochrome theme (based on percentage)
+    /// - Parameter percentage: Usage percentage (0-100)
+    /// - Returns: Opacity (0.8-1.0)
     static func monochromeOpacity(for percentage: Double) -> CGFloat {
         if percentage <= 50 {
             return 0.8
@@ -30,27 +30,27 @@ class ShapeIconRenderer {
 
     // MARK: - Shape Drawing Methods
 
-    /// 绘制圆角正方形进度环和百分比（用于 Opus）
+    /// Draw rounded square progress ring and percentage (for Opus)
     /// - Parameters:
-    ///   - rect: 绘制区域
-    ///   - percentage: 使用百分比
-    ///   - isMonochrome: 是否为单色模式
-    ///   - button: 状态栏按钮（用于获取颜色）
-    ///   - removeBackground: 是否移除背景填充
+    ///   - rect: Drawing area
+    ///   - percentage: Usage percentage
+    ///   - isMonochrome: Whether in monochrome mode
+    ///   - button: Status bar button (for obtaining color)
+    ///   - removeBackground: Whether to remove background fill
     static func drawRoundedSquareWithPercentage(in rect: NSRect, percentage: Double, isMonochrome: Bool, button: NSStatusBarButton?, removeBackground: Bool = false) {
         let cornerRadius: CGFloat = 3.0
         let borderWidth: CGFloat = 1.5
-        let progressWidth: CGFloat = 2.5  // 进度线条加粗
+        let progressWidth: CGFloat = 2.5  // Thicker progress line
         let center = NSPoint(x: rect.midX, y: rect.midY)
 
-        // 1. 绘制背景填充（彩色背景模式）
+        // 1. Draw background fill (colored background mode)
         if !removeBackground && !isMonochrome {
             let backgroundFillPath = NSBezierPath(roundedRect: rect, xRadius: cornerRadius, yRadius: cornerRadius)
             NSColor.white.withAlphaComponent(0.5).setFill()
             backgroundFillPath.fill()
         }
 
-        // 2. 绘制背景边框
+        // 2. Draw background border
         let backgroundPath = NSBezierPath(roundedRect: rect, xRadius: cornerRadius, yRadius: cornerRadius)
         if isMonochrome {
             NSColor.controlTextColor.withAlphaComponent(0.3).setStroke()
@@ -60,33 +60,33 @@ class ShapeIconRenderer {
         backgroundPath.lineWidth = borderWidth
         backgroundPath.stroke()
 
-        // 2. 绘制进度边框（顺时针，从12点位置开始）
+        // 2. Draw progress border (clockwise, starting from 12 o'clock)
         if percentage > 0 {
-            // 计算圆角正方形的实际周长
-            // 周长 = 4条直线段 + 4个圆角弧
-            // 直线段总长 = 4 * (边长 - 2*cornerRadius)
-            // 圆角弧总长 = 4 * (π*cornerRadius/2) = 2*π*cornerRadius
+            // Calculate actual perimeter of the rounded square
+            // Perimeter = 4 straight segments + 4 corner arcs
+            // Total straight length = 4 * (side length - 2*cornerRadius)
+            // Total arc length = 4 * (pi*cornerRadius/2) = 2*pi*cornerRadius
             let straightLength = 4 * (rect.width - 2 * cornerRadius)
             let arcLength = 2 * CGFloat.pi * cornerRadius
             let perimeter = straightLength + arcLength
 
-            // 计算进度长度
-            // 使用渐进式减法：减去的长度随百分比线性增加，在50%时完成完整减法
-            // < 50%时：平滑增长，减去量从0逐步到progressWidth
-            // >= 50%时：完全精确，始终减去完整progressWidth
-            // = 100%时不减去因为会使用.butt平头（无延伸）
+            // Calculate progress length
+            // Uses progressive subtraction: subtracted length increases linearly with percentage, full subtraction at 50%
+            // < 50%: smooth growth, subtraction gradually increases from 0 to progressWidth
+            // >= 50%: fully precise, always subtracts full progressWidth
+            // = 100%: no subtraction because .butt line cap is used (no extension)
             let baseProgressLength = perimeter * CGFloat(percentage / 100.0)
             let progressLength = percentage >= 100 ? baseProgressLength : (baseProgressLength - progressWidth * min(1.0, CGFloat(percentage / 50.0)))
 
-            // 手动构建从12点开始顺时针的路径
+            // Manually build a clockwise path starting from 12 o'clock
             let progressPath = NSBezierPath()
 
-            // 从12点位置（顶边中间）开始
+            // Start from 12 o'clock position (middle of top edge)
             let startPoint = NSPoint(x: rect.midX, y: rect.maxY)
             progressPath.move(to: startPoint)
 
-            // 顺时针绘制：12点 → 3点 → 6点 → 9点 → 回到12点
-            // 右上角（需要考虑圆角）
+            // Draw clockwise: 12 -> 3 -> 6 -> 9 -> back to 12
+            // Top-right corner (need to account for rounded corner)
             progressPath.line(to: NSPoint(x: rect.maxX - cornerRadius, y: rect.maxY))
             progressPath.appendArc(
                 withCenter: NSPoint(x: rect.maxX - cornerRadius, y: rect.maxY - cornerRadius),
@@ -96,7 +96,7 @@ class ShapeIconRenderer {
                 clockwise: true
             )
 
-            // 右边到右下角
+            // Right edge to bottom-right corner
             progressPath.line(to: NSPoint(x: rect.maxX, y: rect.minY + cornerRadius))
             progressPath.appendArc(
                 withCenter: NSPoint(x: rect.maxX - cornerRadius, y: rect.minY + cornerRadius),
@@ -106,7 +106,7 @@ class ShapeIconRenderer {
                 clockwise: true
             )
 
-            // 底边到左下角
+            // Bottom edge to bottom-left corner
             progressPath.line(to: NSPoint(x: rect.minX + cornerRadius, y: rect.minY))
             progressPath.appendArc(
                 withCenter: NSPoint(x: rect.minX + cornerRadius, y: rect.minY + cornerRadius),
@@ -116,7 +116,7 @@ class ShapeIconRenderer {
                 clockwise: true
             )
 
-            // 左边到左上角
+            // Left edge to top-left corner
             progressPath.line(to: NSPoint(x: rect.minX, y: rect.maxY - cornerRadius))
             progressPath.appendArc(
                 withCenter: NSPoint(x: rect.minX + cornerRadius, y: rect.maxY - cornerRadius),
@@ -126,16 +126,16 @@ class ShapeIconRenderer {
                 clockwise: true
             )
 
-            // 顶边回到起点
+            // Top edge back to start point
             progressPath.line(to: startPoint)
 
-            // 使用dash pattern绘制
-            // < 100%时使用负phase让起点处预先绘制半个圆头，使减去的lineWidth均匀分布在两端
+            // Draw using dash pattern
+            // < 100%: use negative phase to pre-draw half a round cap at the start, distributing subtracted lineWidth evenly at both ends
             let phase: CGFloat = percentage >= 100 ? 0 : -progressWidth / 2
             let pattern: [CGFloat] = [progressLength, perimeter - progressLength]
             progressPath.setLineDash(pattern, count: 2, phase: phase)
             progressPath.lineWidth = progressWidth
-            // 100%时使用平头让图形完美闭合，其他进度使用圆头
+            // At 100% use butt cap for perfect closure, other progress uses round cap
             progressPath.lineCapStyle = percentage >= 100 ? .butt : .round
 
             if isMonochrome {
@@ -147,38 +147,40 @@ class ShapeIconRenderer {
             progressPath.stroke()
         }
 
-        // 3. 绘制百分比文字
-        let percentageText = "\(Int(percentage))"
-        let percentageFontSize: CGFloat = percentage >= 100 ? 5.0 : 7.2
-        let attributes: [NSAttributedString.Key: Any] = [
-            .font: NSFont.systemFont(ofSize: percentageFontSize, weight: percentage >= 100 ? .bold : .semibold),
-            .foregroundColor: NSColor.black
-        ]
-        let textSize = percentageText.size(withAttributes: attributes)
-        let textRect = NSRect(x: center.x - textSize.width / 2, y: center.y - textSize.height / 2, width: textSize.width, height: textSize.height)
-        percentageText.draw(in: textRect, withAttributes: attributes)
+        // 3. Draw percentage text (only when showIconNumbers is enabled)
+        if UserSettings.shared.showIconNumbers {
+            let percentageText = "\(Int(percentage))"
+            let percentageFontSize: CGFloat = percentage >= 100 ? 5.0 : 7.2
+            let attributes: [NSAttributedString.Key: Any] = [
+                .font: NSFont.systemFont(ofSize: percentageFontSize, weight: percentage >= 100 ? .bold : .semibold),
+                .foregroundColor: UsageColorScheme.isDarkMode ? NSColor.white : NSColor.black
+            ]
+            let textSize = percentageText.size(withAttributes: attributes)
+            let textRect = NSRect(x: center.x - textSize.width / 2, y: center.y - textSize.height / 2, width: textSize.width, height: textSize.height)
+            percentageText.draw(in: textRect, withAttributes: attributes)
+        }
     }
 
-    /// 绘制菱形进度环和百分比（用于 Sonnet - 45度旋转的正方形）
+    /// Draw diamond progress ring and percentage (for Sonnet - 45-degree rotated square)
     /// - Parameters:
-    ///   - rect: 绘制区域
-    ///   - percentage: 使用百分比
-    ///   - isMonochrome: 是否为单色模式
-    ///   - button: 状态栏按钮（用于获取颜色）
-    ///   - removeBackground: 是否移除背景填充
+    ///   - rect: Drawing area
+    ///   - percentage: Usage percentage
+    ///   - isMonochrome: Whether in monochrome mode
+    ///   - button: Status bar button (for obtaining color)
+    ///   - removeBackground: Whether to remove background fill
     static func drawDiamondWithPercentage(in rect: NSRect, percentage: Double, isMonochrome: Bool, button: NSStatusBarButton?, removeBackground: Bool = false) {
-        // 完全复制Opus的参数设置
+        // Identical parameter setup as Opus
         let cornerRadius: CGFloat = 3.0
         let borderWidth: CGFloat = 1.5
-        let progressWidth: CGFloat = 2.5  // 进度线条加粗
-        let cutSize: CGFloat = 3.5  // 右上角斜切大小（微调小一点）
+        let progressWidth: CGFloat = 2.5  // Thicker progress line
+        let cutSize: CGFloat = 3.5  // Top-right chamfer size (slightly smaller fine-tuning)
         let center = NSPoint(x: rect.midX, y: rect.midY)
 
-        // 创建右上角斜切的圆角矩形路径（与Opus相同，只是右上角砍掉）
+        // Create rounded rectangle path with top-right chamfer (same as Opus, just with top-right corner cut)
         func createChamferedRectPath(_ rect: NSRect) -> NSBezierPath {
             let path = NSBezierPath()
 
-            // 从左下角开始（带圆角）
+            // Start from bottom-left corner (with rounded corner)
             path.move(to: NSPoint(x: rect.minX, y: rect.minY + cornerRadius))
             path.appendArc(
                 withCenter: NSPoint(x: rect.minX + cornerRadius, y: rect.minY + cornerRadius),
@@ -188,7 +190,7 @@ class ShapeIconRenderer {
                 clockwise: false
             )
 
-            // 底边到右下角（带圆角）
+            // Bottom edge to bottom-right corner (with rounded corner)
             path.line(to: NSPoint(x: rect.maxX - cornerRadius, y: rect.minY))
             path.appendArc(
                 withCenter: NSPoint(x: rect.maxX - cornerRadius, y: rect.minY + cornerRadius),
@@ -198,13 +200,13 @@ class ShapeIconRenderer {
                 clockwise: false
             )
 
-            // 右边到斜切位置
+            // Right edge to chamfer position
             path.line(to: NSPoint(x: rect.maxX, y: rect.maxY - cutSize))
 
-            // 斜切线
+            // Chamfer line
             path.line(to: NSPoint(x: rect.maxX - cutSize, y: rect.maxY))
 
-            // 顶边到左上角（带圆角）
+            // Top edge to top-left corner (with rounded corner)
             path.line(to: NSPoint(x: rect.minX + cornerRadius, y: rect.maxY))
             path.appendArc(
                 withCenter: NSPoint(x: rect.minX + cornerRadius, y: rect.maxY - cornerRadius),
@@ -214,20 +216,20 @@ class ShapeIconRenderer {
                 clockwise: false
             )
 
-            // 回到起点
+            // Back to start point
             path.close()
 
             return path
         }
 
-        // 1. 绘制背景填充（彩色背景模式）
+        // 1. Draw background fill (colored background mode)
         if !removeBackground && !isMonochrome {
             let backgroundFillPath = createChamferedRectPath(rect)
             NSColor.white.withAlphaComponent(0.5).setFill()
             backgroundFillPath.fill()
         }
 
-        // 2. 绘制背景边框（与Opus完全一致）
+        // 2. Draw background border (identical to Opus)
         let backgroundPath = createChamferedRectPath(rect)
         if isMonochrome {
             NSColor.controlTextColor.withAlphaComponent(0.3).setStroke()
@@ -237,23 +239,23 @@ class ShapeIconRenderer {
         backgroundPath.lineWidth = borderWidth
         backgroundPath.stroke()
 
-        // 2. 绘制进度边框（顺时针，从12点位置开始）
+        // 2. Draw progress border (clockwise, starting from 12 o'clock)
         if percentage > 0 {
-            // 手动构建从12点开始顺时针的路径（带右上角斜切）
+            // Manually build a clockwise path starting from 12 o'clock (with top-right chamfer)
             let progressPath = NSBezierPath()
 
-            // 从12点位置（顶边中间）开始
+            // Start from 12 o'clock position (middle of top edge)
             let startPoint = NSPoint(x: rect.midX, y: rect.maxY)
             progressPath.move(to: startPoint)
 
-            // 顺时针绘制：12点 → 右上角斜切 → 3点 → 6点 → 9点 → 回到12点
-            // 顶边到右上角斜切位置
+            // Draw clockwise: 12 -> top-right chamfer -> 3 -> 6 -> 9 -> back to 12
+            // Top edge to top-right chamfer position
             progressPath.line(to: NSPoint(x: rect.maxX - cutSize, y: rect.maxY))
 
-            // 右上角斜切线
+            // Top-right chamfer line
             progressPath.line(to: NSPoint(x: rect.maxX, y: rect.maxY - cutSize))
 
-            // 右边到右下角
+            // Right edge to bottom-right corner
             progressPath.line(to: NSPoint(x: rect.maxX, y: rect.minY + cornerRadius))
             progressPath.appendArc(
                 withCenter: NSPoint(x: rect.maxX - cornerRadius, y: rect.minY + cornerRadius),
@@ -263,7 +265,7 @@ class ShapeIconRenderer {
                 clockwise: true
             )
 
-            // 底边到左下角
+            // Bottom edge to bottom-left corner
             progressPath.line(to: NSPoint(x: rect.minX + cornerRadius, y: rect.minY))
             progressPath.appendArc(
                 withCenter: NSPoint(x: rect.minX + cornerRadius, y: rect.minY + cornerRadius),
@@ -273,7 +275,7 @@ class ShapeIconRenderer {
                 clockwise: true
             )
 
-            // 左边到左上角
+            // Left edge to top-left corner
             progressPath.line(to: NSPoint(x: rect.minX, y: rect.maxY - cornerRadius))
             progressPath.appendArc(
                 withCenter: NSPoint(x: rect.minX + cornerRadius, y: rect.maxY - cornerRadius),
@@ -283,42 +285,42 @@ class ShapeIconRenderer {
                 clockwise: true
             )
 
-            // 顶边回到起点
+            // Top edge back to start point
             progressPath.line(to: startPoint)
 
-            // 计算斜切正方形的实际周长
-            // 基于Opus的圆角正方形周长，然后调整斜切部分：
-            // 1. Opus周长 = 4条直线段 + 4个圆角弧
+            // Calculate actual perimeter of the chamfered square
+            // Based on Opus's rounded square perimeter, then adjust for the chamfer:
+            // 1. Opus perimeter = 4 straight segments + 4 corner arcs
             let opusStraightLength = 4 * (rect.width - 2 * cornerRadius)
             let opusArcLength = 2 * CGFloat.pi * cornerRadius
             let opusPerimeter = opusStraightLength + opusArcLength
 
-            // 2. Sonnet的右上角斜切导致：
-            //    - 移除了一个90度圆角弧: -cornerRadius * π/2
-            //    - 顶边从(width-2*corner)变成(width-corner-cut): +cornerRadius-cutSize
-            //    - 右边从(width-2*corner)变成(width-corner-cut): +cornerRadius-cutSize
-            //    - 增加了斜切线: +cutSize * sqrt(2)
-            //    总计: 2*cornerRadius - 2*cutSize + cutSize*sqrt(2) - cornerRadius*π/2
+            // 2. Sonnet's top-right chamfer causes:
+            //    - Removed one 90-degree corner arc: -cornerRadius * pi/2
+            //    - Top edge from (width-2*corner) to (width-corner-cut): +cornerRadius-cutSize
+            //    - Right edge from (width-2*corner) to (width-corner-cut): +cornerRadius-cutSize
+            //    - Added chamfer line: +cutSize * sqrt(2)
+            //    Total: 2*cornerRadius - 2*cutSize + cutSize*sqrt(2) - cornerRadius*pi/2
             let cornerArcReduction = -cornerRadius * .pi / 2
             let edgeAdjustment = 2.0 * cornerRadius
             let cutAdjustment = cutSize * (sqrt(2.0) - 2.0)
             let perimeter = opusPerimeter + cornerArcReduction + edgeAdjustment + cutAdjustment
 
-            // 计算进度长度
-            // 使用渐进式减法：减去的长度随百分比线性增加，在50%时完成完整减法
-            // < 50%时：平滑增长，减去量从0逐步到progressWidth
-            // >= 50%时：完全精确，始终减去完整progressWidth
-            // = 100%时不减去因为会使用.butt平头（无延伸）
+            // Calculate progress length
+            // Uses progressive subtraction: subtracted length increases linearly with percentage, full subtraction at 50%
+            // < 50%: smooth growth, subtraction gradually increases from 0 to progressWidth
+            // >= 50%: fully precise, always subtracts full progressWidth
+            // = 100%: no subtraction because .butt line cap is used (no extension)
             let baseProgressLength = perimeter * CGFloat(percentage / 100.0)
             let progressLength = percentage >= 100 ? baseProgressLength : (baseProgressLength - progressWidth * min(1.0, CGFloat(percentage / 50.0)))
 
-            // 使用dash pattern绘制
-            // < 100%时使用负phase让起点处预先绘制半个圆头，使减去的lineWidth均匀分布在两端
+            // Draw using dash pattern
+            // < 100%: use negative phase to pre-draw half a round cap at the start, distributing subtracted lineWidth evenly at both ends
             let phase: CGFloat = percentage >= 100 ? 0 : -progressWidth / 2
             let pattern: [CGFloat] = [progressLength, perimeter - progressLength]
             progressPath.setLineDash(pattern, count: 2, phase: phase)
             progressPath.lineWidth = progressWidth
-            // 100%时使用平头让图形完美闭合，其他进度使用圆头
+            // At 100% use butt cap for perfect closure, other progress uses round cap
             progressPath.lineCapStyle = percentage >= 100 ? .butt : .round
 
             if isMonochrome {
@@ -330,35 +332,37 @@ class ShapeIconRenderer {
             progressPath.stroke()
         }
 
-        // 3. 绘制百分比文字（与Opus完全一致）
-        let percentageText = "\(Int(percentage))"
-        let percentageFontSize: CGFloat = percentage >= 100 ? 5.0 : 7.2
-        let attributes: [NSAttributedString.Key: Any] = [
-            .font: NSFont.systemFont(ofSize: percentageFontSize, weight: percentage >= 100 ? .bold : .semibold),
-            .foregroundColor: NSColor.black
-        ]
-        let textSize = percentageText.size(withAttributes: attributes)
-        let textRect = NSRect(x: center.x - textSize.width / 2, y: center.y - textSize.height / 2, width: textSize.width, height: textSize.height)
-        percentageText.draw(in: textRect, withAttributes: attributes)
+        // 3. Draw percentage text (only when showIconNumbers is enabled)
+        if UserSettings.shared.showIconNumbers {
+            let percentageText = "\(Int(percentage))"
+            let percentageFontSize: CGFloat = percentage >= 100 ? 5.0 : 7.2
+            let attributes: [NSAttributedString.Key: Any] = [
+                .font: NSFont.systemFont(ofSize: percentageFontSize, weight: percentage >= 100 ? .bold : .semibold),
+                .foregroundColor: UsageColorScheme.isDarkMode ? NSColor.white : NSColor.black
+            ]
+            let textSize = percentageText.size(withAttributes: attributes)
+            let textRect = NSRect(x: center.x - textSize.width / 2, y: center.y - textSize.height / 2, width: textSize.width, height: textSize.height)
+            percentageText.draw(in: textRect, withAttributes: attributes)
+        }
     }
 
-    /// 绘制平顶六边形进度环和百分比（用于 Extra Usage）
+    /// Draw flat-top hexagon progress ring and percentage (for Extra Usage)
     /// - Parameters:
-    ///   - center: 中心点
-    ///   - size: 六边形大小
-    ///   - percentage: 使用百分比
-    ///   - isMonochrome: 是否为单色模式
-    ///   - button: 状态栏按钮（用于获取颜色）
-    ///   - removeBackground: 是否移除背景填充
+    ///   - center: Center point
+    ///   - size: Hexagon size
+    ///   - percentage: Usage percentage
+    ///   - isMonochrome: Whether in monochrome mode
+    ///   - button: Status bar button (for obtaining color)
+    ///   - removeBackground: Whether to remove background fill
     static func drawHexagonWithPercentage(center: NSPoint, size: CGFloat, percentage: Double, isMonochrome: Bool, button: NSStatusBarButton?, removeBackground: Bool = false) {
         let radius = size / 2
         let borderWidth: CGFloat = 1.5
-        let progressWidth: CGFloat = 2.5  // 进度线条加粗
+        let progressWidth: CGFloat = 2.5  // Thicker progress line
 
-        // 创建平顶六边形路径（flat top - 上下两边是平的）
+        // Create flat-top hexagon path (flat top - top and bottom edges are flat)
         let hexagonPath = NSBezierPath()
         for i in 0..<6 {
-            let angle = CGFloat(i) * CGFloat.pi / 3.0  // 保持平顶方向
+            let angle = CGFloat(i) * CGFloat.pi / 3.0  // Maintain flat-top orientation
             let x = center.x + radius * cos(angle)
             let y = center.y + radius * sin(angle)
             if i == 0 {
@@ -369,13 +373,13 @@ class ShapeIconRenderer {
         }
         hexagonPath.close()
 
-        // 1. 绘制背景填充（彩色背景模式）
+        // 1. Draw background fill (colored background mode)
         if !removeBackground && !isMonochrome {
             NSColor.white.withAlphaComponent(0.5).setFill()
             hexagonPath.fill()
         }
 
-        // 2. 绘制背景边框
+        // 2. Draw background border
         if isMonochrome {
             NSColor.controlTextColor.withAlphaComponent(0.3).setStroke()
         } else {
@@ -385,22 +389,22 @@ class ShapeIconRenderer {
         hexagonPath.lineJoinStyle = .round
         hexagonPath.stroke()
 
-        // 2. 绘制进度边框
+        // 2. Draw progress border
         if percentage > 0 {
-            // 计算六边形周长
-            let sideLength = radius  // 正六边形每边长度等于半径
+            // Calculate hexagon perimeter
+            let sideLength = radius  // Regular hexagon side length equals the radius
             let perimeter = sideLength * 6
 
-            // 计算进度长度
-            // 使用渐进式减法：减去的长度随百分比线性增加，在50%时完成完整减法
-            // < 50%时：平滑增长，减去量从0逐步到progressWidth
-            // >= 50%时：完全精确，始终减去完整progressWidth
-            // = 100%时不减去因为会使用.butt平头（无延伸）
+            // Calculate progress length
+            // Uses progressive subtraction: subtracted length increases linearly with percentage, full subtraction at 50%
+            // < 50%: smooth growth, subtraction gradually increases from 0 to progressWidth
+            // >= 50%: fully precise, always subtracts full progressWidth
+            // = 100%: no subtraction because .butt line cap is used (no extension)
             let baseProgressLength = perimeter * CGFloat(percentage / 100.0)
             let progressLength = percentage >= 100 ? baseProgressLength : (baseProgressLength - progressWidth * min(1.0, CGFloat(percentage / 50.0)))
 
-            // 手动构建从12点钟顶部开始的顺时针路径
-            // 首先计算6个顶点位置（保持平顶方向）
+            // Manually build a clockwise path starting from the 12 o'clock top position
+            // First calculate 6 vertex positions (maintain flat-top orientation)
             var vertices: [NSPoint] = []
             for i in 0..<6 {
                 let angle = CGFloat(i) * CGFloat.pi / 3.0
@@ -408,14 +412,14 @@ class ShapeIconRenderer {
                 let y = center.y + radius * sin(angle)
                 vertices.append(NSPoint(x: x, y: y))
             }
-            // vertices[0] = 3点 (右)
-            // vertices[1] = 1点 (右上)
-            // vertices[2] = 11点 (左上)
-            // vertices[3] = 9点 (左)
-            // vertices[4] = 7点 (左下)
-            // vertices[5] = 5点 (右下)
+            // vertices[0] = 3 o'clock (right)
+            // vertices[1] = 1 o'clock (top-right)
+            // vertices[2] = 11 o'clock (top-left)
+            // vertices[3] = 9 o'clock (left)
+            // vertices[4] = 7 o'clock (bottom-left)
+            // vertices[5] = 5 o'clock (bottom-right)
 
-            // 从12点钟位置开始（顶边中点，在vertices[1]和vertices[2]之间）
+            // Start from 12 o'clock position (midpoint of top edge, between vertices[1] and vertices[2])
             let topMidpoint = NSPoint(
                 x: (vertices[1].x + vertices[2].x) / 2,
                 y: (vertices[1].y + vertices[2].y) / 2
@@ -424,22 +428,22 @@ class ShapeIconRenderer {
             let progressHexagon = NSBezierPath()
             progressHexagon.move(to: topMidpoint)
 
-            // 顺时针方向：12点 → 1点 → 3点 → 5点 → 7点 → 9点 → 11点 → 回到12点
-            progressHexagon.line(to: vertices[1])  // 到1点顶点
-            progressHexagon.line(to: vertices[0])  // 到3点顶点
-            progressHexagon.line(to: vertices[5])  // 到5点顶点
-            progressHexagon.line(to: vertices[4])  // 到7点顶点
-            progressHexagon.line(to: vertices[3])  // 到9点顶点
-            progressHexagon.line(to: vertices[2])  // 到11点顶点
-            progressHexagon.line(to: topMidpoint)  // 回到12点
+            // Clockwise direction: 12 -> 1 -> 3 -> 5 -> 7 -> 9 -> 11 -> back to 12
+            progressHexagon.line(to: vertices[1])  // To 1 o'clock vertex
+            progressHexagon.line(to: vertices[0])  // To 3 o'clock vertex
+            progressHexagon.line(to: vertices[5])  // To 5 o'clock vertex
+            progressHexagon.line(to: vertices[4])  // To 7 o'clock vertex
+            progressHexagon.line(to: vertices[3])  // To 9 o'clock vertex
+            progressHexagon.line(to: vertices[2])  // To 11 o'clock vertex
+            progressHexagon.line(to: topMidpoint)  // Back to 12 o'clock
 
-            // 使用dash pattern绘制
-            // < 100%时使用负phase让起点处预先绘制半个圆头，使减去的lineWidth均匀分布在两端
+            // Draw using dash pattern
+            // < 100%: use negative phase to pre-draw half a round cap at the start, distributing subtracted lineWidth evenly at both ends
             let phase: CGFloat = percentage >= 100 ? 0 : -progressWidth / 2
             let pattern: [CGFloat] = [progressLength, perimeter - progressLength]
             progressHexagon.setLineDash(pattern, count: 2, phase: phase)
             progressHexagon.lineWidth = progressWidth
-            // 100%时使用平头让图形完美闭合，其他进度使用圆头
+            // At 100% use butt cap for perfect closure, other progress uses round cap
             progressHexagon.lineCapStyle = percentage >= 100 ? .butt : .round
             progressHexagon.lineJoinStyle = .round
 
@@ -452,27 +456,29 @@ class ShapeIconRenderer {
             progressHexagon.stroke()
         }
 
-        // 3. 绘制百分比文字
-        let percentageText = "\(Int(percentage))"
-        let percentageFontSize: CGFloat = percentage >= 100 ? 5.0 : 7.2
-        let attributes: [NSAttributedString.Key: Any] = [
-            .font: NSFont.systemFont(ofSize: percentageFontSize, weight: percentage >= 100 ? .bold : .semibold),
-            .foregroundColor: NSColor.black
-        ]
-        let textSize = percentageText.size(withAttributes: attributes)
-        let textRect = NSRect(x: center.x - textSize.width / 2, y: center.y - textSize.height / 2, width: textSize.width, height: textSize.height)
-        percentageText.draw(in: textRect, withAttributes: attributes)
+        // 3. Draw percentage text (only when showIconNumbers is enabled)
+        if UserSettings.shared.showIconNumbers {
+            let percentageText = "\(Int(percentage))"
+            let percentageFontSize: CGFloat = percentage >= 100 ? 5.0 : 7.2
+            let attributes: [NSAttributedString.Key: Any] = [
+                .font: NSFont.systemFont(ofSize: percentageFontSize, weight: percentage >= 100 ? .bold : .semibold),
+                .foregroundColor: UsageColorScheme.isDarkMode ? NSColor.white : NSColor.black
+            ]
+            let textSize = percentageText.size(withAttributes: attributes)
+            let textRect = NSRect(x: center.x - textSize.width / 2, y: center.y - textSize.height / 2, width: textSize.width, height: textSize.height)
+            percentageText.draw(in: textRect, withAttributes: attributes)
+        }
     }
 
     // MARK: - Icon Creation Methods
 
-    /// 创建圆角正方形图标（Opus）
+    /// Create rounded square icon (Opus)
     /// - Parameters:
-    ///   - percentage: 使用百分比
-    ///   - isMonochrome: 是否为单色模式
-    ///   - button: 状态栏按钮
-    ///   - removeBackground: 是否移除背景填充
-    /// - Returns: 图标图像 (18×18)
+    ///   - percentage: Usage percentage
+    ///   - isMonochrome: Whether in monochrome mode
+    ///   - button: Status bar button
+    ///   - removeBackground: Whether to remove background fill
+    /// - Returns: Icon image (18x18)
     static func createVerticalRectangleIcon(percentage: Double, isMonochrome: Bool, button: NSStatusBarButton?, removeBackground: Bool = false) -> NSImage {
         let size = NSSize(width: 18, height: 18)
         let image = NSImage(size: size)
@@ -486,13 +492,13 @@ class ShapeIconRenderer {
         return image
     }
 
-    /// 创建菱形图标（Sonnet - 45度旋转的正方形）
+    /// Create diamond icon (Sonnet - 45-degree rotated square)
     /// - Parameters:
-    ///   - percentage: 使用百分比
-    ///   - isMonochrome: 是否为单色模式
-    ///   - button: 状态栏按钮
-    ///   - removeBackground: 是否移除背景填充
-    /// - Returns: 图标图像 (18×18)
+    ///   - percentage: Usage percentage
+    ///   - isMonochrome: Whether in monochrome mode
+    ///   - button: Status bar button
+    ///   - removeBackground: Whether to remove background fill
+    /// - Returns: Icon image (18x18)
     static func createHorizontalRectangleIcon(percentage: Double, isMonochrome: Bool, button: NSStatusBarButton?, removeBackground: Bool = false) -> NSImage {
         let size = NSSize(width: 18, height: 18)
         let image = NSImage(size: size)
@@ -506,13 +512,13 @@ class ShapeIconRenderer {
         return image
     }
 
-    /// 创建平顶六边形图标（Extra Usage）
+    /// Create flat-top hexagon icon (Extra Usage)
     /// - Parameters:
-    ///   - percentage: 使用百分比
-    ///   - isMonochrome: 是否为单色模式
-    ///   - button: 状态栏按钮
-    ///   - removeBackground: 是否移除背景（默认false）
-    /// - Returns: 图标图像 (18×18)
+    ///   - percentage: Usage percentage
+    ///   - isMonochrome: Whether in monochrome mode
+    ///   - button: Status bar button
+    ///   - removeBackground: Whether to remove background (default false)
+    /// - Returns: Icon image (18x18)
     static func createHexagonIcon(percentage: Double, isMonochrome: Bool, button: NSStatusBarButton?, removeBackground: Bool = false) -> NSImage {
         let size = NSSize(width: 18, height: 18)
         let image = NSImage(size: size)

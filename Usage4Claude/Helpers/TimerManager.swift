@@ -9,43 +9,43 @@
 import Foundation
 import OSLog
 
-/// 定时器统一管理器
-/// 负责应用内所有定时器的创建、调度和清理，防止内存泄漏
-/// 提供类型安全的定时器标识符管理
+/// Unified timer manager
+/// Responsible for creating, scheduling, and cleaning up all timers in the app, preventing memory leaks
+/// Provides type-safe timer identifier management
 class TimerManager {
     // MARK: - Properties
 
-    /// 定时器存储字典，键为标识符，值为 Timer 实例
+    /// Timer storage dictionary, key is identifier, value is Timer instance
     private var timers: [String: Timer] = [:]
 
-    /// 线程安全队列
+    /// Thread-safe queue
     private let queue = DispatchQueue(label: "com.usage4claude.timer", attributes: .concurrent)
 
     // MARK: - Public Methods
 
-    /// 调度定时器
+    /// Schedule a timer
     /// - Parameters:
-    ///   - identifier: 定时器唯一标识符
-    ///   - interval: 时间间隔（秒）
-    ///   - repeats: 是否重复执行
-    ///   - block: 定时器触发时执行的闭包
-    /// - Note: 如果相同标识符的定时器已存在，会先取消旧定时器
+    ///   - identifier: Unique timer identifier
+    ///   - interval: Time interval (seconds)
+    ///   - repeats: Whether to repeat execution
+    ///   - block: Closure to execute when the timer fires
+    /// - Note: If a timer with the same identifier already exists, the old timer will be cancelled first
     func schedule(
         _ identifier: String,
         interval: TimeInterval,
         repeats: Bool = true,
         block: @escaping () -> Void
     ) {
-        // 同步取消旧定时器并创建新定时器，避免竞态条件
+        // Synchronously cancel old timer and create new timer to avoid race conditions
         queue.sync(flags: .barrier) {
-            // 取消同标识符的旧定时器
+            // Cancel old timer with the same identifier
             if let oldTimer = self.timers[identifier] {
                 oldTimer.invalidate()
                 self.timers.removeValue(forKey: identifier)
             }
         }
 
-        // 在主线程创建定时器（Timer.scheduledTimer 需要 RunLoop）
+        // Create timer on main thread (Timer.scheduledTimer requires RunLoop)
         let timer = Timer.scheduledTimer(
             withTimeInterval: interval,
             repeats: repeats
@@ -53,7 +53,7 @@ class TimerManager {
             block()
         }
 
-        // 保存新定时器
+        // Save new timer
         queue.async(flags: .barrier) {
             self.timers[identifier] = timer
         }
@@ -61,8 +61,8 @@ class TimerManager {
         Logger.menuBar.info("⏰ Timer scheduled: \(identifier) (interval: \(interval)s, repeats: \(repeats))")
     }
 
-    /// 取消指定定时器
-    /// - Parameter identifier: 定时器标识符
+    /// Cancel a specific timer
+    /// - Parameter identifier: Timer identifier
     func invalidate(_ identifier: String) {
         queue.sync(flags: .barrier) {
             if let timer = self.timers[identifier] {
@@ -73,8 +73,8 @@ class TimerManager {
         }
     }
 
-    /// 取消所有定时器
-    /// - Note: 通常在应用退出或重大状态变更时调用
+    /// Cancel all timers
+    /// - Note: Typically called on app exit or major state changes
     func invalidateAll() {
         queue.sync(flags: .barrier) {
             let count = self.timers.count
@@ -84,18 +84,18 @@ class TimerManager {
         }
     }
 
-    /// 检查指定定时器是否活跃
-    /// - Parameter identifier: 定时器标识符
-    /// - Returns: 如果定时器存在且有效返回 true
+    /// Check if a specific timer is active
+    /// - Parameter identifier: Timer identifier
+    /// - Returns: true if the timer exists and is valid
     func isActive(_ identifier: String) -> Bool {
         return queue.sync {
             return timers[identifier]?.isValid ?? false
         }
     }
 
-    /// 获取当前活跃的定时器列表
-    /// - Returns: 活跃定时器的标识符数组
-    /// - Note: 主要用于调试和诊断
+    /// Get the list of currently active timers
+    /// - Returns: Array of active timer identifiers
+    /// - Note: Primarily used for debugging and diagnostics
     func activeTimers() -> [String] {
         return queue.sync {
             return timers.keys.filter { timers[$0]?.isValid == true }
@@ -111,22 +111,22 @@ class TimerManager {
 
 // MARK: - Timer Identifiers
 
-/// 定时器标识符命名空间
-/// 提供类型安全的定时器标识符常量
+/// Timer identifier namespace
+/// Provides type-safe timer identifier constants
 extension TimerManager {
-    /// 定时器标识符枚举
+    /// Timer identifier enum
     enum Identifier {
-        /// 主数据刷新定时器
+        /// Main data refresh timer
         static let mainRefresh = "mainRefresh"
-        /// 弹出窗口实时刷新定时器（1秒间隔）
+        /// Popover real-time refresh timer (1-second interval)
         static let popoverRefresh = "popoverRefresh"
-        /// 重置验证定时器 - 重置后1秒
+        /// Reset verification timer - 1 second after reset
         static let resetVerify1 = "resetVerify1"
-        /// 重置验证定时器 - 重置后10秒
+        /// Reset verification timer - 10 seconds after reset
         static let resetVerify2 = "resetVerify2"
-        /// 重置验证定时器 - 重置后30秒
+        /// Reset verification timer - 30 seconds after reset
         static let resetVerify3 = "resetVerify3"
-        /// 每日更新检查定时器
+        /// Daily update check timer
         static let dailyUpdate = "dailyUpdate"
     }
 }

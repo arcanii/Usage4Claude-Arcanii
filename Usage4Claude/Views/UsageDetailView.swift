@@ -8,25 +8,25 @@
 
 import SwiftUI
 
-/// 用量详情视图
-/// 显示 Claude 的当前使用情况，包括百分比进度条、倒计时和重置时间
+/// Usage detail view
+/// Displays Claude's current usage status, including percentage progress bar, countdown, and reset time
 struct UsageDetailView: View {
     @Binding var usageData: UsageData?
     @Binding var errorMessage: String?
     @ObservedObject var refreshState: RefreshState
-    /// 菜单操作回调
+    /// Menu action callback
     var onMenuAction: ((MenuAction) -> Void)? = nil
     @StateObject private var localization = LocalizationManager.shared
-    /// 是否有可用更新（用于显示文字和徽章）
+    /// Whether an update is available (used to display text and badge)
     @Binding var hasAvailableUpdate: Bool
-    /// 是否应显示更新徽章（用户未确认时才显示徽章）
+    /// Whether the update badge should be shown (only displayed when user hasn't acknowledged)
     @Binding var shouldShowUpdateBadge: Bool
     
-    /// 加载动画效果类型
+    /// Loading animation effect type
     enum LoadingAnimationType: Int, CaseIterable {
-        case rainbow = 0   // 彩虹渐变旋转
-        case dashed = 1    // 虚线旋转
-        case pulse = 2     // 脉冲效果
+        case rainbow = 0   // Rainbow gradient rotation
+        case dashed = 1    // Dashed rotation
+        case pulse = 2     // Pulse effect
 
         var name: String {
             switch self {
@@ -37,10 +37,10 @@ struct UsageDetailView: View {
         }
     }
 
-    // 当前使用的加载动画类型（可长按圆环切换）
+    // Currently used loading animation type (can be switched by long-pressing the ring)
     @State var animationType: LoadingAnimationType = .rainbow
     
-    /// 菜单操作类型
+    /// Menu action type
     enum MenuAction {
         case generalSettings
         case authSettings
@@ -48,43 +48,42 @@ struct UsageDetailView: View {
         case about
         case webUsage
         case coffee
-        case githubSponsor
         case quit
         case refresh
     }
     
-    // 用于动画的状态（改为从外部传入，避免每次重建视图时重置）
+    // Animation state (passed from outside to avoid resetting on each view rebuild)
     @State var rotationAngle: Double = 0
     @State var animationTimer: Timer?
-    // 显示动画类型切换提示
+    // Show animation type switch hint
     @State private var showAnimationTypeHint = false
-    // 显示更新通知
+    // Show update notification
     @State private var showUpdateNotification = false
-    // 显示模式切换（false: 重置时间, true: 剩余时间）
+    // Display mode toggle (false: reset time, true: remaining time)
     @AppStorage("showRemainingMode") private var savedRemainingMode = false
     @State private var showRemainingMode = false
     
     // MARK: - Body
 
-    /// 获取当前活动的显示类型
+    /// Get current active display types
     private var activeDisplayTypes: [LimitType] {
         guard let data = usageData else { return [] }
         return UserSettings.shared.getActiveDisplayTypes(usageData: data)
     }
 
-    /// 根据活动类型数量计算动态高度
+    /// Calculate dynamic height based on the number of active types
     private var dynamicHeight: CGFloat {
         let activeCount = activeDisplayTypes.count
 
-        // 统一使用动态计算，确保底部边距一致
-        // 基础高度：圆环、标题、上下边距等固定内容的总高度
-        // 每行实际高度：文字(12pt) + vertical padding(12pt) + 背景高度 ≈ 26pt
-        // 行间距：5pt
+        // Use unified dynamic calculation to ensure consistent bottom margin
+        // Base height: total height of fixed content including ring, title, top/bottom margins
+        // Actual row height: text(12pt) + vertical padding(12pt) + background height ≈ 26pt
+        // Row spacing: 5pt
         let baseHeight: CGFloat = 190
         let rowHeight: CGFloat = 26
         let spacing: CGFloat = 5
 
-        // 单限制固定显示2行，双限制和3+限制显示对应行数
+        // Single limit always shows 2 rows; dual and 3+ limits show corresponding row count
         let rowCount = activeCount == 1 ? 2 : activeCount
         let textHeight = CGFloat(rowCount) * rowHeight + CGFloat(max(0, rowCount - 1)) * spacing
 
@@ -92,10 +91,10 @@ struct UsageDetailView: View {
     }
 
     var body: some View {
-        VStack(spacing: activeDisplayTypes.count >= 2 ? 10 : 16) {  // 多限制时减小间距
-            // 标题
+        VStack(spacing: activeDisplayTypes.count >= 2 ? 10 : 16) {  // Reduce spacing for multiple limits
+            // Title
             HStack {
-                // 应用图标（不使用template模式）
+                // App icon (not using template mode)
                 if let icon = ImageHelper.createAppIcon(size: 20) {
                     Image(nsImage: icon)
                         .resizable()
@@ -110,7 +109,7 @@ struct UsageDetailView: View {
                 
                 Spacer()
                 
-                // 刷新按钮（左侧）
+                // Refresh button (left side)
                 Button(action: {
                     onMenuAction?(.refresh)
                 }) {
@@ -123,9 +122,9 @@ struct UsageDetailView: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(!refreshState.canRefresh || refreshState.isRefreshing)
-                .focusable(false)  // 禁用Focus状态
+                .focusable(false)  // Disable focus state
                 .onAppear {
-                    // 如果打开时已经在刷新，启动动画
+                    // If already refreshing when opened, start the animation
                     if refreshState.isRefreshing {
                         startRotationAnimation()
                     }
@@ -138,10 +137,10 @@ struct UsageDetailView: View {
                     }
                 }
                 
-                // 三点菜单按钮（右侧） + 徽章
+                // Ellipsis menu button (right side) + badge
                 ZStack(alignment: .topTrailing) {
                     Menu {
-                        // 账户切换子菜单（仅当有多个账户时显示）
+                        // Account switch submenu (only shown when multiple accounts exist)
                         if UserSettings.shared.accounts.count > 1 {
                             Menu {
                                 ForEach(UserSettings.shared.accounts) { account in
@@ -171,7 +170,7 @@ struct UsageDetailView: View {
                             Label(L.Menu.authSettings, systemImage: "key")
                         }
 
-                        // 检查更新菜单项（根据是否有更新显示不同样式）
+                        // Check for updates menu item (displays different style based on update availability)
                         if hasAvailableUpdate {
                             Button(action: { onMenuAction?(.checkForUpdates) }) {
                                 Label {
@@ -196,9 +195,6 @@ struct UsageDetailView: View {
                         Button(action: { onMenuAction?(.coffee) }) {
                             Label(L.Menu.coffee, systemImage: "cup.and.saucer")
                         }
-                        Button(action: { onMenuAction?(.githubSponsor) }) {
-                            Label(L.Menu.githubSponsor, systemImage: "heart")
-                        }
                         Divider()
                         Button(action: { onMenuAction?(.quit) }) {
                             Label(L.Menu.quit, systemImage: "power")
@@ -216,7 +212,7 @@ struct UsageDetailView: View {
                     .buttonStyle(.plain)
                     .focusable(false)
 
-                    // 徽章（小红点）- 仅在用户未确认时显示
+                    // Badge (red dot) - only shown when user hasn't acknowledged
                     if shouldShowUpdateBadge {
                         Circle()
                             .fill(Color.red)
@@ -229,7 +225,7 @@ struct UsageDetailView: View {
             .padding(.top)
             
             if let error = errorMessage {
-                // 错误信息
+                // Error message
                 VStack(spacing: 12) {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .font(.system(size: 40))
@@ -239,9 +235,9 @@ struct UsageDetailView: View {
                         .multilineTextAlignment(.center)
                         .foregroundColor(.secondary)
 
-                    // 操作按钮组
+                    // Action button group
                     HStack(spacing: 12) {
-                        // 如果是认证信息错误，显示设置按钮
+                        // If it's an authentication error, show settings button
                         if error.contains("认证") || error.contains("配置") || error.contains("Authentication") || error.contains("configured") {
                             Button(action: {
                                 onMenuAction?(.authSettings)
@@ -256,10 +252,10 @@ struct UsageDetailView: View {
                             .buttonStyle(.plain)
                         }
 
-                        // 诊断连接按钮（所有错误都显示）
+                        // Diagnostic connection button (shown for all errors)
                         Button(action: {
                             onMenuAction?(.authSettings)
-                            // 注意：实际会打开认证设置标签页，诊断功能在该页面底部
+                            // Note: this actually opens the auth settings tab; diagnostics are at the bottom of that page
                         }) {
                             Label(L.Usage.runDiagnostic, systemImage: "stethoscope")
                                 .padding(.horizontal, 16)
@@ -273,24 +269,24 @@ struct UsageDetailView: View {
                 }
                 .padding()
             } else if let data = usageData {
-                // 使用数据
-                VStack(spacing: 15) {  // 双模式时两行文字的上间距
-                    // 圆形进度条
+                // Usage data
+                VStack(spacing: 15) {  // Top spacing for two text rows in dual mode
+                    // Circular progress bar
                     ZStack {
-                        // 根据用户选择的显示类型确定主要限制
+                        // Determine primary limit based on user-selected display types
                         let primaryLimitData = getPrimaryLimitData(data: data, activeTypes: activeDisplayTypes)
 
                         if let primary = primaryLimitData {
-                            // 1. 主圆环背景（灰色）
+                            // 1. Main ring background (gray)
                             Circle()
                                 .stroke(Color.gray.opacity(0.2), lineWidth: 10)
                                 .frame(width: 100, height: 100)
 
                             if refreshState.isRefreshing {
-                                // 加载动画
+                                // Loading animation
                                 loadingAnimation()
                             } else {
-                                // 2. 主进度条（根据用户选择的限制类型）
+                                // 2. Main progress arc (based on user-selected limit type)
                                 Circle()
                                     .trim(from: 0, to: CGFloat(primary.percentage) / 100.0)
                                     .stroke(
@@ -302,23 +298,23 @@ struct UsageDetailView: View {
                                     .animation(.easeInOut, value: primary.percentage)
                             }
 
-                            // 3. 外层细圆环（仅在用户同时选择了5h和7d限制时显示）
+                            // 3. Outer thin ring (only shown when user has selected both 5h and 7d limits)
                             if activeDisplayTypes.contains(.fiveHour) &&
                                activeDisplayTypes.contains(.sevenDay) {
-                                // 在自定义模式下，即使数据为 nil 也显示占位圆环
+                                // In custom mode, show placeholder ring even when data is nil
                                 let sevenDayPercentage = data.sevenDay?.percentage ?? (UserSettings.shared.displayMode == .custom ? 0 : nil)
 
                                 if let percentage = sevenDayPercentage {
-                                    // 7天背景圆环（灰色）
+                                    // 7-day background ring (gray)
                                     Circle()
                                         .stroke(Color.gray.opacity(0.15), lineWidth: 3)
                                         .frame(width: 114, height: 114)
 
                                     if refreshState.isRefreshing {
-                                        // 刷新时显示对应类型的外侧圆环动画（逆时针旋转）
+                                        // Show outer ring animation for the corresponding type during refresh (counter-clockwise rotation)
                                         outerLoadingAnimation()
                                     } else {
-                                        // 7天进度条（紫色系）
+                                        // 7-day progress arc (purple theme)
                                         Circle()
                                             .trim(from: 0, to: CGFloat(percentage) / 100.0)
                                             .stroke(
@@ -332,36 +328,50 @@ struct UsageDetailView: View {
                                 }
                             }
 
-                            // 4. 中间显示区域：百分比（显示主要限制的百分比）
-                            VStack(spacing: 2) {
-                                Text("\(Int(primary.percentage))%")
-                                    .font(.system(size: 28, weight: .bold))
-                                Text(L.Usage.used)
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
+                            // 4. Center display area: stacked percentages when both limits active
+                            if activeDisplayTypes.contains(.fiveHour) &&
+                               activeDisplayTypes.contains(.sevenDay) {
+                                let fhPct = data.fiveHour?.percentage ?? 0
+                                let sdPct = data.sevenDay?.percentage ?? 0
+                                VStack(spacing: 1) {
+                                    Text("\(Int(fhPct))%")
+                                        .font(.system(size: 20, weight: .bold))
+                                        .foregroundColor(colorForPercentage(fhPct))
+                                    Text("\(Int(sdPct))%")
+                                        .font(.system(size: 20, weight: .bold))
+                                        .foregroundColor(colorForSevenDay(sdPct))
+                                }
+                            } else {
+                                VStack(spacing: 2) {
+                                    Text("\(Int(primary.percentage))%")
+                                        .font(.system(size: 28, weight: .bold))
+                                    Text(L.Usage.used)
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
                             }
                         }
                     }
-                    .frame(height: 114)  // 固定高度，确保有无双圆环时高度一致
-                    .contentShape(Circle())  // 定义可点击区域为整个圆形
+                    .frame(height: 114)  // Fixed height to ensure consistent height with or without dual rings
+                    .contentShape(Circle())  // Define clickable area as the entire circle
                     .onTapGesture {
-                        // 点击圆环刷新数据
+                        // Tap the ring to refresh data
                         if refreshState.canRefresh && !refreshState.isRefreshing {
                             onMenuAction?(.refresh)
                         }
                     }
                     .onLongPressGesture(minimumDuration: 3.0) {
-                        // 长按圆环切换动画类型
+                        // Long press the ring to switch animation type
                         let allTypes = LoadingAnimationType.allCases
                         let currentIndex = allTypes.firstIndex(of: animationType) ?? 0
                         let nextIndex = (currentIndex + 1) % allTypes.count
                         animationType = allTypes[nextIndex]
 
-                        // 显示提示
+                        // Show hint
                         withAnimation {
                             showAnimationTypeHint = true
                         }
-                        // 2秒后隐藏提示
+                        // Hide hint after 2 seconds
                         DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                             withAnimation {
                                 showAnimationTypeHint = false
@@ -369,12 +379,12 @@ struct UsageDetailView: View {
                         }
                     }
 
-                    // 详细信息 - 根据用户选择的显示类型数量使用不同的显示方式
+                    // Detail info - use different display methods based on number of user-selected display types
                     VStack(spacing: 8) {
                         let activeTypes = activeDisplayTypes
 
                         if activeTypes.count >= 3 {
-                            // 场景3: 3种及以上限制，使用统一行显示
+                            // Scenario 3: 3 or more limits, use unified row display
                             VStack(spacing: 5) {
                                 ForEach(activeTypes, id: \.self) { type in
                                     UnifiedLimitRow(
@@ -392,7 +402,7 @@ struct UsageDetailView: View {
                                 savedRemainingMode = showRemainingMode
                             }
                         } else if activeTypes.count == 2 {
-                            // 场景2：用户选择了2种限制，使用统一行显示
+                            // Scenario 2: user selected 2 limits, use unified row display
                             VStack(spacing: 5) {
                                 ForEach(activeTypes, id: \.self) { type in
                                     UnifiedLimitRow(
@@ -410,11 +420,11 @@ struct UsageDetailView: View {
                                 savedRemainingMode = showRemainingMode
                             }
                         } else if activeTypes.count == 1 {
-                            // 场景1：用户只选择了1种限制，使用大圆环+2行信息显示
+                            // Scenario 1: user selected only 1 limit, use large ring + 2-row info display
                             let singleType = activeTypes.first!
 
                             if singleType == .fiveHour, let fiveHour = data.fiveHour {
-                                // 场景1a：只显示5小时限制
+                                // Scenario 1a: show only 5-hour limit
                                 VStack(spacing: 5) {
                                     InfoRow(
                                         icon: "clock.fill",
@@ -429,7 +439,7 @@ struct UsageDetailView: View {
                                     )
                                 }
                             } else if singleType == .sevenDay, let sevenDay = data.sevenDay {
-                                // 场景1b：只显示7天限制（使用紫色）
+                                // Scenario 1b: show only 7-day limit (using purple)
                                 VStack(spacing: 5) {
                                     InfoRow(
                                         icon: "calendar",
@@ -451,7 +461,7 @@ struct UsageDetailView: View {
                     .padding(.horizontal, 14)
                 }
             } else {
-                // 加载中
+                // Loading
                 VStack(spacing: 12) {
                     ProgressView()
                         .scaleEffect(1.2)
@@ -462,7 +472,7 @@ struct UsageDetailView: View {
                 .frame(height: 100)
             }
 
-            // 动画类型提示（长按圆环切换）
+            // Animation type hint (long press the ring to switch)
             if showAnimationTypeHint {
                 HStack(spacing: 6) {
                     Image(systemName: "wand.and.stars")
@@ -485,12 +495,12 @@ struct UsageDetailView: View {
                         )
                 }
                 .padding(.horizontal, 12)
-                .padding(.top, -8)  // 向上移动，与更新通知一致
+                .padding(.top, -8)  // Move up, consistent with update notification
                 .padding(.bottom, 6)
                 .transition(.opacity.combined(with: .scale))
             }
 
-            // 更新通知提示（在圆环下方显示）
+            // Update notification hint (displayed below the ring)
             if showUpdateNotification {
                 HStack(spacing: 6) {
                     Image(systemName: "arrow.down.circle.fill")
@@ -506,7 +516,7 @@ struct UsageDetailView: View {
                         .font(.system(size: 14))
                 }
                 .padding(.horizontal, 12)
-                .padding(.top, -8)  // 向上移动
+                .padding(.top, -8)  // Move up
                 .padding(.bottom, 6)
                 .transition(.opacity.combined(with: .scale))
             }
@@ -514,16 +524,16 @@ struct UsageDetailView: View {
             Spacer()
         }
         .frame(width: 290, height: dynamicHeight)
-        .id(localization.updateTrigger)  // 语言变化时重新创建视图
+        .id(localization.updateTrigger)  // Recreate view when language changes
         .onAppear {
-            // 恢复上次保存的显示模式
+            // Restore previously saved display mode
             showRemainingMode = savedRemainingMode
-            // 如果有更新通知消息，显示通知
+            // If there's an update notification message, show notification
             if refreshState.notificationMessage != nil {
                 withAnimation {
                     showUpdateNotification = true
                 }
-                // 3秒后隐藏通知
+                // Hide notification after 3 seconds
                 DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
                     withAnimation {
                         showUpdateNotification = false
@@ -532,12 +542,12 @@ struct UsageDetailView: View {
             }
         }
         .onChange(of: refreshState.notificationMessage) { message in
-            // 监听通知消息变化
+            // Listen for notification message changes
             if message != nil {
                 withAnimation {
                     showUpdateNotification = true
                 }
-                // 3秒后隐藏通知
+                // Hide notification after 3 seconds
                 DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
                     withAnimation {
                         showUpdateNotification = false
@@ -550,7 +560,7 @@ struct UsageDetailView: View {
             }
         }
         .onDisappear {
-            // 视图消失时清理定时器和重置状态
+            // Clean up timer and reset state when view disappears
             stopRotationAnimation()
         }
         #if DEBUG
@@ -561,7 +571,7 @@ struct UsageDetailView: View {
     }
 }
 
-// 预览
+// Preview
 struct UsageDetailView_Previews: PreviewProvider {
     @State static var sampleData: UsageData? = UsageData(
         fiveHour: UsageData.LimitData(
