@@ -322,8 +322,9 @@ class UserSettings: ObservableObject {
     
     // MARK: - Properties
     
-    private let defaults = UserDefaults.standard
-    private let keychain = KeychainManager.shared
+    // Internal (not private) so extension files in this module can reach them.
+    let defaults = UserDefaults.standard
+    let keychain = KeychainManager.shared
     
     // MARK: - Multi-Account Support (v2.1.0)
 
@@ -494,8 +495,9 @@ class UserSettings: ObservableObject {
     /// Launch at login status (for UI display)
     @Published var launchAtLoginStatus: SMAppService.Status = .notRegistered
 
-    /// Flag to prevent recursive calls during sync
-    private var isSyncingLaunchStatus: Bool = false
+    /// Flag to prevent recursive calls during launch-at-login sync.
+    /// Internal so the LaunchAtLogin extension can flip it.
+    var isSyncingLaunchStatus: Bool = false
 
     // MARK: - Debug Mode (only available in Debug builds)
 
@@ -944,185 +946,6 @@ class UserSettings: ObservableObject {
     /// Update smart monitoring mode
     /// Intelligently adjusts refresh frequency based on usage percentage changes
     /// - Parameter currentUtilization: Current usage percentage
-    func updateSmartMonitoringMode(currentUtilization: Double) {
-        // Only works in smart mode
-        guard refreshMode == .smart else { return }
-
-        // Check for changes
-        if hasUtilizationChanged(currentUtilization) {
-            switchToActiveMode()
-        } else {
-            handleNoChange()
-        }
-
-        // Update last percentage
-        lastUtilization = currentUtilization
-    }
-
-    /// Check if usage percentage has changed
-    /// - Parameter current: Current usage percentage
-    /// - Returns: true if the change exceeds 0.01
-    private func hasUtilizationChanged(_ current: Double) -> Bool {
-        guard let last = lastUtilization else { return false }
-        return abs(current - last) > 0.01
-    }
-
-    /// Switch to active mode
-    private func switchToActiveMode() {
-        guard currentMonitoringMode != .active else { return }
-
-        Logger.settings.debug("检测到使用变化，切换到活跃模式 (1分钟)")
-        currentMonitoringMode = .active
-        unchangedCount = 0
-        NotificationCenter.default.post(name: .refreshIntervalChanged, object: nil)
-    }
-
-    /// Handle no-change scenario
-    private func handleNoChange() {
-        unchangedCount += 1
-
-        let previousMode = currentMonitoringMode
-        let newMode = calculateNewMode()
-
-        if let mode = newMode {
-            currentMonitoringMode = mode
-            unchangedCount = 0
-            logModeTransition(from: previousMode, to: mode)
-            NotificationCenter.default.post(name: .refreshIntervalChanged, object: nil)
-        }
-    }
-
-    /// Calculate new mode based on current mode and unchanged count
-    /// - Returns: New mode if switching is needed; otherwise nil
-    private func calculateNewMode() -> MonitoringMode? {
-        switch currentMonitoringMode {
-        case .active:
-            // Active mode: 3 consecutive unchanged (3 minutes) -> short idle
-            return unchangedCount >= 3 ? .idleShort : nil
-        case .idleShort:
-            // Short idle: 6 consecutive unchanged (18 minutes) -> medium idle
-            return unchangedCount >= 6 ? .idleMedium : nil
-        case .idleMedium:
-            // Medium idle: 12 consecutive unchanged (60 minutes) -> long idle
-            return unchangedCount >= 12 ? .idleLong : nil
-        case .idleLong:
-            // Long idle: Maintain current mode
-            return nil
-        }
-    }
-
-    /// Log mode transition
-    /// - Parameters:
-    ///   - from: Previous mode
-    ///   - to: New mode
-    private func logModeTransition(from: MonitoringMode, to: MonitoringMode) {
-        let modeNames: [MonitoringMode: String] = [
-            .active: "活跃 (1分钟)",
-            .idleShort: "短期静默 (3分钟)",
-            .idleMedium: "中期静默 (5分钟)",
-            .idleLong: "长期静默 (10分钟)"
-        ]
-        Logger.settings.debug("监控模式切换: \(modeNames[from] ?? "") -> \(modeNames[to] ?? "")")
-    }
-    
-    /// Reset smart monitoring mode state
-    /// Called when switching to fixed mode or on manual refresh
-    func resetSmartMonitoringState() {
-        lastUtilization = nil
-        unchangedCount = 0
-        currentMonitoringMode = .active
-    }
-
-    // MARK: - Account Management (v2.1.0)
-
-    /// Save account list to Keychain
-    private func saveAccounts() {
-        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-            guard let self = self else { return }
-            self.keychain.saveAccounts(self.accounts)
-        }
-    }
-
-    /// Add a new account, or refresh an existing one with the same organizationId
-    /// - Parameter account: Account to add (its sessionKey is treated as the latest)
-    /// - Returns: The canonical Account in the store (existing entry if same orgId, otherwise the newly added account)
-    @discardableResult
-    func addAccount(_ account: Account) -> Account {
-        // If an account with the same organizationId already exists, refresh its sessionKey
-        // (a re-login produces a fresh session cookie that must overwrite the stale one)
-        if let index = accounts.firstIndex(where: { $0.organizationId == account.organizationId }) {
-            accounts[index].sessionKey = account.sessionKey
-            accounts[index].organizationName = account.organizationName
-            if let alias = account.alias, !alias.isEmpty {
-                accounts[index].alias = alias
-            }
-            let refreshed = accounts[index]
-            Logger.settings.notice("刷新账户: \(refreshed.displayName)")
-            return refreshed
-        }
-
-        accounts.append(account)
-        // If this is the first account, automatically set it as current
-        if accounts.count == 1 {
-            currentAccountId = account.id
-        }
-        Logger.settings.notice("添加账户: \(account.displayName)")
-        return account
-    }
-
-    /// Delete an account
-    /// - Parameter account: Account to delete
-    func removeAccount(_ account: Account) {
-        guard let index = accounts.firstIndex(where: { $0.id == account.id }) else { return }
-
-        let wasCurrentAccount = (currentAccountId == account.id)
-        accounts.remove(at: index)
-
-        // If the deleted account was the current one, switch to the first account
-        if wasCurrentAccount {
-            currentAccountId = accounts.first?.id
-            // Post account change notification
-            NotificationCenter.default.post(name: .accountChanged, object: nil)
-        }
-
-        Logger.settings.notice("删除账户: \(account.displayName)")
-    }
-
-    /// Switch to the specified account
-    /// - Parameter account: Account to switch to
-    func switchToAccount(_ account: Account) {
-        guard account.id != currentAccountId else { return }
-        guard accounts.contains(where: { $0.id == account.id }) else { return }
-
-        currentAccountId = account.id
-        Logger.settings.notice("切换到账户: \(account.displayName)")
-
-        // Post account change notification
-        NotificationCenter.default.post(name: .accountChanged, object: nil)
-    }
-
-    /// Update account information
-    /// - Parameters:
-    ///   - account: Account to update
-    ///   - alias: New alias (optional)
-    func updateAccount(_ account: Account, alias: String?) {
-        guard let index = accounts.firstIndex(where: { $0.id == account.id }) else { return }
-        accounts[index].alias = alias
-        let displayName = accounts[index].displayName
-        Logger.settings.notice("更新账户别名: \(displayName)")
-    }
-
-    /// Account list for display
-    /// - Returns: Account list
-    var displayAccounts: [Account] {
-        return accounts
-    }
-
-    /// Display name of the current account
-    var currentAccountName: String? {
-        return currentAccount?.displayName
-    }
-
     // MARK: - Organization Management (backward compatible)
 
     /// Save organization list to UserDefaults (backward compatible)
@@ -1142,93 +965,6 @@ class UserSettings: ObservableObject {
         }
         let decoder = JSONDecoder()
         return (try? decoder.decode([Organization].self, from: data)) ?? []
-    }
-
-    // MARK: - Launch at Login Management
-    
-    /// Enable launch at login
-    private func enableLaunchAtLogin() {
-        do {
-            try SMAppService.mainApp.register()
-            defaults.set(true, forKey: "launchAtLogin")
-            syncLaunchAtLoginStatus()
-            Logger.settings.notice("开机启动已启用")
-        } catch {
-            Logger.settings.error("启用开机启动失败: \(error.localizedDescription)")
-            // Registration failed, restore state (avoid triggering didSet)
-            isSyncingLaunchStatus = true
-            DispatchQueue.main.async {
-                self.launchAtLogin = false
-                // Reset flag inside async block to avoid race condition
-                self.isSyncingLaunchStatus = false
-                self.syncLaunchAtLoginStatus()
-            }
-
-            // Post error notification
-            NotificationCenter.default.post(
-                name: .launchAtLoginError,
-                object: nil,
-                userInfo: ["error": error, "operation": "enable"]
-            )
-        }
-    }
-    
-    /// Disable launch at login
-    private func disableLaunchAtLogin() {
-        let currentStatus = SMAppService.mainApp.status
-
-        // If service is not registered or not found, just update settings without unregister
-        if currentStatus == .notRegistered || currentStatus == .notFound {
-            defaults.set(false, forKey: "launchAtLogin")
-            syncLaunchAtLoginStatus()
-            Logger.settings.notice("开机启动服务未注册，已更新设置")
-            return
-        }
-
-        do {
-            try SMAppService.mainApp.unregister()
-            defaults.set(false, forKey: "launchAtLogin")
-            syncLaunchAtLoginStatus()
-            Logger.settings.notice("开机启动已禁用")
-        } catch {
-            Logger.settings.error("禁用开机启动失败: \(error.localizedDescription)")
-            // Unregister failed, restore state (avoid triggering didSet)
-            isSyncingLaunchStatus = true
-            DispatchQueue.main.async {
-                self.launchAtLogin = true
-                // Reset flag inside async block to avoid race condition
-                self.isSyncingLaunchStatus = false
-                self.syncLaunchAtLoginStatus()
-            }
-
-            // Post error notification
-            NotificationCenter.default.post(
-                name: .launchAtLoginError,
-                object: nil,
-                userInfo: ["error": error, "operation": "disable"]
-            )
-        }
-    }
-    
-    /// Sync launch at login status
-    /// Read actual state from system and update UI
-    func syncLaunchAtLoginStatus() {
-        let status = SMAppService.mainApp.status
-        DispatchQueue.main.async {
-            self.launchAtLoginStatus = status
-
-            // Sync actual state to settings
-            let isActuallyEnabled = (status == .enabled)
-            if self.launchAtLogin != isActuallyEnabled {
-                // Set sync flag to avoid triggering enable/disable in didSet
-                self.isSyncingLaunchStatus = true
-                self.defaults.set(isActuallyEnabled, forKey: "launchAtLogin")
-                self.launchAtLogin = isActuallyEnabled
-                self.isSyncingLaunchStatus = false
-            }
-        }
-
-        Logger.settings.debug("开机启动状态: \(String(describing: status))")
     }
 
     // MARK: - Display Logic Helper Methods (v2.0)
