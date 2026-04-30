@@ -231,6 +231,18 @@ class MenuBarManager: ObservableObject {
                 self.updateMenuBarIcon()
             }
             .store(in: &cancellables)
+
+        // Session expired → present the WebLogin window so the user can re-authenticate
+        // without having to navigate to Auth Settings manually. DataRefreshManager throttles
+        // this to once per expiry, but WebLoginWindowManager additionally dedupes if the
+        // window is already on screen.
+        NotificationCenter.default.publisher(for: .sessionExpired)
+            .receive(on: DispatchQueue.main)
+            .sink { _ in
+                Logger.menuBar.notice("Session expired — presenting WebLogin")
+                WebLoginWindowManager.shared.showLoginWindow()
+            }
+            .store(in: &cancellables)
     }
 
     // MARK: - Popover Management

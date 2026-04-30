@@ -53,6 +53,14 @@ BUILD_DIR="${PROJECT_ROOT}/build"
 DEVELOPMENT_TEAM="386M76FV3K"
 NOTARY_PROFILE="${NOTARY_PROFILE:-Usage4Claude-Arcanii-notarize}"
 
+# Optional: source a gitignored override file so contributors can use their own
+# Developer ID team and notary profile without editing this script. See
+# scripts/build.config.example for the available variables.
+if [ -f "${PROJECT_ROOT}/scripts/build.config" ]; then
+    # shellcheck disable=SC1091
+    source "${PROJECT_ROOT}/scripts/build.config"
+fi
+
 # xcode-select may point at CommandLineTools; force the full Xcode so archive works.
 if [ -d "/Applications/Xcode.app/Contents/Developer" ]; then
     export DEVELOPER_DIR="/Applications/Xcode.app/Contents/Developer"

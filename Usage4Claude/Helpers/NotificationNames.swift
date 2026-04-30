@@ -46,6 +46,12 @@ extension Notification.Name {
     /// Launch at login error notification
     /// Sent when setting launch at login fails
     static let launchAtLoginError = Notification.Name("launchAtLoginError")
+
+    /// Session-expired notification
+    /// Posted by DataRefreshManager the first time a fetch fails with .sessionExpired
+    /// after a previously valid session. Subscribers (MenuBarManager) react by
+    /// presenting the WebLogin window so the user can re-authenticate.
+    static let sessionExpired = Notification.Name("sessionExpired")
 }
 
 // MARK: - UserInfo Keys

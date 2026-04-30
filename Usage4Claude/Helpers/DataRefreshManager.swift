@@ -54,6 +54,11 @@ class DataRefreshManager: ObservableObject {
     private let minimumAnimationDuration: TimeInterval = 1.0
     /// Last update check time
     private var lastUpdateCheckTime: Date?
+    /// Whether the daily update-check timer has been started (idempotency guard)
+    private var dailyUpdateCheckScheduled = false
+    /// Whether the most recent fetch failed with .sessionExpired. Used to prompt the user
+    /// to re-login exactly once per expiry, instead of every 60-second refresh tick.
+    private var sessionExpiredPrompted = false
     /// App Nap prevention activity token
     private var refreshActivity: NSObjectProtocol?
 
@@ -72,7 +77,8 @@ class DataRefreshManager: ObservableObject {
     // MARK: - Initialization
 
     init() {
-        scheduleDailyUpdateCheck()
+        // Daily update check is deferred to `startRefreshing()` so it only fires once the
+        // user has credentials. Hitting GitHub from the welcome screen is wasted traffic.
     }
 
     // MARK: - Data Fetching
@@ -100,6 +106,7 @@ class DataRefreshManager: ObservableObject {
                     let previousData = self.usageData
                     self.usageData = data
                     self.errorMessage = nil
+                    self.sessionExpiredPrompted = false
 
                     // Check if usage notifications need to be sent
                     if self.settings.notificationsEnabled {
@@ -129,6 +136,14 @@ class DataRefreshManager: ObservableObject {
                 case .failure(let error):
                     self.errorMessage = error.localizedDescription
                     Logger.menuBar.error("API 请求失败: \(error.localizedDescription)")
+
+                    // First sessionExpired hit → prompt user to re-login. Skip on subsequent
+                    // ticks until a successful fetch resets the flag, so we don't re-pop
+                    // the login window every 60 seconds.
+                    if case UsageError.sessionExpired = error, !self.sessionExpiredPrompted {
+                        self.sessionExpiredPrompted = true
+                        NotificationCenter.default.post(name: .sessionExpired, object: nil)
+                    }
                 }
             }
         }
@@ -140,6 +155,7 @@ class DataRefreshManager: ObservableObject {
         beginRefreshActivity()
         fetchUsage()
         restartTimer()
+        scheduleDailyUpdateCheck()
 
         #if DEBUG
         // Test: ensure icon displays badge
@@ -366,8 +382,11 @@ class DataRefreshManager: ObservableObject {
 
     // MARK: - Update Checking
 
-    /// Schedule daily update check
+    /// Schedule daily update check (idempotent — safe to call repeatedly).
     private func scheduleDailyUpdateCheck() {
+        guard !dailyUpdateCheckScheduled else { return }
+        dailyUpdateCheckScheduled = true
+
         #if DEBUG
         // Debug mode: check if simulated update is enabled
         if settings.simulateUpdateAvailable {

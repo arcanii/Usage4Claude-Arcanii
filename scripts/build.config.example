@@ -1,0 +1,10 @@
+# scripts/build.config — sourced by scripts/build.sh if present (gitignored).
+# Copy to scripts/build.config and edit for your machine.
+#
+# Override the Apple Developer team that signs Release builds. Find your team ID
+# at https://developer.apple.com/account → Membership → Team ID.
+# DEVELOPMENT_TEAM="ABCDE12345"
+
+# Override the keychain profile used by xcrun notarytool. Set up the profile once
+# with: xcrun notarytool store-credentials <name> --apple-id … --team-id … --password …
+# NOTARY_PROFILE="my-notary-profile"

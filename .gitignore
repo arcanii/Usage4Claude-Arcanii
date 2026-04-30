@@ -3,6 +3,9 @@
 *.cer
 *.certSigningRequest
 
+# Per-developer build script overrides (signing team, notary profile, etc.)
+scripts/build.config
+
 # md file upload rules 
 /*.md
 !/README.md

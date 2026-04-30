@@ -163,18 +163,21 @@ class ClaudeAPIService {
             // Print raw response for debugging
             if let jsonString = String(data: data, encoding: .utf8) {
                 Logger.api.debug("Main Usage API Response: \(jsonString)")
-
-                // Check if HTML response (Cloudflare interception)
-                if jsonString.contains("<!DOCTYPE html>") || jsonString.contains("<html") {
-                    Logger.api.debug("⚠️ Received HTML response, possibly intercepted by Cloudflare.")
-                    completion(.failure(UsageError.cloudflareBlocked))
-                    return
-                }
             }
 
             // Check HTTP status code
             if let httpResponse = response as? HTTPURLResponse {
                 Logger.api.debug("Main Usage HTTP Status: \(httpResponse.statusCode)")
+
+                // Cloudflare challenges return HTML with text/html Content-Type, regardless
+                // of HTTP status. Treat any HTML response as a Cloudflare block — the JSON
+                // error mappings below assume application/json bodies.
+                let contentType = (httpResponse.value(forHTTPHeaderField: "Content-Type") ?? "").lowercased()
+                if contentType.contains("text/html") {
+                    Logger.api.debug("⚠️ Received HTML response, possibly intercepted by Cloudflare.")
+                    completion(.failure(UsageError.cloudflareBlocked))
+                    return
+                }
 
                 // Handle various HTTP error status codes
                 switch httpResponse.statusCode {
@@ -380,9 +383,27 @@ class ClaudeAPIService {
                 case 200...299:
                     // Successful response, continue processing
                     break
-                case 403, 404:
-                    // Extra Usage not enabled or no permission, return nil indicating feature unavailable
-                    Logger.api.info("Extra Usage not available (HTTP \(httpResponse.statusCode))")
+                case 403:
+                    // 403 covers two cases (same pattern as fetchMainUsage):
+                    // - permission_error body → expired session (propagate as failure so the
+                    //   caller can re-auth)
+                    // - anything else → Extra Usage feature not enabled / no permission for
+                    //   this org (graceful degradation, return nil)
+                    if let errorResponse = try? JSONDecoder().decode(ErrorResponse.self, from: data),
+                       errorResponse.error.type == "permission_error" {
+                        DispatchQueue.main.async {
+                            completion(.failure(UsageError.sessionExpired))
+                        }
+                    } else {
+                        Logger.api.info("Extra Usage not available (HTTP 403)")
+                        DispatchQueue.main.async {
+                            completion(.success(nil))
+                        }
+                    }
+                    return
+                case 404:
+                    // Extra Usage endpoint not present for this org — feature unavailable.
+                    Logger.api.info("Extra Usage not available (HTTP 404)")
                     DispatchQueue.main.async {
                         completion(.success(nil))
                     }
