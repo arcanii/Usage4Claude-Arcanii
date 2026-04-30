@@ -1043,20 +1043,31 @@ class UserSettings: ObservableObject {
         }
     }
 
-    /// Add a new account
-    /// - Parameter account: Account to add
-    func addAccount(_ account: Account) {
-        // Check if an account with the same organizationId already exists
-        if accounts.contains(where: { $0.organizationId == account.organizationId }) {
-            Logger.settings.notice("账户已存在，跳过: \(account.displayName)")
-            return
+    /// Add a new account, or refresh an existing one with the same organizationId
+    /// - Parameter account: Account to add (its sessionKey is treated as the latest)
+    /// - Returns: The canonical Account in the store (existing entry if same orgId, otherwise the newly added account)
+    @discardableResult
+    func addAccount(_ account: Account) -> Account {
+        // If an account with the same organizationId already exists, refresh its sessionKey
+        // (a re-login produces a fresh session cookie that must overwrite the stale one)
+        if let index = accounts.firstIndex(where: { $0.organizationId == account.organizationId }) {
+            accounts[index].sessionKey = account.sessionKey
+            accounts[index].organizationName = account.organizationName
+            if let alias = account.alias, !alias.isEmpty {
+                accounts[index].alias = alias
+            }
+            let refreshed = accounts[index]
+            Logger.settings.notice("刷新账户: \(refreshed.displayName)")
+            return refreshed
         }
+
         accounts.append(account)
         // If this is the first account, automatically set it as current
         if accounts.count == 1 {
             currentAccountId = account.id
         }
         Logger.settings.notice("添加账户: \(account.displayName)")
+        return account
     }
 
     /// Delete an account

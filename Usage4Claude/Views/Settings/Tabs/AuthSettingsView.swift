@@ -517,16 +517,17 @@ struct AuthSettingsView: View {
                     if !organizations.isEmpty {
                         let useAlias = organizations.count == 1
                         for (index, org) in organizations.enumerated() {
-                            let newAccount = Account(
+                            let candidate = Account(
                                 sessionKey: newSessionKey,
                                 organizationId: org.uuid,
                                 organizationName: org.name,
                                 alias: (useAlias && !newAlias.isEmpty) ? newAlias : nil
                             )
-                            settings.addAccount(newAccount)
-                            // Switch to the first newly added account
+                            // addAccount returns the canonical entry (refreshed if same orgId already existed)
+                            let stored = settings.addAccount(candidate)
+                            // Switch to the first added/refreshed account
                             if index == 0 {
-                                settings.switchToAccount(newAccount)
+                                settings.switchToAccount(stored)
                             }
                         }
                         // Show hint for multiple organizations

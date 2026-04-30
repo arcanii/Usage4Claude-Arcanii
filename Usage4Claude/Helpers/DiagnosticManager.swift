@@ -117,6 +117,76 @@ class DiagnosticManager: ObservableObject {
         }
     }
 
+    /// Build a debug snapshot describing in-app credential state.
+    /// Sensitive values are redacted (sessionKey is shown as length + prefix only).
+    /// Intended for the user to copy and share when troubleshooting auth issues.
+    func buildDebugSnapshot() -> String {
+        var lines: [String] = []
+        lines.append("=== Usage4Claude debug snapshot ===")
+        lines.append("Timestamp: \(ISO8601DateFormatter().string(from: Date()))")
+        lines.append("App version: \(getAppVersion())")
+        lines.append("OS: \(getOSVersion()) (\(getArchitecture()))")
+        lines.append("")
+        lines.append("--- UserSettings ---")
+        lines.append("hasValidCredentials: \(settings.hasValidCredentials)")
+        lines.append("accounts.count: \(settings.accounts.count)")
+        if let currentId = settings.currentAccountId {
+            lines.append("currentAccountId: \(currentId.uuidString)")
+        } else {
+            lines.append("currentAccountId: <nil>")
+        }
+        let resolved = settings.currentAccount
+        lines.append("currentAccount resolved: \(resolved == nil ? "<nil>" : "yes")")
+        lines.append("")
+
+        for (i, account) in settings.accounts.enumerated() {
+            let isCurrent = (account.id == settings.currentAccountId)
+            lines.append("--- Account #\(i)\(isCurrent ? " (current)" : "") ---")
+            lines.append("  id: \(account.id.uuidString)")
+            lines.append("  organizationId: \(account.organizationId)")
+            lines.append("  organizationName: \(account.organizationName)")
+            lines.append("  alias: \(account.alias ?? "<nil>")")
+            lines.append("  sessionKey.count: \(account.sessionKey.count)")
+            lines.append("  sessionKey hasPrefix sk-ant-: \(account.sessionKey.hasPrefix("sk-ant-"))")
+            lines.append("  sessionKey isValid: \(settings.isValidSessionKey(account.sessionKey))")
+            lines.append("  organizationId isValid UUID: \(settings.isValidOrganizationId(account.organizationId))")
+        }
+        lines.append("")
+
+        if let report = latestReport {
+            lines.append("--- Last diagnostic test ---")
+            lines.append("  success: \(report.success)")
+            if let code = report.httpStatusCode {
+                lines.append("  http status: \(code)")
+            }
+            lines.append("  responseType: \(report.responseType.rawValue)")
+            lines.append("  cloudflareChallenge: \(report.cloudflareChallenge)")
+            lines.append("  cfMitigated: \(report.cfMitigated)")
+            if let err = report.errorType {
+                lines.append("  errorType: \(err.rawValue)")
+            }
+            if let preview = report.responseBodyPreview, !preview.isEmpty {
+                lines.append("  bodyPreview (sanitized):")
+                let sanitized = SensitiveDataRedactor.redactText(preview)
+                for line in sanitized.split(separator: "\n").prefix(20) {
+                    lines.append("    \(line)")
+                }
+            }
+        } else {
+            lines.append("--- Last diagnostic test ---")
+            lines.append("  <none — run the test button first>")
+        }
+
+        return lines.joined(separator: "\n")
+    }
+
+    /// Copy the debug snapshot to the system clipboard.
+    func copyDebugSnapshotToClipboard() {
+        let snapshot = buildDebugSnapshot()
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(snapshot, forType: .string)
+    }
+
     /// Show save dialog and export report
     func saveReportWithDialog() {
         guard let report = latestReport else {

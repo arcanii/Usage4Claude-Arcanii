@@ -14,6 +14,7 @@ struct DiagnosticsView: View {
 
     @StateObject private var diagnosticManager = DiagnosticManager()
     @State private var showDetailedReport = false
+    @State private var snapshotCopied = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -55,6 +56,21 @@ struct DiagnosticsView: View {
                         NSWorkspace.shared.open(folderURL)
                     }
                 }
+
+                // Copy debug snapshot to clipboard (for sharing when troubleshooting)
+                Button(action: {
+                    diagnosticManager.copyDebugSnapshotToClipboard()
+                    snapshotCopied = true
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                        snapshotCopied = false
+                    }
+                }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: snapshotCopied ? "checkmark" : "doc.on.clipboard")
+                        Text(snapshotCopied ? "Copied" : "Copy debug snapshot")
+                    }
+                }
+                .help("Copy a redacted debug snapshot of credential state to the clipboard")
             }
 
             // Status message

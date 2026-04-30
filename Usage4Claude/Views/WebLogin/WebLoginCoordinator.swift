@@ -163,21 +163,22 @@ final class WebLoginCoordinator: ObservableObject {
                 switch result {
                 case .success(let organizations):
                     if let firstOrg = organizations.first {
-                        let account = Account(
+                        let candidate = Account(
                             sessionKey: sessionKey,
                             organizationId: firstOrg.uuid,
                             organizationName: firstOrg.name,
                             alias: nil
                         )
 
-                        // Add and switch to new account
-                        UserSettings.shared.addAccount(account)
-                        UserSettings.shared.switchToAccount(account)
+                        // addAccount returns the canonical entry — either the freshly inserted
+                        // account or the existing same-org account refreshed with this sessionKey.
+                        let stored = UserSettings.shared.addAccount(candidate)
+                        UserSettings.shared.switchToAccount(stored)
 
-                        self.loginState = .success(accountName: account.displayName)
-                        self.onAccountCreated?(account)
+                        self.loginState = .success(accountName: stored.displayName)
+                        self.onAccountCreated?(stored)
 
-                        Logger.settings.notice("WebLogin: 账户创建成功 - \(account.displayName)")
+                        Logger.settings.notice("WebLogin: 账户创建成功 - \(stored.displayName)")
                     } else {
                         self.loginState = .failed(message: L.Error.noOrganizationsFound)
                     }
