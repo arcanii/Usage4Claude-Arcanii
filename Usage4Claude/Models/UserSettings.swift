@@ -581,15 +581,6 @@ class UserSettings: ObservableObject {
         }
     }
 
-    /// Whether to simulate an available update (debug)
-    @Published var simulateUpdateAvailable: Bool {
-        didSet {
-            defaults.set(simulateUpdateAvailable, forKey: "simulateUpdateAvailable")
-            // Post notification for MenuBarManager to recheck update status
-            NotificationCenter.default.post(name: .settingsChanged, object: nil)
-        }
-    }
-
     /// Whether to show all shape icons individually in menu bar (debug, for screenshots)
     @Published var debugShowAllShapesIndividually: Bool {
         didSet {
@@ -829,7 +820,6 @@ class UserSettings: ObservableObject {
         self.debugExtraUsageUsed = defaults.object(forKey: "debugExtraUsageUsed") as? Double ?? 30.50
         self.debugExtraUsageLimit = defaults.object(forKey: "debugExtraUsageLimit") as? Double ?? 50.0
         self.debugExtraUsagePercentage = defaults.object(forKey: "debugExtraUsagePercentage") as? Double ?? 61.0
-        self.simulateUpdateAvailable = defaults.bool(forKey: "simulateUpdateAvailable")
         self.debugShowAllShapesIndividually = defaults.bool(forKey: "debugShowAllShapesIndividually")
         self.debugKeepDetailWindowOpen = defaults.bool(forKey: "debugKeepDetailWindowOpen")
         #endif

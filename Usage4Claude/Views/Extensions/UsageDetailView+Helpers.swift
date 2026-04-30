@@ -248,37 +248,4 @@ extension UsageDetailView {
         return .gray
     }
 
-    // MARK: - Text Helper Methods
-
-    /// Create rainbow text
-    /// - Parameter text: The text to display
-    /// - Returns: Text view with rainbow effect
-    @ViewBuilder
-    func rainbowText(_ text: String) -> some View {
-        Text(text)
-            .foregroundStyle(
-                LinearGradient(
-                    colors: [.red, .orange, .yellow, .green, .blue, .purple, .red],
-                    startPoint: .leading,
-                    endPoint: .trailing
-                )
-            )
-    }
-
-    /// Create menu update text (with partial colored text)
-    /// - Returns: Colored AttributedString
-    func createUpdateMenuText() -> AttributedString {
-        let baseText = L.Menu.checkUpdates
-        let badgeText = L.Update.Notification.badgeShort
-        let fullText = baseText + "   " + badgeText
-
-        var attributedString = AttributedString(fullText)
-
-        // Find the range of badge text and set color
-        if let range = attributedString.range(of: badgeText) {
-            attributedString[range].foregroundColor = .orange
-        }
-
-        return attributedString
-    }
 }

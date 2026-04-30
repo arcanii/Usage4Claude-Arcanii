@@ -235,13 +235,12 @@ class MenuBarUI {
     // MARK: - Menu Management
 
     /// Create the standard menu
-    /// Used for the right-click menu and the three-dot menu in the popover
-    /// - Parameters:
-    ///   - hasUpdate: Whether an update is available
-    ///   - shouldShowBadge: Whether to show the update badge
-    ///   - target: Menu item target object
+    /// Used for the right-click menu and the three-dot menu in the popover.
+    /// Sparkle owns the "update available" prompt now, so the menu doesn't
+    /// surface that state — "Check for updates…" always renders the same way.
+    /// - Parameter target: Menu item target object
     /// - Returns: Configured NSMenu instance
-    func createStandardMenu(hasUpdate: Bool, shouldShowBadge: Bool, target: AnyObject?) -> NSMenu {
+    func createStandardMenu(target: AnyObject?) -> NSMenu {
         let menu = NSMenu()
 
         // Account selection submenu (only shown when there are multiple accounts)
@@ -282,42 +281,14 @@ class MenuBarUI {
         setMenuItemIcon(authItem, systemName: "key.horizontal")
         menu.addItem(authItem)
 
-        // Check for updates
+        // Check for updates (Sparkle owns the prompt — no badge needed here)
         let updateItem = NSMenuItem(
-            title: "",
+            title: L.Menu.checkUpdates,
             action: #selector(MenuBarManager.checkForUpdates),
             keyEquivalent: "u"
         )
         updateItem.target = target
-
-        // Set different styles based on whether an update is available
-        if hasUpdate {
-            // Update available: Show rainbow text
-            let baseText = L.Menu.checkUpdates
-            let highlightText = L.Update.Notification.badgeMenu
-            let title = "\(baseText)\t\(highlightText)"
-
-            let highlightLocation = baseText.utf16.count + 1
-            let highlightLength = highlightText.utf16.count
-            let highlightRange = NSRange(location: highlightLocation, length: highlightLength)
-
-            let attributedTitle = createRainbowText(title, highlightRange: highlightRange)
-            updateItem.attributedTitle = attributedTitle
-
-            // Badge icon: Only shown when user has not acknowledged
-            if shouldShowBadge {
-                if let badgeImage = createBadgeIcon() {
-                    updateItem.image = badgeImage
-                }
-            } else {
-                setMenuItemIcon(updateItem, systemName: "arrow.triangle.2.circlepath")
-            }
-        } else {
-            // No update: Normal style
-            updateItem.title = L.Menu.checkUpdates
-            setMenuItemIcon(updateItem, systemName: "arrow.triangle.2.circlepath")
-        }
-
+        setMenuItemIcon(updateItem, systemName: "arrow.triangle.2.circlepath")
         menu.addItem(updateItem)
 
         // About
@@ -400,99 +371,22 @@ class MenuBarUI {
         return submenu
     }
 
-    /// Create a rainbow text NSAttributedString
-    /// - Parameters:
-    ///   - text: Complete text
-    ///   - highlightRange: Range to highlight
-    /// - Returns: Attributed string with rainbow effect
-    private func createRainbowText(_ text: String, highlightRange: NSRange) -> NSAttributedString {
-        let attributedString = NSMutableAttributedString(string: text)
-
-        let font = NSFont.menuFont(ofSize: 0)
-        attributedString.addAttribute(.font, value: font, range: NSRange(location: 0, length: text.utf16.count))
-
-        let paragraphStyle = NSMutableParagraphStyle()
-        let nsText = text as NSString
-        let baseText = nsText.substring(to: highlightRange.location)
-        let baseTextSize = (baseText as NSString).size(withAttributes: [.font: font])
-
-        let tabLocation = baseTextSize.width + 20
-        let tabStop = NSTextTab(textAlignment: .left, location: tabLocation, options: [:])
-        paragraphStyle.tabStops = [tabStop]
-
-        attributedString.addAttribute(.paragraphStyle, value: paragraphStyle, range: NSRange(location: 0, length: text.utf16.count))
-
-        let colors: [NSColor] = [.systemRed, .systemOrange, .systemYellow, .systemGreen, .systemBlue, .systemPurple]
-        let highlightText = nsText.substring(with: highlightRange) as String
-
-        var utf16Offset = 0
-        for (index, char) in highlightText.enumerated() {
-            let charString = String(char)
-            let charUtf16Count = charString.utf16.count
-            let colorIndex = index % colors.count
-
-            attributedString.addAttribute(
-                .foregroundColor,
-                value: colors[colorIndex],
-                range: NSRange(location: highlightRange.location + utf16Offset, length: charUtf16Count)
-            )
-
-            utf16Offset += charUtf16Count
-        }
-
-        return attributedString
-    }
-
-    /// Create a badge icon (red dot)
-    /// - Returns: Icon with badge
-    private func createBadgeIcon() -> NSImage? {
-        let size = NSSize(width: 16, height: 16)
-        let image = NSImage(size: size)
-        image.lockFocus()
-
-        if let icon = NSImage(systemSymbolName: "arrow.triangle.2.circlepath", accessibilityDescription: nil) {
-            icon.size = NSSize(width: 12, height: 12)
-            icon.draw(in: NSRect(x: 0, y: 2, width: 12, height: 12))
-        }
-
-        NSColor.systemRed.setFill()
-        NSBezierPath(ovalIn: NSRect(x: 10, y: 10, width: 6, height: 6)).fill()
-
-        image.unlockFocus()
-        image.isTemplate = true
-        return image
-    }
-
     // MARK: - Icon Management
 
-    /// Update the menu bar icon
-    /// - Parameters:
-    ///   - usageData: Usage data
-    ///   - hasUpdate: Whether an update is available
-    ///   - shouldShowBadge: Whether to show the update badge
-    func updateMenuBarIcon(usageData: UsageData?, hasUpdate: Bool, shouldShowBadge: Bool) {
+    /// Update the menu bar icon based on the latest usage data.
+    /// (No update-badge state — Sparkle owns that surface now.)
+    func updateMenuBarIcon(usageData: UsageData?) {
         guard let button = statusItem.button else { return }
 
-        // Determine whether to actually show the badge
-        let showBadge = hasUpdate && shouldShowBadge
+        let cacheKey = generateCacheKey(usageData: usageData)
 
-        // Generate cache key
-        let cacheKey = generateCacheKey(usageData: usageData, hasUpdate: showBadge)
-
-        // Try to get from cache
         if let cachedImage = iconCache[cacheKey] {
             button.image = cachedImage
             return
         }
 
-        // Cache miss, create new icon using IconRenderer
-        let icon = iconRenderer.createIcon(
-            usageData: usageData,
-            hasUpdate: showBadge,
-            button: button
-        )
+        let icon = iconRenderer.createIcon(usageData: usageData, button: button)
 
-        // Store in cache
         if iconCache.count >= maxCacheSize {
             iconCache.removeValue(forKey: iconCache.keys.first!)
         }
@@ -506,19 +400,14 @@ class MenuBarUI {
         iconCache.removeAll()
     }
 
-    /// Generate an icon cache key
-    /// - Parameters:
-    ///   - usageData: Usage data
-    ///   - hasUpdate: Whether there is an update badge
-    /// - Returns: Cache key string
-    private func generateCacheKey(usageData: UsageData?, hasUpdate: Bool) -> String {
+    /// Generate an icon cache key from the current display settings + usage data.
+    private func generateCacheKey(usageData: UsageData?) -> String {
         guard let data = usageData else {
-            return "no_data_\(settings.iconStyleMode.rawValue)_\(hasUpdate)"
+            return "no_data_\(settings.iconStyleMode.rawValue)"
         }
 
         var key = "\(settings.iconDisplayMode.rawValue)_\(settings.iconStyleMode.rawValue)_num\(settings.showIconNumbers)"
 
-        // Include percentages for all limit types to ensure shape icons are also correctly cached
         if let fiveHour = data.fiveHour {
             key += "_5h\(Int(fiveHour.percentage))"
         }
@@ -533,10 +422,6 @@ class MenuBarUI {
         }
         if let extraUsage = data.extraUsage, extraUsage.enabled, let percentage = extraUsage.percentage {
             key += "_extra\(Int(percentage))"
-        }
-
-        if hasUpdate {
-            key += "_badge"
         }
 
         return key

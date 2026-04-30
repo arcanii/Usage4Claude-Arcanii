@@ -713,7 +713,7 @@ struct MenuBarIconPreview: View {
         let mockData = createMockUsageData()
 
         // Use createIcon method so it correctly responds to iconDisplayMode
-        return renderer.createIcon(usageData: mockData, hasUpdate: false, button: nil)
+        return renderer.createIcon(usageData: mockData, button: nil)
     }
 
     /// Create mock usage data (66% usage)

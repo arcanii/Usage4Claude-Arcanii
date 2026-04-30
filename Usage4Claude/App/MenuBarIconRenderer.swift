@@ -27,17 +27,12 @@ class MenuBarIconRenderer {
     
     // MARK: - Public API
     
-    /// Create menu bar icon
+    /// Create menu bar icon for the given usage data.
     /// - Parameters:
-    ///   - usageData: Usage data
-    ///   - hasUpdate: Whether an update is available
+    ///   - usageData: Usage data (nil → placeholder ring)
     ///   - button: Status bar button (used to get appearance mode)
     /// - Returns: The generated icon image
-    func createIcon(
-        usageData: UsageData?,
-        hasUpdate: Bool,
-        button: NSStatusBarButton?
-    ) -> NSImage {
+    func createIcon(usageData: UsageData?, button: NSStatusBarButton?) -> NSImage {
         // Show default icon when no data is available
         guard let data = usageData else {
             let size = NSSize(width: 22, height: 22)
@@ -46,7 +41,6 @@ class MenuBarIconRenderer {
                 createCircleImage(percentage: 0, size: size, button: button, removeBackground: true)
         }
 
-        // Get the limit types to display
         let activeTypes = settings.getActiveDisplayTypes(usageData: data)
 
         // Determine if the colored theme can be used
@@ -54,40 +48,25 @@ class MenuBarIconRenderer {
         let forceMonochrome = !canUseColor && settings.iconStyleMode != .monochrome
         let isMonochrome = settings.iconStyleMode == .monochrome || forceMonochrome
 
-        var icon: NSImage
-
-        // Create icon based on display mode
         switch settings.iconDisplayMode {
         case .percentageOnly:
-            // Percentage only (circle/rectangle/hexagon combination)
-            icon = createCombinedPercentageIcon(data: data, types: activeTypes, isMonochrome: isMonochrome, button: button)
+            return createCombinedPercentageIcon(data: data, types: activeTypes, isMonochrome: isMonochrome, button: button)
 
         case .iconOnly:
-            // App icon only
             let iconName = isMonochrome ? "AppIconReverse" : "AppIcon"
             if let appIcon = NSImage(named: iconName), let iconCopy = appIcon.copy() as? NSImage {
                 iconCopy.size = NSSize(width: 18, height: 18)
                 iconCopy.isTemplate = isMonochrome
-                icon = iconCopy
-            } else {
-                icon = createSimpleCircleIcon()
+                return iconCopy
             }
+            return createSimpleCircleIcon()
 
         case .both:
-            // App icon + percentage combination
-            icon = createCombinedIconWithAppIcon(data: data, types: activeTypes, isMonochrome: isMonochrome, button: button)
+            return createCombinedIconWithAppIcon(data: data, types: activeTypes, isMonochrome: isMonochrome, button: button)
 
         case .unified:
-            // Unified concentric ring display
-            icon = createUnifiedIcon(data: data, isMonochrome: isMonochrome, button: button)
+            return createUnifiedIcon(data: data, isMonochrome: isMonochrome, button: button)
         }
-
-        // Add badge if needed
-        if hasUpdate {
-            icon = addBadgeToImage(icon)
-        }
-
-        return icon
     }
 
     /// Create a combined percentage-only icon
@@ -469,32 +448,6 @@ class MenuBarIconRenderer {
         image.unlockFocus()
         image.isTemplate = true
         return image
-    }
-
-    /// Add a badge (red dot) to the icon
-    private func addBadgeToImage(_ baseImage: NSImage) -> NSImage {
-        let size = baseImage.size
-        let expandedSize = NSSize(width: size.width + 2.5, height: size.height + 2.5)
-        let badgedImage = NSImage(size: expandedSize)
-
-        badgedImage.lockFocus()
-        baseImage.draw(in: NSRect(origin: .zero, size: size))
-
-        let badgeRadius: CGFloat = 2.0
-        let badgeDiameter = badgeRadius * 2
-        let badgeX = expandedSize.width - badgeDiameter - 1.5
-        let badgeY = expandedSize.height - badgeDiameter - 1.5
-        let badgeRect = NSRect(x: badgeX, y: badgeY, width: badgeDiameter, height: badgeDiameter)
-
-        NSGraphicsContext.saveGraphicsState()
-        NSColor.systemRed.setFill()
-        NSBezierPath(ovalIn: badgeRect).fill()
-        NSGraphicsContext.restoreGraphicsState()
-
-        badgedImage.unlockFocus()
-        badgedImage.isTemplate = baseImage.isTemplate
-
-        return badgedImage
     }
 
     // MARK: - Icon Combination Methods (v2.0)

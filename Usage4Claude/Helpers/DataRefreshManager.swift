@@ -31,10 +31,6 @@ class DataRefreshManager: ObservableObject {
     @Published var isLoading = false
     /// Error message
     @Published var errorMessage: String?
-    /// Whether an update is available
-    @Published var hasAvailableUpdate = false
-    /// Latest version number
-    @Published var latestVersion: String?
     /// Refresh state manager
     let refreshState = RefreshState()
 

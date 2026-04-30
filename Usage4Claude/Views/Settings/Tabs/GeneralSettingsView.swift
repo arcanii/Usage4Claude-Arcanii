@@ -501,27 +501,6 @@ struct GeneralSettingsView: View {
                             .padding(.leading, 20)
                         }
 
-                        // Simulate update switch
-                        Divider()
-                            .padding(.vertical, 4)
-
-                        HStack {
-                            Toggle("", isOn: $settings.simulateUpdateAvailable)
-                                .toggleStyle(.switch)
-                                .controlSize(.mini)
-                                .focusable(false)
-                                .labelsHidden()
-
-                            Text("模拟有可用更新")
-                                .font(.subheadline)
-
-                            Spacer()
-
-                            Text("实时显示红点标识")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-
                         // Show all shape icons individually switch
                         Divider()
                             .padding(.vertical, 4)

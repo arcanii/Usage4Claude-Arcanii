@@ -17,10 +17,6 @@ struct UsageDetailView: View {
     /// Menu action callback
     var onMenuAction: ((MenuAction) -> Void)? = nil
     @StateObject private var localization = LocalizationManager.shared
-    /// Whether an update is available (used to display text and badge)
-    @Binding var hasAvailableUpdate: Bool
-    /// Whether the update badge should be shown (only displayed when user hasn't acknowledged)
-    @Binding var shouldShowUpdateBadge: Bool
     
     /// Loading animation effect type
     enum LoadingAnimationType: Int, CaseIterable {
@@ -56,8 +52,6 @@ struct UsageDetailView: View {
     @State var animationTimer: Timer?
     // Show animation type switch hint
     @State private var showAnimationTypeHint = false
-    // Show update notification
-    @State private var showUpdateNotification = false
     // Display mode toggle (false: reset time, true: remaining time)
     @AppStorage("showRemainingMode") private var savedRemainingMode = false
     @State private var showRemainingMode = false
@@ -169,19 +163,9 @@ struct UsageDetailView: View {
                             Label(L.Menu.authSettings, systemImage: "key")
                         }
 
-                        // Check for updates menu item (displays different style based on update availability)
-                        if hasAvailableUpdate {
-                            Button(action: { onMenuAction?(.checkForUpdates) }) {
-                                Label {
-                                    Text(createUpdateMenuText())
-                                } icon: {
-                                    Image(systemName: "exclamationmark.arrow.trianglehead.2.clockwise.rotate.90")
-                                }
-                            }
-                        } else {
-                            Button(action: { onMenuAction?(.checkForUpdates) }) {
-                                Label(L.Menu.checkUpdates, systemImage: "arrow.triangle.2.circlepath")
-                            }
+                        // Check for updates (Sparkle owns the prompt — single style here)
+                        Button(action: { onMenuAction?(.checkForUpdates) }) {
+                            Label(L.Menu.checkUpdates, systemImage: "arrow.triangle.2.circlepath")
                         }
 
                         Button(action: { onMenuAction?(.about) }) {
@@ -207,14 +191,6 @@ struct UsageDetailView: View {
                     .fixedSize()
                     .buttonStyle(.plain)
                     .focusable(false)
-
-                    // Badge (red dot) - only shown when user hasn't acknowledged
-                    if shouldShowUpdateBadge {
-                        Circle()
-                            .fill(Color.red)
-                            .frame(width: 6, height: 6)
-                            .offset(x: 5, y: -5)
-                    }
                 }
             }
             .padding(.horizontal)
@@ -557,27 +533,6 @@ struct UsageDetailView: View {
                 .transition(.opacity.combined(with: .scale))
             }
 
-            // Update notification hint (displayed below the ring)
-            if showUpdateNotification {
-                HStack(spacing: 6) {
-                    Image(systemName: "arrow.down.circle.fill")
-                        .font(.system(size: 14))
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [.red, .orange, .yellow, .green, .blue, .purple, .red],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
-                    rainbowText(L.Update.Notification.available)
-                        .font(.system(size: 14))
-                }
-                .padding(.horizontal, 12)
-                .padding(.top, -8)  // Move up
-                .padding(.bottom, 6)
-                .transition(.opacity.combined(with: .scale))
-            }
-
             Spacer()
         }
         .frame(width: 290, height: dynamicHeight)
@@ -585,36 +540,6 @@ struct UsageDetailView: View {
         .onAppear {
             // Restore previously saved display mode
             showRemainingMode = savedRemainingMode
-            // If there's an update notification message, show notification
-            if refreshState.notificationMessage != nil {
-                withAnimation {
-                    showUpdateNotification = true
-                }
-                // Hide notification after 3 seconds
-                DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-                    withAnimation {
-                        showUpdateNotification = false
-                    }
-                }
-            }
-        }
-        .onChange(of: refreshState.notificationMessage) { message in
-            // Listen for notification message changes
-            if message != nil {
-                withAnimation {
-                    showUpdateNotification = true
-                }
-                // Hide notification after 3 seconds
-                DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-                    withAnimation {
-                        showUpdateNotification = false
-                    }
-                }
-            } else {
-                withAnimation {
-                    showUpdateNotification = false
-                }
-            }
         }
         .onDisappear {
             // Clean up timer and reset state when view disappears
@@ -643,16 +568,12 @@ struct UsageDetailView_Previews: PreviewProvider {
 
     @State static var errorMsg: String? = nil
     @StateObject static var refreshState = RefreshState()
-    @State static var hasUpdate = false
-    @State static var shouldShowBadge = false
 
     static var previews: some View {
         UsageDetailView(
             usageData: $sampleData,
             errorMessage: $errorMsg,
-            refreshState: refreshState,
-            hasAvailableUpdate: $hasUpdate,
-            shouldShowUpdateBadge: $shouldShowBadge
+            refreshState: refreshState
         )
     }
 }

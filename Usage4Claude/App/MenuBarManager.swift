@@ -13,22 +13,12 @@ import OSLog
 import Sparkle
 
 /// Refresh state manager
-/// Used to synchronize refresh state across views, supporting reactive updates
+/// Used to synchronize refresh state across views, supporting reactive updates.
 class RefreshState: ObservableObject {
     /// Whether a refresh is in progress
     @Published var isRefreshing = false
     /// Whether refresh is allowed (debounce control)
     @Published var canRefresh = true
-    /// Notification message
-    @Published var notificationMessage: String?
-    /// Notification type
-    @Published var notificationType: NotificationType = .loading
-    
-    /// Notification type
-    enum NotificationType {
-        case loading          // Rainbow loading animation
-        case updateAvailable  // Rainbow text notification
-    }
 }
 
 /// Menu bar manager
@@ -57,22 +47,10 @@ class MenuBarManager: ObservableObject {
     @Published var isLoading = false
     /// Error message (synced from dataManager)
     @Published var errorMessage: String?
-    /// Whether an update is available (synced from dataManager)
-    @Published var hasAvailableUpdate = false
-    /// Latest version number (synced from dataManager)
-    @Published var latestVersion: String?
-    /// Version number acknowledged by user (recorded after clicking check for updates)
-    private var acknowledgedVersion: String?
 
     /// Refresh state manager (referenced from dataManager)
     var refreshState: RefreshState {
         return dataManager.refreshState
-    }
-
-    /// Whether to show the badge and notification (only when user has not acknowledged)
-    var shouldShowUpdateBadge: Bool {
-        guard hasAvailableUpdate, let latest = latestVersion else { return false }
-        return acknowledgedVersion != latest
     }
 
     // MARK: - Initialization
@@ -98,16 +76,6 @@ class MenuBarManager: ObservableObject {
 
         dataManager.$errorMessage
             .assign(to: &$errorMessage)
-
-        dataManager.$hasAvailableUpdate
-            .sink { [weak self] hasUpdate in
-                self?.hasAvailableUpdate = hasUpdate
-                self?.updateMenuBarIcon()
-            }
-            .store(in: &cancellables)
-
-        dataManager.$latestVersion
-            .assign(to: &$latestVersion)
     }
     
     /// Handle menu bar icon click event
@@ -128,7 +96,7 @@ class MenuBarManager: ObservableObject {
 
     /// Show the right-click menu
     private func showMenu() {
-        let menu = ui.createStandardMenu(hasUpdate: hasAvailableUpdate, shouldShowBadge: shouldShowUpdateBadge, target: self)
+        let menu = ui.createStandardMenu(target: self)
         ui.statusItem.menu = menu
         ui.statusItem.button?.performClick(nil)
         ui.statusItem.menu = nil
@@ -189,17 +157,6 @@ class MenuBarManager: ObservableObject {
                 #if DEBUG
                 // In debug mode, refresh data immediately (no debounce)
                 self.dataManager.fetchUsage()
-
-                // If simulated update settings changed, reapply update state
-                if self.settings.simulateUpdateAvailable {
-                    self.hasAvailableUpdate = true
-                    self.latestVersion = "2.0.0"
-                    Logger.menuBar.debug("Simulated update enabled")
-                } else {
-                    self.hasAvailableUpdate = false
-                    self.latestVersion = ""
-                    Logger.menuBar.debug("Simulated update disabled")
-                }
                 #endif
             }
             .store(in: &cancellables)
@@ -264,9 +221,6 @@ class MenuBarManager: ObservableObject {
         // Smart data refresh
         dataManager.refreshOnPopoverOpen()
 
-        // Show update notification (if available)
-        showUpdateNotificationIfNeeded()
-
         // Create and set the content view
         ui.setPopoverContent(UsageDetailView(
             usageData: Binding(
@@ -280,15 +234,7 @@ class MenuBarManager: ObservableObject {
             refreshState: self.refreshState,
             onMenuAction: { [weak self] action in
                 self?.handleMenuAction(action)
-            },
-            hasAvailableUpdate: Binding(
-                get: { self.hasAvailableUpdate },
-                set: { self.hasAvailableUpdate = $0 }
-            ),
-            shouldShowUpdateBadge: Binding(
-                get: { self.shouldShowUpdateBadge },
-                set: { _ in }
-            )
+            }
         ))
 
         // Open popover
@@ -296,18 +242,6 @@ class MenuBarManager: ObservableObject {
 
         // Start refresh timer
         startPopoverRefreshTimer()
-    }
-
-    /// Show update notification (if needed)
-    private func showUpdateNotificationIfNeeded() {
-        guard shouldShowUpdateBadge else { return }
-
-        dataManager.refreshState.notificationMessage = L.Update.Notification.available
-        dataManager.refreshState.notificationType = .updateAvailable
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3) { [weak self] in
-            self?.dataManager.refreshState.notificationMessage = nil
-        }
     }
 
     /// Close the popover
@@ -468,7 +402,7 @@ class MenuBarManager: ObservableObject {
 
     /// Update the menu bar icon
     private func updateMenuBarIcon() {
-        ui.updateMenuBarIcon(usageData: usageData, hasUpdate: hasAvailableUpdate, shouldShowBadge: shouldShowUpdateBadge)
+        ui.updateMenuBarIcon(usageData: usageData)
     }
     
     // MARK: - Cleanup
