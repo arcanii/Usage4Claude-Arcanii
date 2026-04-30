@@ -9,6 +9,7 @@
 import Foundation
 import Combine
 import OSLog
+import WidgetKit
 
 /// Data refresh manager
 /// Responsible for managing all data refreshing, timers, update checks, and reset verification logic
@@ -97,6 +98,10 @@ class DataRefreshManager: ObservableObject {
                     self.errorMessage = nil
                     self.sessionExpiredPrompted = false
                     UsageHistoryStore.shared.append(data)
+                    // Publish to the App Group container + nudge the widget so
+                    // it picks up the new numbers without waiting for its 15-min tick.
+                    UsageSnapshotStore.write(UsageSnapshot(from: data))
+                    WidgetCenter.shared.reloadAllTimelines()
 
                     // Check if usage notifications need to be sent
                     if self.settings.notificationsEnabled {
