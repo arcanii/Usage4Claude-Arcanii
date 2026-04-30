@@ -12,7 +12,6 @@
 "menu.check_updates" = "アップデートを確認";
 "menu.about" = "このアプリについて";
 "menu.web_usage" = "Claude使用状況を表示";
-"menu.coffee" = "Buy f-is-h a Coffee";
 "menu.github_sponsor" = "GitHub Sponsor";
 "menu.quit" = "Usage4Claudeを終了";
 "menu.account" = "アカウント";
@@ -95,7 +94,6 @@
 "settings.about.license" = "ライセンス";
 "settings.about.license_value" = "MIT License";
 "settings.about.github" = "GitHubリポジトリを表示";
-"settings.about.coffee" = "Buy f-is-h a Coffee";
 "settings.about.github_sponsor" = "GitHub Sponsor";
 "settings.about.copyright" = "© 2025 All Rights Reserved";
 

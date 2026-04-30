@@ -12,7 +12,6 @@
 "menu.check_updates" = "업데이트 확인";
 "menu.about" = "정보";
 "menu.web_usage" = "Claude 사용량 웹페이지";
-"menu.coffee" = "Buy f-is-h a Coffee";
 "menu.github_sponsor" = "GitHub Sponsor";
 "menu.quit" = "Usage4Claude 종료";
 "menu.account" = "계정";
@@ -95,7 +94,6 @@
 "settings.about.license" = "라이선스";
 "settings.about.license_value" = "MIT License";
 "settings.about.github" = "GitHub 저장소 방문";
-"settings.about.coffee" = "Buy f-is-h a Coffee";
 "settings.about.github_sponsor" = "GitHub Sponsor";
 "settings.about.copyright" = "© 2025 All Rights Reserved";
 

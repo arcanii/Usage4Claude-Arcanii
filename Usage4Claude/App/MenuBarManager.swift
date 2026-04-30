@@ -168,11 +168,6 @@ class MenuBarManager: ObservableObject {
         case .webUsage:
             closePopover()
             openWebUsage()
-        case .coffee:
-            closePopover()
-            if let url = URL(string: "https://ko-fi.com/1atte") {
-                NSWorkspace.shared.open(url)
-            }
         case .quit:
             quitApp()
         }
@@ -345,12 +340,6 @@ class MenuBarManager: ObservableObject {
 
     @objc func openAbout() {
         openSettingsWindow(tab: 2)
-    }
-
-    @objc func openCoffee() {
-        if let url = URL(string: "https://ko-fi.com/1atte") {
-            NSWorkspace.shared.open(url)
-        }
     }
 
     /// Switch account

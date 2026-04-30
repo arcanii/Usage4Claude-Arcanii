@@ -47,7 +47,6 @@ struct UsageDetailView: View {
         case checkForUpdates
         case about
         case webUsage
-        case coffee
         case quit
         case refresh
     }
@@ -191,9 +190,6 @@ struct UsageDetailView: View {
                         Divider()
                         Button(action: { onMenuAction?(.webUsage) }) {
                             Label(L.Menu.webUsage, systemImage: "safari")
-                        }
-                        Button(action: { onMenuAction?(.coffee) }) {
-                            Label(L.Menu.coffee, systemImage: "cup.and.saucer")
                         }
                         Divider()
                         Button(action: { onMenuAction?(.quit) }) {

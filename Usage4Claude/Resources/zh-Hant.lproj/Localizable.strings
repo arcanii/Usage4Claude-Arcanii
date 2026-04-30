@@ -12,7 +12,6 @@
 "menu.check_updates" = "檢查更新";
 "menu.about" = "關於";
 "menu.web_usage" = "檢視 Claude 用量";
-"menu.coffee" = "Buy f-is-h a Coffee";
 "menu.github_sponsor" = "GitHub Sponsor";
 "menu.quit" = "結束 Usage4Claude";
 "menu.account" = "帳戶";
@@ -95,7 +94,6 @@
 "settings.about.license" = "授權條款";
 "settings.about.license_value" = "MIT License";
 "settings.about.github" = "造訪 GitHub 儲存庫";
-"settings.about.coffee" = "Buy f-is-h a Coffee";
 "settings.about.github_sponsor" = "GitHub Sponsor";
 "settings.about.copyright" = "© 2025 All Rights Reserved";
 

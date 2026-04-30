@@ -343,16 +343,6 @@ class MenuBarUI {
         setMenuItemIcon(webItem, systemName: "safari")
         menu.addItem(webItem)
 
-        // Buy Me A Coffee
-        let coffeeItem = NSMenuItem(
-            title: L.Menu.coffee,
-            action: #selector(MenuBarManager.openCoffee),
-            keyEquivalent: ""
-        )
-        coffeeItem.target = target
-        setMenuItemIcon(coffeeItem, systemName: "cup.and.saucer")
-        menu.addItem(coffeeItem)
-
         menu.addItem(NSMenuItem.separator())
 
         // Quit
