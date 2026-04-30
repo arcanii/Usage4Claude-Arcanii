@@ -282,16 +282,48 @@ struct UsageDetailView: View {
                                 // Loading animation
                                 loadingAnimation()
                             } else {
-                                // 2. Main progress arc (based on user-selected limit type)
-                                Circle()
-                                    .trim(from: 0, to: CGFloat(primary.percentage) / 100.0)
-                                    .stroke(
-                                        colorForPrimaryByActiveTypes(data: data, activeTypes: activeDisplayTypes),
-                                        style: StrokeStyle(lineWidth: 10, lineCap: .round)
-                                    )
-                                    .frame(width: 100, height: 100)
-                                    .rotationEffect(.degrees(-90))
-                                    .animation(.easeInOut, value: primary.percentage)
+                                // 2. Main progress arc (based on user-selected limit type).
+                                // Stacked shadows give the stroke a glow halo — small radius
+                                // for a hot core, larger radius for ambient bloom.
+                                let primaryColor = colorForPrimaryByActiveTypes(data: data, activeTypes: activeDisplayTypes)
+                                // Glass-tube effect: stroke gradient gives the body
+                                // (specular highlight at top, dimmer middle, ambient
+                                // reflection at bottom). On macOS 26 we layer Apple's
+                                // Liquid Glass material for a real refractive feel;
+                                // older macOS falls back to the gradient + shadow only.
+                                let primaryGlass = LinearGradient(
+                                    stops: [
+                                        .init(color: .white.opacity(0.85), location: 0.0),
+                                        .init(color: primaryColor, location: 0.25),
+                                        .init(color: primaryColor.opacity(0.6), location: 0.55),
+                                        .init(color: primaryColor.opacity(0.95), location: 1.0)
+                                    ],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                                Group {
+                                    if #available(macOS 26.0, *) {
+                                        Circle()
+                                            .trim(from: 0, to: CGFloat(primary.percentage) / 100.0)
+                                            .stroke(
+                                                primaryGlass,
+                                                style: StrokeStyle(lineWidth: 10, lineCap: .round)
+                                            )
+                                            .glassEffect(in: Circle().stroke(lineWidth: 10))
+                                    } else {
+                                        Circle()
+                                            .trim(from: 0, to: CGFloat(primary.percentage) / 100.0)
+                                            .stroke(
+                                                primaryGlass,
+                                                style: StrokeStyle(lineWidth: 10, lineCap: .round)
+                                            )
+                                    }
+                                }
+                                .frame(width: 100, height: 100)
+                                .rotationEffect(.degrees(-90))
+                                .shadow(color: primaryColor, radius: 2)
+                                .shadow(color: primaryColor.opacity(0.55), radius: 5)
+                                .animation(.easeInOut, value: primary.percentage)
                             }
 
                             // 3. Outer thin ring (only shown when user has selected both 5h and 7d limits)
@@ -310,16 +342,45 @@ struct UsageDetailView: View {
                                         // Show outer ring animation for the corresponding type during refresh (counter-clockwise rotation)
                                         outerLoadingAnimation()
                                     } else {
-                                        // 7-day progress arc (purple theme)
-                                        Circle()
-                                            .trim(from: 0, to: CGFloat(percentage) / 100.0)
-                                            .stroke(
-                                                colorForSevenDay(percentage),
-                                                style: StrokeStyle(lineWidth: 3, lineCap: .round)
-                                            )
-                                            .frame(width: 114, height: 114)
-                                            .rotationEffect(.degrees(-90))
-                                            .animation(.easeInOut, value: percentage)
+                                        // 7-day progress arc (purple theme), with a softer
+                                        // glow than the inner ring since the stroke is thinner.
+                                        let sevenColor = colorForSevenDay(percentage)
+                                        // Same glass treatment for the outer 7-day ring,
+                                        // tuned for the thinner stroke (3pt can't hold as
+                                        // many bands without muddying).
+                                        let sevenGlass = LinearGradient(
+                                            stops: [
+                                                .init(color: .white.opacity(0.8), location: 0.0),
+                                                .init(color: sevenColor, location: 0.3),
+                                                .init(color: sevenColor.opacity(0.65), location: 0.65),
+                                                .init(color: sevenColor.opacity(0.95), location: 1.0)
+                                            ],
+                                            startPoint: .top,
+                                            endPoint: .bottom
+                                        )
+                                        Group {
+                                            if #available(macOS 26.0, *) {
+                                                Circle()
+                                                    .trim(from: 0, to: CGFloat(percentage) / 100.0)
+                                                    .stroke(
+                                                        sevenGlass,
+                                                        style: StrokeStyle(lineWidth: 3, lineCap: .round)
+                                                    )
+                                                    .glassEffect(in: Circle().stroke(lineWidth: 3))
+                                            } else {
+                                                Circle()
+                                                    .trim(from: 0, to: CGFloat(percentage) / 100.0)
+                                                    .stroke(
+                                                        sevenGlass,
+                                                        style: StrokeStyle(lineWidth: 3, lineCap: .round)
+                                                    )
+                                            }
+                                        }
+                                        .frame(width: 114, height: 114)
+                                        .rotationEffect(.degrees(-90))
+                                        .shadow(color: sevenColor, radius: 1.5)
+                                        .shadow(color: sevenColor.opacity(0.55), radius: 4)
+                                        .animation(.easeInOut, value: percentage)
                                     }
                                 }
                             }
