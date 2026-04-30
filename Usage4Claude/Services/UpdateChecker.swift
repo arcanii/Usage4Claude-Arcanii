@@ -173,37 +173,15 @@ class UpdateChecker {
     }
     
     // MARK: - Private Methods
-    
-    /// Parse version number string
-    /// - Parameter string: Raw version string (may contain "v" prefix)
-    /// - Returns: Numeric version number only (e.g., "1.0.0")
+
+    /// Parse version number string (delegates to SemverCompare for testability).
     private func parseVersion(from string: String) -> String {
-        return string.lowercased().replacingOccurrences(of: "v", with: "")
+        SemverCompare.parseVersion(string)
     }
-    
-    /// Compare version numbers (semantic versioning)
-    /// - Parameters:
-    ///   - latest: Latest version number
-    ///   - current: Current version number
-    /// - Returns: true if latest is newer than current
-    /// - Note: Uses semantic versioning comparison rules (major.minor.patch)
+
+    /// Compare version numbers (delegates to SemverCompare for testability).
     private func isNewerVersion(latest: String, current: String) -> Bool {
-        let latestComponents = latest.split(separator: ".").compactMap { Int($0) }
-        let currentComponents = current.split(separator: ".").compactMap { Int($0) }
-        
-        // Ensure at least 3 version components
-        let latestPadded = (latestComponents + [0, 0, 0]).prefix(3)
-        let currentPadded = (currentComponents + [0, 0, 0]).prefix(3)
-        
-        for (l, c) in zip(latestPadded, currentPadded) {
-            if l > c {
-                return true
-            } else if l < c {
-                return false
-            }
-        }
-        
-        return false
+        SemverCompare.isNewerVersion(latest: latest, current: current)
     }
     
     /// Show update prompt dialog

@@ -47,7 +47,8 @@ class ClaudeAPIService {
     /// - Parameter completion: Completion callback containing successful UsageData or Error on failure
     /// - Note: Requests automatically add necessary headers to bypass Cloudflare protection
     /// - Important: Ensure user has configured valid credentials before calling
-    /// - Note: Calls main usage API and Extra Usage API in parallel; Extra Usage failure does not affect main functionality
+    /// - Note: Main and Extra Usage are fetched in parallel via `async let`. Main failure
+    ///   propagates as the overall failure; Extra Usage failure is logged and treated as nil.
     func fetchUsage(completion: @escaping (Result<UsageData, Error>) -> Void) {
         #if DEBUG
         // Debug mode: Return mock data (immediate return, no delay)
@@ -60,70 +61,55 @@ class ClaudeAPIService {
         }
         #endif
 
-        // Cancel previous request (if exists)
+        // Cancel any in-flight network task so a fast manual refresh doesn't double-fire.
         currentTask?.cancel()
 
-        // Check authentication credentials
         guard settings.hasValidCredentials else {
             completion(.failure(UsageError.noCredentials))
             return
         }
 
-        // Use DispatchGroup to make two API requests in parallel
-        let dispatchGroup = DispatchGroup()
-        var mainUsageData: UsageData?
-        var extraUsageData: ExtraUsageData?
-        var mainError: Error?
+        Task { @MainActor in
+            do {
+                async let main = fetchMainUsageAsync()
+                async let extra = fetchExtraUsageQuietlyAsync()
 
-        // ========== Request 1: Main Usage API ==========
-        dispatchGroup.enter()
-        fetchMainUsage { result in
-            switch result {
-            case .success(let data):
-                mainUsageData = data
-            case .failure(let error):
-                mainError = error
-            }
-            dispatchGroup.leave()
-        }
-
-        // ========== Request 2: Extra Usage API (optional) ==========
-        dispatchGroup.enter()
-        fetchExtraUsage { result in
-            switch result {
-            case .success(let data):
-                extraUsageData = data  // May be nil (feature not enabled or failed)
-            case .failure:
-                // Extra Usage failure does not affect main functionality, keep extraUsageData as nil
-                Logger.api.info("Extra Usage API failed, continuing with main usage data only")
-            }
-            dispatchGroup.leave()
-        }
-
-        // ========== Wait for both requests to complete then merge results ==========
-        dispatchGroup.notify(queue: .main) {
-            // If main API failed, the entire request fails
-            if let error = mainError {
+                let mainData = try await main
+                let extraData = await extra
+                let merged = UsageData(
+                    fiveHour: mainData.fiveHour,
+                    sevenDay: mainData.sevenDay,
+                    opus: mainData.opus,
+                    sonnet: mainData.sonnet,
+                    extraUsage: extraData
+                )
+                completion(.success(merged))
+            } catch {
                 completion(.failure(error))
-                return
             }
+        }
+    }
 
-            // Main API succeeded, merge Extra Usage data
-            guard var finalData = mainUsageData else {
-                completion(.failure(UsageError.decodingError))
-                return
+    /// Async wrapper around `fetchMainUsage` for parallel orchestration.
+    private func fetchMainUsageAsync() async throws -> UsageData {
+        try await withCheckedThrowingContinuation { continuation in
+            fetchMainUsage { continuation.resume(with: $0) }
+        }
+    }
+
+    /// Extra Usage failures are downgraded to nil so they never break the main fetch.
+    /// Sites that need to surface Extra Usage errors can call `fetchExtraUsage` directly.
+    private func fetchExtraUsageQuietlyAsync() async -> ExtraUsageData? {
+        await withCheckedContinuation { continuation in
+            fetchExtraUsage { result in
+                switch result {
+                case .success(let data):
+                    continuation.resume(returning: data)
+                case .failure(let error):
+                    Logger.api.info("Extra Usage failed, continuing with main usage only: \(error.localizedDescription)")
+                    continuation.resume(returning: nil)
+                }
             }
-
-            // Create complete data including Extra Usage
-            finalData = UsageData(
-                fiveHour: finalData.fiveHour,
-                sevenDay: finalData.sevenDay,
-                opus: finalData.opus,
-                sonnet: finalData.sonnet,
-                extraUsage: extraUsageData  // May be nil
-            )
-
-            completion(.success(finalData))
         }
     }
 
