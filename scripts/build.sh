@@ -1,14 +1,15 @@
 #!/bin/bash
 
-# Usage4Claude 构建打包脚本
-# 功能：编译 Xcode 项目，导出 .app，创建 DMG 安装包
-# 用法：./scripts/build.sh [--no-clean] [--config Release|Debug] [--verbose|-v]
+# Usage4Claude build script
+# Compiles the Xcode project, exports the .app, packages a DMG, notarizes it,
+# and signs it for Sparkle distribution.
+# Usage: ./scripts/build.sh [--no-clean] [--config Release|Debug] [--verbose|-v]
 
-set -e  # 遇到错误立即退出
-set -o pipefail  # 管道命令中任何一个失败都会导致整个管道失败
+set -e  # Exit on any error
+set -o pipefail  # Fail the whole pipeline if any stage fails
 
 # ============================================
-# 颜色输出
+# Color output
 # ============================================
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -17,7 +18,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # ============================================
-# 辅助函数
+# Helper functions
 # ============================================
 print_header() {
     echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
@@ -30,11 +31,11 @@ print_success() {
 }
 
 print_error() {
-    echo -e "${RED}❌ 错误: $1${NC}"
+    echo -e "${RED}❌ Error: $1${NC}"
 }
 
 print_warning() {
-    echo -e "${YELLOW}⚠️  警告: $1${NC}"
+    echo -e "${YELLOW}⚠️  Warning: $1${NC}"
 }
 
 print_info() {
@@ -42,7 +43,7 @@ print_info() {
 }
 
 # ============================================
-# 配置变量
+# Configuration
 # ============================================
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PROJECT_NAME="Usage4Claude"
@@ -69,13 +70,13 @@ if [ -d "/Applications/Xcode.app/Contents/Developer" ]; then
     export DEVELOPER_DIR="/Applications/Xcode.app/Contents/Developer"
 fi
 
-# 默认参数
+# Defaults
 BUILD_CONFIG="Release"
 SHOULD_CLEAN=true
 VERBOSE=false
 
 # ============================================
-# 解析命令行参数
+# Parse command-line arguments
 # ============================================
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -92,100 +93,99 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         --help|-h)
-            echo "用法: $0 [选项]"
+            echo "Usage: $0 [options]"
             echo ""
-            echo "选项:"
-            echo "  --no-clean          跳过 Xcode clean（默认会执行 clean）"
-            echo "  --config <config>   指定构建配置 (Release|Debug)，默认 Release"
-            echo "  --verbose, -v       显示详细构建日志（默认只显示摘要）"
-            echo "  --help, -h          显示此帮助信息"
+            echo "Options:"
+            echo "  --no-clean          Skip the Xcode clean step (clean runs by default)"
+            echo "  --config <config>   Build configuration (Release|Debug). Default: Release"
+            echo "  --verbose, -v       Show full build log instead of a summary"
+            echo "  --help, -h          Show this help"
             echo ""
-            echo "示例:"
-            echo "  $0                  # 默认：clean + Release 构建"
-            echo "  $0 --no-clean       # 跳过 clean"
-            echo "  $0 --config Debug   # 使用 Debug 配置"
-            echo "  $0 --verbose        # 显示详细日志"
+            echo "Examples:"
+            echo "  $0                  # Default: clean + Release build"
+            echo "  $0 --no-clean       # Skip clean"
+            echo "  $0 --config Debug   # Use Debug configuration"
+            echo "  $0 --verbose        # Show full log"
             exit 0
             ;;
         *)
-            print_error "未知参数: $1"
-            echo "使用 --help 查看帮助"
+            print_error "Unknown argument: $1"
+            echo "Run --help for usage."
             exit 1
             ;;
     esac
 done
 
 # ============================================
-# 检查依赖
+# Dependency checks
 # ============================================
-print_header "检查依赖"
+print_header "Checking dependencies"
 
-# 检查 xcodebuild
+# xcodebuild
 if ! command -v xcodebuild &> /dev/null; then
-    print_error "未找到 xcodebuild，请安装 Xcode"
+    print_error "xcodebuild not found. Install Xcode."
     exit 1
 fi
-print_success "xcodebuild 已安装"
+print_success "xcodebuild present"
 
-# 检查 create-dmg
+# create-dmg
 if ! command -v create-dmg &> /dev/null; then
-    print_error "未找到 create-dmg"
+    print_error "create-dmg not found"
     echo ""
-    echo "请执行以下命令安装："
+    echo "Install with:"
     echo "  brew install create-dmg"
     exit 1
 fi
-print_success "create-dmg 已安装"
+print_success "create-dmg present"
 
-# 检查项目文件
+# Project file
 if [ ! -d "$XCODEPROJ" ]; then
-    print_error "未找到项目文件: $XCODEPROJ"
+    print_error "Project file not found: $XCODEPROJ"
     exit 1
 fi
-print_success "项目文件存在"
+print_success "Project file present"
 
 # ============================================
-# 读取版本号
+# Read version
 # ============================================
-print_header "读取版本号"
+print_header "Reading version"
 
 VERSION=$(xcodebuild -project "$XCODEPROJ" -showBuildSettings | grep MARKETING_VERSION | head -1 | awk '{print $3}')
 
 if [ -z "$VERSION" ]; then
-    print_error "无法从 Xcode 项目读取版本号"
+    print_error "Could not read MARKETING_VERSION from the Xcode project"
     exit 1
 fi
 
-print_success "版本号: $VERSION"
+print_success "Version: $VERSION"
 
-# 设置输出目录
+# Output paths
 EXPORT_DIR="${BUILD_DIR}/${PROJECT_NAME}-${BUILD_CONFIG}-${VERSION}"
 DMG_NAME="${PRODUCT_NAME}-v${VERSION}.dmg"
 DMG_PATH="${EXPORT_DIR}/${DMG_NAME}"
 LOG_FILE="${EXPORT_DIR}/build.log"
 ARCHIVE_PATH="${EXPORT_DIR}/${PROJECT_NAME}.xcarchive"
 
-print_info "输出目录: $EXPORT_DIR"
-print_info "DMG 文件名: $DMG_NAME"
+print_info "Output directory: $EXPORT_DIR"
+print_info "DMG filename: $DMG_NAME"
 
 if [ "$VERBOSE" = false ]; then
-    print_info "详细日志: $LOG_FILE"
+    print_info "Full log: $LOG_FILE"
 fi
 
-# 创建输出目录
 mkdir -p "$EXPORT_DIR"
 
-# 清空日志文件（如果使用简洁模式）
+# Truncate the log when running in summary mode
 if [ "$VERBOSE" = false ]; then
     > "$LOG_FILE"
 fi
 
 # ============================================
-# 清理
+# Clean
 # ============================================
 if [ "$SHOULD_CLEAN" = true ]; then
-    print_header "清理构建"
-    
+    print_header "Cleaning build"
+
     if [ "$VERBOSE" = true ]; then
         xcodebuild clean \
             -project "$XCODEPROJ" \
@@ -193,7 +193,7 @@ if [ "$SHOULD_CLEAN" = true ]; then
             -configuration "$BUILD_CONFIG" \
             -destination "generic/platform=macOS,name=Any Mac"
     else
-        print_info "正在清理..."
+        print_info "Cleaning..."
         xcodebuild clean \
             -project "$XCODEPROJ" \
             -scheme "$SCHEME_NAME" \
@@ -201,26 +201,26 @@ if [ "$SHOULD_CLEAN" = true ]; then
             -destination "generic/platform=macOS,name=Any Mac" \
             >> "$LOG_FILE" 2>&1
     fi
-    
-    print_success "清理完成"
+
+    print_success "Clean done"
 else
-    print_info "跳过清理步骤"
+    print_info "Skipping clean step"
 fi
 
 # ============================================
-# Archive（编译打包）
+# Archive (compile + package)
 # ============================================
-print_header "Archive（编译打包）"
+print_header "Archive (compile + package)"
 
-# 删除旧的 archive（如果存在）
+# Remove any prior archive
 if [ -d "$ARCHIVE_PATH" ]; then
-    print_info "删除旧的 archive"
+    print_info "Removing previous archive"
     rm -rf "$ARCHIVE_PATH"
 fi
 
-print_info "开始编译..."
-print_info "配置: $BUILD_CONFIG"
-print_info "目标: Any Mac (Universal Binary)"
+print_info "Starting compile..."
+print_info "Configuration: $BUILD_CONFIG"
+print_info "Target: Any Mac (Universal Binary)"
 
 # Release builds sign with Developer ID for distribution; Debug uses project default.
 # Manual style avoids Xcode's "conflicting provisioning settings" error when overriding
@@ -238,7 +238,7 @@ if [ "$BUILD_CONFIG" = "Release" ]; then
 fi
 
 if [ "$VERBOSE" = true ]; then
-    # 详细模式：显示所有输出
+    # Verbose mode: stream xcodebuild output
     xcodebuild archive \
         -project "$XCODEPROJ" \
         -scheme "$SCHEME_NAME" \
@@ -248,8 +248,8 @@ if [ "$VERBOSE" = true ]; then
         "${ARCHIVE_SIGN_ARGS[@]}"
     ARCHIVE_RESULT=$?
 else
-    # 简洁模式：只显示进度
-    print_info "编译中，请稍候...（通常需要 1-2 分钟）"
+    # Summary mode: only show progress
+    print_info "Compiling, please wait... (typically 1-2 minutes)"
     xcodebuild archive \
         -project "$XCODEPROJ" \
         -scheme "$SCHEME_NAME" \
@@ -262,23 +262,23 @@ else
 fi
 
 if [ $ARCHIVE_RESULT -ne 0 ] || [ ! -d "$ARCHIVE_PATH" ]; then
-    print_error "Archive 失败"
+    print_error "Archive failed"
     if [ "$VERBOSE" = false ]; then
-        print_info "显示最后 20 行日志："
+        print_info "Last 20 lines of log:"
         echo ""
         tail -n 20 "$LOG_FILE"
         echo ""
-        print_info "完整日志: $LOG_FILE"
+        print_info "Full log: $LOG_FILE"
     fi
     exit 1
 fi
 
-print_success "Archive 完成"
+print_success "Archive complete"
 
 # ============================================
-# Export（导出 .app）
+# Export (extract .app from archive)
 # ============================================
-print_header "Export（导出 .app）"
+print_header "Export (.app)"
 
 # Release exports use developer-id (for distribution + notarization);
 # Debug uses mac-application (development signing).
@@ -306,18 +306,16 @@ cat > "$EXPORT_OPTIONS_PLIST" << EOF
 </plist>
 EOF
 
-print_info "导出到: $EXPORT_DIR"
+print_info "Exporting to: $EXPORT_DIR"
 
 if [ "$VERBOSE" = true ]; then
-    # 详细模式：显示所有输出
     xcodebuild -exportArchive \
         -archivePath "$ARCHIVE_PATH" \
         -exportPath "$EXPORT_DIR" \
         -exportOptionsPlist "$EXPORT_OPTIONS_PLIST"
     EXPORT_RESULT=$?
 else
-    # 简洁模式：只显示进度
-    print_info "导出中..."
+    print_info "Exporting..."
     xcodebuild -exportArchive \
         -archivePath "$ARCHIVE_PATH" \
         -exportPath "$EXPORT_DIR" \
@@ -327,35 +325,35 @@ else
 fi
 
 if [ $EXPORT_RESULT -ne 0 ] || [ ! -d "${EXPORT_DIR}/${PRODUCT_NAME}.app" ]; then
-    print_error "导出 .app 失败"
+    print_error "Export failed"
     if [ "$VERBOSE" = false ]; then
-        print_info "显示最后 20 行日志："
+        print_info "Last 20 lines of log:"
         echo ""
         tail -n 20 "$LOG_FILE"
         echo ""
-        print_info "完整日志: $LOG_FILE"
+        print_info "Full log: $LOG_FILE"
     fi
     exit 1
 fi
 
-print_success "导出完成: ${EXPORT_DIR}/${PRODUCT_NAME}.app"
+print_success "Export complete: ${EXPORT_DIR}/${PRODUCT_NAME}.app"
 
 # ============================================
-# 创建 DMG
+# Create DMG
 # ============================================
-print_header "创建 DMG 安装包"
+print_header "Creating DMG installer"
 
-# 删除旧的 DMG（如果存在）
+# Remove any prior DMG
 if [ -f "$DMG_PATH" ]; then
-    print_info "删除旧的 DMG: $DMG_PATH"
+    print_info "Removing previous DMG: $DMG_PATH"
     rm -f "$DMG_PATH"
 fi
 
-# 检查 DMG 图标文件
+# DMG icon (optional)
 DMG_ICON="${PROJECT_ROOT}/docs/images/DmgIcon.icns"
 if [ ! -f "$DMG_ICON" ]; then
-    print_warning "未找到 DMG 图标文件: $DMG_ICON"
-    print_info "将创建不带图标的 DMG"
+    print_warning "DMG icon not found: $DMG_ICON"
+    print_info "Creating DMG without a custom icon"
     VOLICON_OPTION=""
 else
     VOLICON_OPTION="--volicon ${DMG_ICON}"
@@ -364,8 +362,7 @@ fi
 cd "$EXPORT_DIR"
 
 if [ "$VERBOSE" = true ]; then
-    # 详细模式：显示所有 create-dmg 输出
-    print_info "创建 DMG: $DMG_NAME"
+    print_info "Creating DMG: $DMG_NAME"
     create-dmg \
       --volname "${PRODUCT_NAME}-${VERSION}" \
       ${VOLICON_OPTION} \
@@ -379,8 +376,7 @@ if [ "$VERBOSE" = true ]; then
       "${PRODUCT_NAME}.app" 2>&1 | grep -v "Failed running AppleScript" || true
     DMG_RESULT=$?
 else
-    # 简洁模式：只显示进度信息
-    print_info "创建 DMG 中..."
+    print_info "Creating DMG..."
     create-dmg \
       --volname "${PRODUCT_NAME}-${VERSION}" \
       ${VOLICON_OPTION} \
@@ -398,63 +394,63 @@ fi
 
 set -e
 
-# 检查 DMG 是否真的创建成功
+# Verify the DMG actually exists
 if [ ! -f "$DMG_PATH" ]; then
-    print_error "创建 DMG 失败"
+    print_error "DMG creation failed"
     if [ "$VERBOSE" = false ]; then
-        print_info "显示最后 20 行日志："
+        print_info "Last 20 lines of log:"
         echo ""
         tail -n 20 "$LOG_FILE"
         echo ""
-        print_info "完整日志: $LOG_FILE"
+        print_info "Full log: $LOG_FILE"
     fi
     exit 1
 fi
 
 if [ $DMG_RESULT -ne 0 ]; then
     if [ "$VERBOSE" = true ]; then
-        print_warning "DMG 创建过程中有警告，但 DMG 文件已成功创建"
+        print_warning "create-dmg emitted warnings, but the DMG was produced"
     fi
 fi
 
-print_success "DMG 创建完成: $DMG_PATH"
+print_success "DMG created: $DMG_PATH"
 
 # ============================================
-# 公证 (Notarize) — 仅 Release 构建
+# Notarize — Release builds only
 # ============================================
 NOTARIZED=false
 if [ "$BUILD_CONFIG" = "Release" ]; then
-    print_header "公证 DMG (Notarize)"
+    print_header "Notarizing DMG"
 
     if xcrun notarytool history --keychain-profile "$NOTARY_PROFILE" >/dev/null 2>&1; then
-        print_info "提交至 Apple 公证服务（profile: $NOTARY_PROFILE，可能需要几分钟）..."
+        print_info "Submitting to Apple notary service (profile: $NOTARY_PROFILE; usually a few minutes)..."
         # notarytool submit --wait exits 0 only when status is Accepted; non-zero otherwise.
         # (Don't pipe to grep — notarytool's \r progress updates corrupt line-based parsing.)
         if xcrun notarytool submit "$DMG_PATH" \
             --keychain-profile "$NOTARY_PROFILE" \
             --wait >> "$LOG_FILE" 2>&1; then
-            print_success "公证通过"
-            print_info "Stapling 票据到 DMG..."
+            print_success "Notarization accepted"
+            print_info "Stapling ticket to DMG..."
             if xcrun stapler staple "$DMG_PATH" >> "$LOG_FILE" 2>&1; then
-                print_success "Staple 完成"
+                print_success "Staple complete"
                 NOTARIZED=true
             else
-                print_warning "Staple 失败，DMG 仍已公证（首次启动需联网验证）"
+                print_warning "Staple failed; DMG is still notarized but first launch will require network access"
             fi
         else
-            print_error "公证失败 — 查看日志: $LOG_FILE"
-            print_info "可用 'xcrun notarytool log <submission-id> --keychain-profile $NOTARY_PROFILE' 查看具体错误"
+            print_error "Notarization failed — see log: $LOG_FILE"
+            print_info "Use 'xcrun notarytool log <submission-id> --keychain-profile $NOTARY_PROFILE' to see details"
         fi
     else
-        print_warning "未找到 notarytool keychain profile '$NOTARY_PROFILE'，跳过公证"
+        print_warning "notarytool keychain profile '$NOTARY_PROFILE' not found; skipping notarization"
         echo ""
-        print_info "首次设置（一次性）— 在 appleid.apple.com 生成 app-specific password 后："
+        print_info "First-time setup (one-off) — generate an app-specific password at appleid.apple.com, then:"
         echo "    xcrun notarytool store-credentials \"$NOTARY_PROFILE\" \\"
         echo "      --apple-id <your-apple-id-email> \\"
         echo "      --team-id $DEVELOPMENT_TEAM \\"
         echo "      --password <app-specific-password>"
         echo ""
-        print_info "（或设置 NOTARY_PROFILE 环境变量指向另一个已存在的 profile）"
+        print_info "(Or set the NOTARY_PROFILE env var to point at an existing profile)"
     fi
 fi
 
@@ -465,69 +461,68 @@ fi
 # via `generate_keys`). Without that key, sign_update fails fast.
 # ============================================
 if [ "$BUILD_CONFIG" = "Release" ] && [ "$NOTARIZED" = true ]; then
-    print_header "Sparkle 签名"
+    print_header "Sparkle signature"
 
     if [ ! -x "$SIGN_UPDATE" ]; then
-        print_warning "未找到 sign_update ($SIGN_UPDATE)，跳过 Sparkle 签名"
-        print_info "下载 Sparkle 工具：https://github.com/sparkle-project/Sparkle/releases"
-        print_info "或设置 SIGN_UPDATE 环境变量指向你已安装的 sign_update 路径"
+        print_warning "sign_update not found ($SIGN_UPDATE); skipping Sparkle signing"
+        print_info "Download Sparkle tools: https://github.com/sparkle-project/Sparkle/releases"
+        print_info "Or set the SIGN_UPDATE env var to the path of an installed sign_update"
     else
         SIGN_OUTPUT="$($SIGN_UPDATE "$DMG_PATH" 2>&1)" || true
         if [[ "$SIGN_OUTPUT" == *"sparkle:edSignature="* ]]; then
-            print_success "Sparkle 签名完成"
+            print_success "Sparkle signature generated"
             DMG_FILENAME="$(basename "$DMG_PATH")"
             ENCLOSURE_URL="https://github.com/arcanii/Usage4Claude-Arcanii/releases/download/v${VERSION}/${DMG_FILENAME}"
             echo ""
-            print_info "把下面这行更新到 appcast.xml 的 <enclosure ...> 里："
+            print_info "Paste the following into appcast.xml as the new <enclosure ...>:"
             echo ""
             echo "    <enclosure"
             echo "        url=\"${ENCLOSURE_URL}\""
             echo "        ${SIGN_OUTPUT}"
             echo "        type=\"application/octet-stream\"/>"
             echo ""
-            print_info "（version=${VERSION}, build=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "${EXPORT_DIR}/${PRODUCT_NAME}.app/Contents/Info.plist" 2>/dev/null || echo '?'))"
+            print_info "(version=${VERSION}, build=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "${EXPORT_DIR}/${PRODUCT_NAME}.app/Contents/Info.plist" 2>/dev/null || echo '?'))"
         else
-            print_error "Sparkle 签名失败: $SIGN_OUTPUT"
+            print_error "Sparkle signing failed: $SIGN_OUTPUT"
         fi
     fi
 fi
 
 # ============================================
-# 清理临时文件
+# Cleanup
 # ============================================
-print_header "清理临时文件"
+print_header "Cleaning up temp files"
 
 rm -f "$EXPORT_OPTIONS_PLIST"
 rm -rf "$ARCHIVE_PATH"
 
-print_success "清理完成"
+print_success "Cleanup done"
 
 # ============================================
-# 构建摘要
+# Summary
 # ============================================
-print_header "构建完成 🎉"
+print_header "Build complete 🎉"
 
 echo ""
-print_success "版本: $VERSION"
-print_success "配置: $BUILD_CONFIG"
-print_success "输出目录: $EXPORT_DIR"
+print_success "Version: $VERSION"
+print_success "Configuration: $BUILD_CONFIG"
+print_success "Output directory: $EXPORT_DIR"
 echo ""
-print_info "构建产物:"
-echo "  📦 应用程序: ${EXPORT_DIR}/${PRODUCT_NAME}.app"
-echo "  💿 DMG 安装包: ${DMG_PATH}"
+print_info "Artifacts:"
+echo "  📦 App: ${EXPORT_DIR}/${PRODUCT_NAME}.app"
+echo "  💿 DMG: ${DMG_PATH}"
 if [ "$BUILD_CONFIG" = "Release" ]; then
     if [ "$NOTARIZED" = true ]; then
-        echo "  ✅ 已公证 + stapled (可直接分发)"
+        echo "  ✅ Notarized + stapled (ready to distribute)"
     else
-        echo "  ⚠️  未公证 (用户首次打开需右键 → 打开)"
+        echo "  ⚠️  Not notarized (users must right-click → Open on first launch)"
     fi
 fi
 echo ""
 
-# 获取 DMG 文件大小
 DMG_SIZE=$(du -h "$DMG_PATH" | awk '{print $1}')
-print_info "DMG 大小: $DMG_SIZE"
+print_info "DMG size: $DMG_SIZE"
 
 echo ""
-print_success "全部完成！"
+print_success "All done!"
 echo ""
