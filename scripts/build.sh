@@ -364,7 +364,7 @@ if [ "$VERBOSE" = true ]; then
     # 详细模式：显示所有 create-dmg 输出
     print_info "创建 DMG: $DMG_NAME"
     create-dmg \
-      --volname "${PRODUCT_NAME}" \
+      --volname "${PRODUCT_NAME}-${VERSION}" \
       ${VOLICON_OPTION} \
       --window-pos 200 120 \
       --window-size 600 500 \
@@ -379,7 +379,7 @@ else
     # 简洁模式：只显示进度信息
     print_info "创建 DMG 中..."
     create-dmg \
-      --volname "${PRODUCT_NAME}" \
+      --volname "${PRODUCT_NAME}-${VERSION}" \
       ${VOLICON_OPTION} \
       --window-pos 200 120 \
       --window-size 600 500 \
