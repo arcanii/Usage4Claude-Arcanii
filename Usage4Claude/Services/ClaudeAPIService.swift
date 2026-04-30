@@ -186,8 +186,15 @@ class ClaudeAPIService {
                     completion(.failure(UsageError.unauthorized))
                     return
                 case 403:
-                    // Forbidden, possibly Cloudflare interception
-                    completion(.failure(UsageError.cloudflareBlocked))
+                    // 403 covers two distinct cases:
+                    // - Cloudflare/bot block (HTML body, handled above)
+                    // - Expired/invalid session (JSON body with permission_error)
+                    if let errorResponse = try? JSONDecoder().decode(ErrorResponse.self, from: data),
+                       errorResponse.error.type == "permission_error" {
+                        completion(.failure(UsageError.sessionExpired))
+                    } else {
+                        completion(.failure(UsageError.cloudflareBlocked))
+                    }
                     return
                 case 429:
                     // Request rate too high

@@ -15,6 +15,11 @@ struct AboutView: View {
     private var appVersion: String {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown"
     }
+
+    /// Read build number from Bundle
+    private var buildNumber: String {
+        Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?"
+    }
     
     var body: some View {
         VStack(spacing: 20) {
@@ -36,7 +41,7 @@ struct AboutView: View {
                     .font(.subheadline)
                     .foregroundColor(.secondary)
 
-                Text(L.SettingsAbout.version(appVersion))
+                Text("\(L.SettingsAbout.version(appVersion)) (\(buildNumber))")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
             }

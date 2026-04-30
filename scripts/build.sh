@@ -46,9 +46,17 @@ print_info() {
 # ============================================
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PROJECT_NAME="Usage4Claude"
+PRODUCT_NAME="U4Claude"
 SCHEME_NAME="Usage4Claude"
 XCODEPROJ="${PROJECT_ROOT}/${PROJECT_NAME}.xcodeproj"
 BUILD_DIR="${PROJECT_ROOT}/build"
+DEVELOPMENT_TEAM="386M76FV3K"
+NOTARY_PROFILE="${NOTARY_PROFILE:-Usage4Claude-Arcanii-notarize}"
+
+# xcode-select may point at CommandLineTools; force the full Xcode so archive works.
+if [ -d "/Applications/Xcode.app/Contents/Developer" ]; then
+    export DEVELOPER_DIR="/Applications/Xcode.app/Contents/Developer"
+fi
 
 # 默认参数
 BUILD_CONFIG="Release"
@@ -141,7 +149,7 @@ print_success "版本号: $VERSION"
 
 # 设置输出目录
 EXPORT_DIR="${BUILD_DIR}/${PROJECT_NAME}-${BUILD_CONFIG}-${VERSION}"
-DMG_NAME="${PROJECT_NAME}-v${VERSION}.dmg"
+DMG_NAME="${PRODUCT_NAME}-v${VERSION}.dmg"
 DMG_PATH="${EXPORT_DIR}/${DMG_NAME}"
 LOG_FILE="${EXPORT_DIR}/build.log"
 ARCHIVE_PATH="${EXPORT_DIR}/${PROJECT_NAME}.xcarchive"
@@ -203,6 +211,21 @@ print_info "开始编译..."
 print_info "配置: $BUILD_CONFIG"
 print_info "目标: Any Mac (Universal Binary)"
 
+# Release builds sign with Developer ID for distribution; Debug uses project default.
+# Manual style avoids Xcode's "conflicting provisioning settings" error when overriding
+# the project's automatic-signing identity. Developer ID Application signing does not
+# require a provisioning profile.
+ARCHIVE_SIGN_ARGS=()
+if [ "$BUILD_CONFIG" = "Release" ]; then
+    ARCHIVE_SIGN_ARGS=(
+        CODE_SIGN_IDENTITY="Developer ID Application"
+        CODE_SIGN_STYLE=Manual
+        DEVELOPMENT_TEAM="$DEVELOPMENT_TEAM"
+        PROVISIONING_PROFILE_SPECIFIER=
+        OTHER_CODE_SIGN_FLAGS=
+    )
+fi
+
 if [ "$VERBOSE" = true ]; then
     # 详细模式：显示所有输出
     xcodebuild archive \
@@ -211,9 +234,7 @@ if [ "$VERBOSE" = true ]; then
         -configuration "$BUILD_CONFIG" \
         -archivePath "$ARCHIVE_PATH" \
         -destination "generic/platform=macOS,name=Any Mac" \
-        CODE_SIGN_IDENTITY="Usage4Claude-CodeSigning" \
-        CODE_SIGN_STYLE=Manual \
-        DEVELOPMENT_TEAM=""
+        "${ARCHIVE_SIGN_ARGS[@]}"
     ARCHIVE_RESULT=$?
 else
     # 简洁模式：只显示进度
@@ -224,9 +245,7 @@ else
         -configuration "$BUILD_CONFIG" \
         -archivePath "$ARCHIVE_PATH" \
         -destination "generic/platform=macOS,name=Any Mac" \
-        CODE_SIGN_IDENTITY="Usage4Claude-CodeSigning" \
-        CODE_SIGN_STYLE=Manual \
-        DEVELOPMENT_TEAM="" \
+        "${ARCHIVE_SIGN_ARGS[@]}" \
         >> "$LOG_FILE" 2>&1
     ARCHIVE_RESULT=$?
 fi
@@ -250,7 +269,14 @@ print_success "Archive 完成"
 # ============================================
 print_header "Export（导出 .app）"
 
-# 创建导出配置 plist
+# Release exports use developer-id (for distribution + notarization);
+# Debug uses mac-application (development signing).
+if [ "$BUILD_CONFIG" = "Release" ]; then
+    EXPORT_METHOD="developer-id"
+else
+    EXPORT_METHOD="mac-application"
+fi
+
 EXPORT_OPTIONS_PLIST="${EXPORT_DIR}/ExportOptions.plist"
 cat > "$EXPORT_OPTIONS_PLIST" << EOF
 <?xml version="1.0" encoding="UTF-8"?>
@@ -258,9 +284,11 @@ cat > "$EXPORT_OPTIONS_PLIST" << EOF
 <plist version="1.0">
 <dict>
     <key>method</key>
-    <string>mac-application</string>
+    <string>${EXPORT_METHOD}</string>
     <key>signingStyle</key>
-    <string>manual</string>
+    <string>automatic</string>
+    <key>teamID</key>
+    <string>${DEVELOPMENT_TEAM}</string>
     <key>stripSwiftSymbols</key>
     <true/>
 </dict>
@@ -287,7 +315,7 @@ else
     EXPORT_RESULT=$?
 fi
 
-if [ $EXPORT_RESULT -ne 0 ] || [ ! -d "${EXPORT_DIR}/${PROJECT_NAME}.app" ]; then
+if [ $EXPORT_RESULT -ne 0 ] || [ ! -d "${EXPORT_DIR}/${PRODUCT_NAME}.app" ]; then
     print_error "导出 .app 失败"
     if [ "$VERBOSE" = false ]; then
         print_info "显示最后 20 行日志："
@@ -299,7 +327,7 @@ if [ $EXPORT_RESULT -ne 0 ] || [ ! -d "${EXPORT_DIR}/${PROJECT_NAME}.app" ]; the
     exit 1
 fi
 
-print_success "导出完成: ${EXPORT_DIR}/${PROJECT_NAME}.app"
+print_success "导出完成: ${EXPORT_DIR}/${PRODUCT_NAME}.app"
 
 # ============================================
 # 创建 DMG
@@ -328,31 +356,31 @@ if [ "$VERBOSE" = true ]; then
     # 详细模式：显示所有 create-dmg 输出
     print_info "创建 DMG: $DMG_NAME"
     create-dmg \
-      --volname "${PROJECT_NAME}" \
+      --volname "${PRODUCT_NAME}" \
       ${VOLICON_OPTION} \
       --window-pos 200 120 \
       --window-size 600 500 \
       --icon-size 128 \
-      --icon "${PROJECT_NAME}.app" 175 190 \
-      --hide-extension "${PROJECT_NAME}.app" \
+      --icon "${PRODUCT_NAME}.app" 175 190 \
+      --hide-extension "${PRODUCT_NAME}.app" \
       --app-drop-link 425 190 \
       "$DMG_NAME" \
-      "${PROJECT_NAME}.app" 2>&1 | grep -v "Failed running AppleScript" || true
+      "${PRODUCT_NAME}.app" 2>&1 | grep -v "Failed running AppleScript" || true
     DMG_RESULT=$?
 else
     # 简洁模式：只显示进度信息
     print_info "创建 DMG 中..."
     create-dmg \
-      --volname "${PROJECT_NAME}" \
+      --volname "${PRODUCT_NAME}" \
       ${VOLICON_OPTION} \
       --window-pos 200 120 \
       --window-size 600 500 \
       --icon-size 128 \
-      --icon "${PROJECT_NAME}.app" 175 190 \
-      --hide-extension "${PROJECT_NAME}.app" \
+      --icon "${PRODUCT_NAME}.app" 175 190 \
+      --hide-extension "${PRODUCT_NAME}.app" \
       --app-drop-link 425 190 \
       "$DMG_NAME" \
-      "${PROJECT_NAME}.app" \
+      "${PRODUCT_NAME}.app" \
       >> "$LOG_FILE" 2>&1
     DMG_RESULT=$?
 fi
@@ -381,6 +409,45 @@ fi
 print_success "DMG 创建完成: $DMG_PATH"
 
 # ============================================
+# 公证 (Notarize) — 仅 Release 构建
+# ============================================
+NOTARIZED=false
+if [ "$BUILD_CONFIG" = "Release" ]; then
+    print_header "公证 DMG (Notarize)"
+
+    if xcrun notarytool history --keychain-profile "$NOTARY_PROFILE" >/dev/null 2>&1; then
+        print_info "提交至 Apple 公证服务（profile: $NOTARY_PROFILE，可能需要几分钟）..."
+        # notarytool submit --wait exits 0 only when status is Accepted; non-zero otherwise.
+        # (Don't pipe to grep — notarytool's \r progress updates corrupt line-based parsing.)
+        if xcrun notarytool submit "$DMG_PATH" \
+            --keychain-profile "$NOTARY_PROFILE" \
+            --wait >> "$LOG_FILE" 2>&1; then
+            print_success "公证通过"
+            print_info "Stapling 票据到 DMG..."
+            if xcrun stapler staple "$DMG_PATH" >> "$LOG_FILE" 2>&1; then
+                print_success "Staple 完成"
+                NOTARIZED=true
+            else
+                print_warning "Staple 失败，DMG 仍已公证（首次启动需联网验证）"
+            fi
+        else
+            print_error "公证失败 — 查看日志: $LOG_FILE"
+            print_info "可用 'xcrun notarytool log <submission-id> --keychain-profile $NOTARY_PROFILE' 查看具体错误"
+        fi
+    else
+        print_warning "未找到 notarytool keychain profile '$NOTARY_PROFILE'，跳过公证"
+        echo ""
+        print_info "首次设置（一次性）— 在 appleid.apple.com 生成 app-specific password 后："
+        echo "    xcrun notarytool store-credentials \"$NOTARY_PROFILE\" \\"
+        echo "      --apple-id <your-apple-id-email> \\"
+        echo "      --team-id $DEVELOPMENT_TEAM \\"
+        echo "      --password <app-specific-password>"
+        echo ""
+        print_info "（或设置 NOTARY_PROFILE 环境变量指向另一个已存在的 profile）"
+    fi
+fi
+
+# ============================================
 # 清理临时文件
 # ============================================
 print_header "清理临时文件"
@@ -401,8 +468,15 @@ print_success "配置: $BUILD_CONFIG"
 print_success "输出目录: $EXPORT_DIR"
 echo ""
 print_info "构建产物:"
-echo "  📦 应用程序: ${EXPORT_DIR}/${PROJECT_NAME}.app"
+echo "  📦 应用程序: ${EXPORT_DIR}/${PRODUCT_NAME}.app"
 echo "  💿 DMG 安装包: ${DMG_PATH}"
+if [ "$BUILD_CONFIG" = "Release" ]; then
+    if [ "$NOTARIZED" = true ]; then
+        echo "  ✅ 已公证 + stapled (可直接分发)"
+    else
+        echo "  ⚠️  未公证 (用户首次打开需右键 → 打开)"
+    fi
+fi
 echo ""
 
 # 获取 DMG 文件大小

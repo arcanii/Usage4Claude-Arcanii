@@ -95,7 +95,7 @@
 "settings.about.license_value" = "MIT License";
 "settings.about.github" = "访问 GitHub 仓库";
 "settings.about.github_sponsor" = "GitHub Sponsor";
-"settings.about.copyright" = "© 2025 All Rights Reserved";
+"settings.about.copyright" = "© 2026 All Rights Reserved";
 
 // MARK: - Welcome View
 "welcome.title" = "欢迎使用 Usage4Claude";

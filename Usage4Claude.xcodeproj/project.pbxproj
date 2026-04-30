@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		8873E4CF2E9F61C700ACFF5C /* Usage4Claude.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Usage4Claude.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		8873E4CF2E9F61C700ACFF5C /* U4Claude.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = U4Claude.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -40,7 +40,7 @@
 		8873E4D02E9F61C700ACFF5C /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				8873E4CF2E9F61C700ACFF5C /* Usage4Claude.app */,
+				8873E4CF2E9F61C700ACFF5C /* U4Claude.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -67,7 +67,7 @@
 			packageProductDependencies = (
 			);
 			productName = Usage4Claude;
-			productReference = 8873E4CF2E9F61C700ACFF5C /* Usage4Claude.app */;
+			productReference = 8873E4CF2E9F61C700ACFF5C /* U4Claude.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -265,10 +265,9 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "Apple Development";
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = 386M76FV3K;
 				ENABLE_APP_SANDBOX = NO;
@@ -295,7 +294,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 1.0.0;
+				MARKETING_VERSION = 1.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.arcanii.Usage4Claude;
 				PRODUCT_NAME = U4Claude;
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -318,10 +317,10 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "Apple Development";
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = 386M76FV3K;
 				ENABLE_APP_SANDBOX = NO;
@@ -348,7 +347,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 1.0.0;
+				MARKETING_VERSION = 1.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.arcanii.Usage4Claude;
 				PRODUCT_NAME = U4Claude;
 				PROVISIONING_PROFILE_SPECIFIER = "";
