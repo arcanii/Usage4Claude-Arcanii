@@ -1,4 +1,4 @@
-// swift-tools-version: 5.9
+// swift-tools-version: 6.2
 //
 // Lightweight SwiftPM package for unit-testing pure functions extracted from the
 // Xcode app target. The .xcodeproj remains the authoritative app build; this
@@ -15,7 +15,7 @@ import PackageDescription
 
 let package = Package(
     name: "Usage4ClaudeTests",
-    platforms: [.macOS(.v13)],
+    platforms: [.macOS(.v26)],
     products: [
         .library(name: "Usage4ClaudeCore", targets: ["Usage4ClaudeCore"])
     ],

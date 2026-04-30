@@ -277,29 +277,18 @@ struct UsageDetailView: View {
                                     startPoint: .top,
                                     endPoint: .bottom
                                 )
-                                Group {
-                                    if #available(macOS 26.0, *) {
-                                        Circle()
-                                            .trim(from: 0, to: CGFloat(primary.percentage) / 100.0)
-                                            .stroke(
-                                                primaryGlass,
-                                                style: StrokeStyle(lineWidth: 10, lineCap: .round)
-                                            )
-                                            .glassEffect(in: Circle().stroke(lineWidth: 10))
-                                    } else {
-                                        Circle()
-                                            .trim(from: 0, to: CGFloat(primary.percentage) / 100.0)
-                                            .stroke(
-                                                primaryGlass,
-                                                style: StrokeStyle(lineWidth: 10, lineCap: .round)
-                                            )
-                                    }
-                                }
-                                .frame(width: 100, height: 100)
-                                .rotationEffect(.degrees(-90))
-                                .shadow(color: primaryColor, radius: 2)
-                                .shadow(color: primaryColor.opacity(0.55), radius: 5)
-                                .animation(.easeInOut, value: primary.percentage)
+                                Circle()
+                                    .trim(from: 0, to: CGFloat(primary.percentage) / 100.0)
+                                    .stroke(
+                                        primaryGlass,
+                                        style: StrokeStyle(lineWidth: 10, lineCap: .round)
+                                    )
+                                    .glassEffect(in: Circle().stroke(lineWidth: 10))
+                                    .frame(width: 100, height: 100)
+                                    .rotationEffect(.degrees(-90))
+                                    .shadow(color: primaryColor, radius: 2)
+                                    .shadow(color: primaryColor.opacity(0.55), radius: 5)
+                                    .animation(.easeInOut, value: primary.percentage)
                             }
 
                             // 3. Outer thin ring (only shown when user has selected both 5h and 7d limits)
@@ -334,29 +323,18 @@ struct UsageDetailView: View {
                                             startPoint: .top,
                                             endPoint: .bottom
                                         )
-                                        Group {
-                                            if #available(macOS 26.0, *) {
-                                                Circle()
-                                                    .trim(from: 0, to: CGFloat(percentage) / 100.0)
-                                                    .stroke(
-                                                        sevenGlass,
-                                                        style: StrokeStyle(lineWidth: 3, lineCap: .round)
-                                                    )
-                                                    .glassEffect(in: Circle().stroke(lineWidth: 3))
-                                            } else {
-                                                Circle()
-                                                    .trim(from: 0, to: CGFloat(percentage) / 100.0)
-                                                    .stroke(
-                                                        sevenGlass,
-                                                        style: StrokeStyle(lineWidth: 3, lineCap: .round)
-                                                    )
-                                            }
-                                        }
-                                        .frame(width: 114, height: 114)
-                                        .rotationEffect(.degrees(-90))
-                                        .shadow(color: sevenColor, radius: 1.5)
-                                        .shadow(color: sevenColor.opacity(0.55), radius: 4)
-                                        .animation(.easeInOut, value: percentage)
+                                        Circle()
+                                            .trim(from: 0, to: CGFloat(percentage) / 100.0)
+                                            .stroke(
+                                                sevenGlass,
+                                                style: StrokeStyle(lineWidth: 3, lineCap: .round)
+                                            )
+                                            .glassEffect(in: Circle().stroke(lineWidth: 3))
+                                            .frame(width: 114, height: 114)
+                                            .rotationEffect(.degrees(-90))
+                                            .shadow(color: sevenColor, radius: 1.5)
+                                            .shadow(color: sevenColor.opacity(0.55), radius: 4)
+                                            .animation(.easeInOut, value: percentage)
                                     }
                                 }
                             }
