@@ -26,16 +26,21 @@ struct ClaudeUsageMonitorApp: App {
 /// Responsible for application lifecycle management, resource initialization and cleanup
 class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Properties
-    
+
+    /// Weak self-reference. NSApplicationDelegateAdaptor wraps this delegate in a way
+    /// that makes `NSApp.delegate as? AppDelegate` flaky in practice, so consumers
+    /// (MenuBarManager) read this static instead.
+    static private(set) weak var shared: AppDelegate?
+
     private var statusItem: NSStatusItem!
     private var popover: NSPopover!
-    
+
     /// Menu bar manager, responsible for all menu bar related functionality
     private var menuBarManager: MenuBarManager!
-    
+
     /// Welcome window, displayed on first launch
     private var welcomeWindow: NSWindow?
-    
+
     /// User settings instance
     private let settings = UserSettings.shared
 
@@ -48,6 +53,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         updaterDelegate: nil,
         userDriverDelegate: nil
     )
+
+    override init() {
+        super.init()
+        AppDelegate.shared = self
+    }
 
     /// Combine subscription set, used for automatic observer lifecycle management
     private var cancellables = Set<AnyCancellable>()

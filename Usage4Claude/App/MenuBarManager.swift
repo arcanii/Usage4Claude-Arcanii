@@ -370,10 +370,11 @@ class MenuBarManager: ObservableObject {
         // Hand off to Sparkle. The SPUStandardUpdaterController owns the modal
         // alert, the download progress sheet, the EdDSA signature verification,
         // and the relaunch — all the things UpdateChecker used to half-implement.
-        // The badge dismissal logic that used to live here is gone with Sparkle:
-        // Sparkle's own UI is the source of truth.
-        guard let appDelegate = NSApp.delegate as? AppDelegate else {
-            Logger.menuBar.error("checkForUpdates: AppDelegate not available")
+        // We reach the controller via AppDelegate.shared because casting
+        // `NSApp.delegate as? AppDelegate` doesn't reliably succeed when the
+        // delegate is wrapped by SwiftUI's NSApplicationDelegateAdaptor.
+        guard let appDelegate = AppDelegate.shared else {
+            Logger.menuBar.error("checkForUpdates: AppDelegate.shared not set")
             return
         }
         appDelegate.updaterController.checkForUpdates(self)
