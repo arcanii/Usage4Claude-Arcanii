@@ -16,9 +16,12 @@ scripts/build.config
 *.xcodeproj/*
 !*.xcodeproj/project.pbxproj
 !*.xcodeproj/xcshareddata/
+!*.xcodeproj/project.xcworkspace/
 !*.xcworkspace/contents.xcworkspacedata
 *.xcworkspace/*
 !*.xcworkspace/xcshareddata/
+!*.xcworkspace/xcshareddata/swiftpm/
+!*.xcworkspace/xcshareddata/swiftpm/Package.resolved
 
 # Build products
 build/
@@ -32,7 +35,9 @@ DerivedData/
 .build/
 Packages/
 Package.pins
-Package.resolved
+# Package.resolved at the SwiftPM root (Tests/) is generated, not committed.
+/Tests/Package.resolved
+# But the one inside the .xcodeproj's xcshareddata IS committed (pins Sparkle etc.).
 
 # CocoaPods
 Pods/

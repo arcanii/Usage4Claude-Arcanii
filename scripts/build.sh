@@ -52,6 +52,9 @@ XCODEPROJ="${PROJECT_ROOT}/${PROJECT_NAME}.xcodeproj"
 BUILD_DIR="${PROJECT_ROOT}/build"
 DEVELOPMENT_TEAM="386M76FV3K"
 NOTARY_PROFILE="${NOTARY_PROFILE:-Usage4Claude-Arcanii-notarize}"
+# Sparkle's sign_update tool. Override via env var if installed elsewhere; the
+# build step is skipped (with a hint) when the tool isn't reachable.
+SIGN_UPDATE="${SIGN_UPDATE:-/tmp/sparkle-tools/bin/sign_update}"
 
 # Optional: source a gitignored override file so contributors can use their own
 # Developer ID team and notary profile without editing this script. See
@@ -452,6 +455,40 @@ if [ "$BUILD_CONFIG" = "Release" ]; then
         echo "      --password <app-specific-password>"
         echo ""
         print_info "（或设置 NOTARY_PROFILE 环境变量指向另一个已存在的 profile）"
+    fi
+fi
+
+# ============================================
+# Sparkle EdDSA signature for the appcast — Release only, after notarization.
+# Emits a copy-pasteable <enclosure ...> line for appcast.xml. Signing is keyed
+# on the Sparkle private key stored in the user's login keychain (set up once
+# via `generate_keys`). Without that key, sign_update fails fast.
+# ============================================
+if [ "$BUILD_CONFIG" = "Release" ] && [ "$NOTARIZED" = true ]; then
+    print_header "Sparkle 签名"
+
+    if [ ! -x "$SIGN_UPDATE" ]; then
+        print_warning "未找到 sign_update ($SIGN_UPDATE)，跳过 Sparkle 签名"
+        print_info "下载 Sparkle 工具：https://github.com/sparkle-project/Sparkle/releases"
+        print_info "或设置 SIGN_UPDATE 环境变量指向你已安装的 sign_update 路径"
+    else
+        SIGN_OUTPUT="$($SIGN_UPDATE "$DMG_PATH" 2>&1)" || true
+        if [[ "$SIGN_OUTPUT" == *"sparkle:edSignature="* ]]; then
+            print_success "Sparkle 签名完成"
+            DMG_FILENAME="$(basename "$DMG_PATH")"
+            ENCLOSURE_URL="https://github.com/arcanii/Usage4Claude-Arcanii/releases/download/v${VERSION}/${DMG_FILENAME}"
+            echo ""
+            print_info "把下面这行更新到 appcast.xml 的 <enclosure ...> 里："
+            echo ""
+            echo "    <enclosure"
+            echo "        url=\"${ENCLOSURE_URL}\""
+            echo "        ${SIGN_OUTPUT}"
+            echo "        type=\"application/octet-stream\"/>"
+            echo ""
+            print_info "（version=${VERSION}, build=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "${EXPORT_DIR}/${PRODUCT_NAME}.app/Contents/Info.plist" 2>/dev/null || echo '?'))"
+        else
+            print_error "Sparkle 签名失败: $SIGN_OUTPUT"
+        fi
     fi
 fi
 

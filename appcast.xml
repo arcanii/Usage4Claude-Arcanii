@@ -1,0 +1,33 @@
+<?xml version="1.0" standalone="yes"?>
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
+    <channel>
+        <title>U4Claude</title>
+        <link>https://github.com/arcanii/Usage4Claude-Arcanii</link>
+        <description>Updates to U4Claude (Arcanii Mod) — Claude.ai usage menu bar app for macOS.</description>
+        <language>en</language>
+        <item>
+            <title>v1.2.0</title>
+            <pubDate>Thu, 01 May 2026 00:00:00 +0000</pubDate>
+            <sparkle:version>3</sparkle:version>
+            <sparkle:shortVersionString>1.2.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <link>https://github.com/arcanii/Usage4Claude-Arcanii/releases/tag/v1.2.0</link>
+            <description><![CDATA[
+                <h2>v1.2.0 — Auth-failure UX overhaul, multi-account ergonomics, history export</h2>
+                <ul>
+                    <li>Auto-prompt re-login when the session expires — no more "right-click → Auth Settings" detour.</li>
+                    <li>⌘1–⌘9 keyboard shortcuts for switching between configured accounts.</li>
+                    <li>Rolling usage history capture + CSV export from the diagnostics view.</li>
+                    <li>Better Cloudflare vs. session-invalid distinction in the API layer.</li>
+                    <li>About tab simplified, log messages normalized to English, Chrome user-agent bumped to 140.</li>
+                </ul>
+                <p>See <a href="https://github.com/arcanii/Usage4Claude-Arcanii/blob/main/docs/RELEASES/v1.2.0.md">the full release notes</a> for the complete changelog and internal cleanup.</p>
+            ]]></description>
+            <enclosure
+                url="https://github.com/arcanii/Usage4Claude-Arcanii/releases/download/v1.2.0/U4Claude-v1.2.0.dmg"
+                sparkle:edSignature="8DiV/bIS+RQRYke7BHMyIcJnZyeZt1OvbmGJSQiv1dhJI6Jsrn+5A10yFVI3eEyvjz8Vg7NVDN0JfQduiR48Cg=="
+                length="3784645"
+                type="application/octet-stream"/>
+        </item>
+    </channel>
+</rss>

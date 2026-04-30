@@ -18,8 +18,6 @@ class DataRefreshManager: ObservableObject {
 
     /// Claude API service instance
     private let apiService = ClaudeAPIService()
-    /// Update checker instance
-    private let updateChecker = UpdateChecker()
     /// Timer manager
     private let timerManager = TimerManager()
     /// User settings instance
@@ -52,10 +50,6 @@ class DataRefreshManager: ObservableObject {
     private var refreshAnimationStartTime: Date?
     /// Minimum animation display duration (seconds)
     private let minimumAnimationDuration: TimeInterval = 1.0
-    /// Last update check time
-    private var lastUpdateCheckTime: Date?
-    /// Whether the daily update-check timer has been started (idempotency guard)
-    private var dailyUpdateCheckScheduled = false
     /// Whether the most recent fetch failed with .sessionExpired. Used to prompt the user
     /// to re-login exactly once per expiry, instead of every 60-second refresh tick.
     private var sessionExpiredPrompted = false
@@ -71,14 +65,13 @@ class DataRefreshManager: ObservableObject {
         static let resetVerify1 = "resetVerify1"
         static let resetVerify2 = "resetVerify2"
         static let resetVerify3 = "resetVerify3"
-        static let dailyUpdate = "dailyUpdate"
     }
 
     // MARK: - Initialization
 
     init() {
-        // Daily update check is deferred to `startRefreshing()` so it only fires once the
-        // user has credentials. Hitting GitHub from the welcome screen is wasted traffic.
+        // App-update polling is owned by Sparkle (SPUStandardUpdaterController in
+        // AppDelegate). This manager is now strictly about Claude usage data refresh.
     }
 
     // MARK: - Data Fetching
@@ -156,7 +149,6 @@ class DataRefreshManager: ObservableObject {
         beginRefreshActivity()
         fetchUsage()
         restartTimer()
-        scheduleDailyUpdateCheck()
 
         #if DEBUG
         // Test: ensure icon displays badge
@@ -379,70 +371,6 @@ class DataRefreshManager: ObservableObject {
             Logger.menuBar.debug("Reset verification +30s — refreshing")
             self?.fetchUsage()
         }
-    }
-
-    // MARK: - Update Checking
-
-    /// Schedule daily update check (idempotent — safe to call repeatedly).
-    private func scheduleDailyUpdateCheck() {
-        guard !dailyUpdateCheckScheduled else { return }
-        dailyUpdateCheckScheduled = true
-
-        #if DEBUG
-        // Debug mode: check if simulated update is enabled
-        if settings.simulateUpdateAvailable {
-            hasAvailableUpdate = true
-            latestVersion = "2.0.0"
-            Logger.menuBar.debug("Simulated update enabled; showing update notification")
-        } else {
-            // Even in Debug mode, perform real update checks
-            checkForUpdatesInBackground()
-
-            timerManager.schedule(TimerID.dailyUpdate, interval: 24 * 60 * 60, repeats: true) { [weak self] in
-                self?.checkForUpdatesInBackground()
-            }
-
-            Logger.menuBar.info("Debug mode: real update check started")
-        }
-        #else
-        // Release mode: always perform real update checks
-        checkForUpdatesInBackground()
-
-        // Check every 24 hours
-        timerManager.schedule(TimerID.dailyUpdate, interval: 24 * 60 * 60, repeats: true) { [weak self] in
-            self?.checkForUpdatesInBackground()
-        }
-
-        Logger.menuBar.info("Daily update check started")
-        #endif
-    }
-
-    /// Check for updates silently in the background (no UI prompt)
-    private func checkForUpdatesInBackground() {
-        let now = Date()
-
-        // Prevent duplicate checks: skip if less than 12 hours since last check
-        if let lastCheck = lastUpdateCheckTime,
-           now.timeIntervalSince(lastCheck) < 12 * 60 * 60 {
-            return
-        }
-
-        lastUpdateCheckTime = now
-
-        updateChecker.checkForUpdatesInBackground { [weak self] hasUpdate, version in
-            DispatchQueue.main.async {
-                guard let self = self else { return }
-
-                self.hasAvailableUpdate = hasUpdate
-                self.latestVersion = version
-            }
-        }
-    }
-
-    /// User-initiated manual update check
-    func checkForUpdatesManually() {
-        // Manual update check (will show a dialog)
-        updateChecker.checkForUpdates(manually: true)
     }
 
     // MARK: - Cleanup

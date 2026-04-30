@@ -10,6 +10,7 @@ import SwiftUI
 import AppKit
 import Combine
 import OSLog
+import Sparkle
 
 /// Refresh state manager
 /// Used to synchronize refresh state across views, supporting reactive updates
@@ -366,17 +367,16 @@ class MenuBarManager: ObservableObject {
     }
 
     @objc func checkForUpdates() {
-        // Record that the user has acknowledged the current version's update
-        if let version = latestVersion {
-            acknowledgedVersion = version
-            // Trigger UI update (hide badge and notification)
-            objectWillChange.send()
-            // Update menu bar icon
-            updateMenuBarIcon()
+        // Hand off to Sparkle. The SPUStandardUpdaterController owns the modal
+        // alert, the download progress sheet, the EdDSA signature verification,
+        // and the relaunch — all the things UpdateChecker used to half-implement.
+        // The badge dismissal logic that used to live here is gone with Sparkle:
+        // Sparkle's own UI is the source of truth.
+        guard let appDelegate = NSApp.delegate as? AppDelegate else {
+            Logger.menuBar.error("checkForUpdates: AppDelegate not available")
+            return
         }
-
-        // Manually check for updates (will show dialog)
-        dataManager.checkForUpdatesManually()
+        appDelegate.updaterController.checkForUpdates(self)
     }
     
     /// Open the settings window

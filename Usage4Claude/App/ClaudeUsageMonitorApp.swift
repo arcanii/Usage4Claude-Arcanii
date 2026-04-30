@@ -8,6 +8,7 @@
 
 import SwiftUI
 import Combine
+import Sparkle
 
 /// Usage4Claude application main entry point
 @main
@@ -37,6 +38,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     /// User settings instance
     private let settings = UserSettings.shared
+
+    /// Sparkle updater. `startingUpdater: true` schedules the background poll using
+    /// SUEnableAutomaticChecks / SUScheduledCheckInterval from Info.plist (default 24h).
+    /// Exposed `internal` so MenuBarManager can call `updaterController.checkForUpdates(_:)`
+    /// from the right-click "Check for updates…" menu item.
+    let updaterController = SPUStandardUpdaterController(
+        startingUpdater: true,
+        updaterDelegate: nil,
+        userDriverDelegate: nil
+    )
 
     /// Combine subscription set, used for automatic observer lifecycle management
     private var cancellables = Set<AnyCancellable>()
