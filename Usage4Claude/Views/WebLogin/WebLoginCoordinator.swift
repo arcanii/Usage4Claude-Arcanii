@@ -111,7 +111,7 @@ final class WebLoginCoordinator: ObservableObject {
         let allTypes = WKWebsiteDataStore.allWebsiteDataTypes()
         dataStore.fetchDataRecords(ofTypes: allTypes) { records in
             dataStore.removeData(ofTypes: allTypes, for: records) {
-                Logger.settings.info("WebLogin: 已清除所有 WebView 数据")
+                Logger.settings.info("WebLogin: cleared all WebView data")
             }
         }
     }
@@ -138,7 +138,7 @@ final class WebLoginCoordinator: ObservableObject {
 
             if let cookie = sessionCookie {
                 let sessionKey = cookie.value
-                Logger.settings.info("WebLogin: 检测到 sessionKey Cookie")
+                Logger.settings.info("WebLogin: sessionKey cookie detected")
 
                 DispatchQueue.main.async {
                     self.cookieTimer?.invalidate()
@@ -178,7 +178,7 @@ final class WebLoginCoordinator: ObservableObject {
                         self.loginState = .success(accountName: stored.displayName)
                         self.onAccountCreated?(stored)
 
-                        Logger.settings.notice("WebLogin: 账户创建成功 - \(stored.displayName)")
+                        Logger.settings.notice("WebLogin: account created — \(stored.displayName)")
                     } else {
                         self.loginState = .failed(message: L.Error.noOrganizationsFound)
                     }
@@ -191,7 +191,7 @@ final class WebLoginCoordinator: ObservableObject {
                         message = error.localizedDescription
                     }
                     self.loginState = .failed(message: message)
-                    Logger.settings.error("WebLogin: 验证失败 - \(message)")
+                    Logger.settings.error("WebLogin: validation failed — \(message)")
 
                     // Resume monitoring after validation failure
                     self.startCookieMonitoring()

@@ -50,7 +50,7 @@ extension UserSettings {
 
     private func switchToActiveMode() {
         guard currentMonitoringMode != .active else { return }
-        Logger.settings.debug("检测到使用变化，切换到活跃模式 (1分钟)")
+        Logger.settings.debug("Utilization change detected; switching to active mode (1 min)")
         currentMonitoringMode = .active
         unchangedCount = 0
         NotificationCenter.default.post(name: .refreshIntervalChanged, object: nil)
@@ -77,11 +77,11 @@ extension UserSettings {
 
     private func logModeTransition(from: MonitoringMode, to: MonitoringMode) {
         let modeNames: [MonitoringMode: String] = [
-            .active: "活跃 (1分钟)",
-            .idleShort: "短期静默 (3分钟)",
-            .idleMedium: "中期静默 (5分钟)",
-            .idleLong: "长期静默 (10分钟)"
+            .active: "active (1 min)",
+            .idleShort: "idle-short (3 min)",
+            .idleMedium: "idle-medium (5 min)",
+            .idleLong: "idle-long (10 min)"
         ]
-        Logger.settings.debug("监控模式切换: \(modeNames[from] ?? "") -> \(modeNames[to] ?? "")")
+        Logger.settings.debug("Monitoring mode switch: \(modeNames[from] ?? "") -> \(modeNames[to] ?? "")")
     }
 }

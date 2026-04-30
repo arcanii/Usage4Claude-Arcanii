@@ -45,7 +45,7 @@ class KeychainManager {
     @discardableResult
     func saveOrganizationId(_ value: String) -> Bool {
         UserDefaults.standard.set(value, forKey: debugKeyPrefix + "organizationId")
-        Logger.keychain.debug("[Debug] 保存 Organization ID 到 UserDefaults")
+        Logger.keychain.debug("[Debug] Saved Organization ID to UserDefaults")
         return true
     }
 
@@ -55,7 +55,7 @@ class KeychainManager {
     @discardableResult
     func saveSessionKey(_ value: String) -> Bool {
         UserDefaults.standard.set(value, forKey: debugKeyPrefix + "sessionKey")
-        Logger.keychain.debug("[Debug] 保存 Session Key 到 UserDefaults")
+        Logger.keychain.debug("[Debug] Saved Session Key to UserDefaults")
         return true
     }
     #else
@@ -83,7 +83,7 @@ class KeychainManager {
     /// - Returns: Organization ID value, returns nil if not found
     func loadOrganizationId() -> String? {
         let value = UserDefaults.standard.string(forKey: debugKeyPrefix + "organizationId")
-        Logger.keychain.debug("[Debug] 读取 Organization ID: \(value ?? "nil")")
+        Logger.keychain.debug("[Debug] Loaded Organization ID: \(value ?? "nil")")
         return value
     }
 
@@ -91,7 +91,7 @@ class KeychainManager {
     /// - Returns: Session Key value, returns nil if not found
     func loadSessionKey() -> String? {
         let value = UserDefaults.standard.string(forKey: debugKeyPrefix + "sessionKey")
-        Logger.keychain.debug("[Debug] 读取 Session Key: \(value != nil ? "存在" : "nil")")
+        Logger.keychain.debug("[Debug] Loaded Session Key: \(value != nil ? "present" : "nil")")
         return value
     }
     #else
@@ -116,7 +116,7 @@ class KeychainManager {
     @discardableResult
     func deleteOrganizationId() -> Bool {
         UserDefaults.standard.removeObject(forKey: debugKeyPrefix + "organizationId")
-        Logger.keychain.debug("[Debug] 删除 Organization ID")
+        Logger.keychain.debug("[Debug] Deleted Organization ID")
         return true
     }
 
@@ -125,7 +125,7 @@ class KeychainManager {
     @discardableResult
     func deleteSessionKey() -> Bool {
         UserDefaults.standard.removeObject(forKey: debugKeyPrefix + "sessionKey")
-        Logger.keychain.debug("[Debug] 删除 Session Key")
+        Logger.keychain.debug("[Debug] Deleted Session Key")
         return true
     }
     #else
@@ -170,11 +170,11 @@ class KeychainManager {
     func saveAccounts(_ accounts: [Account]) -> Bool {
         let encoder = JSONEncoder()
         guard let data = try? encoder.encode(accounts) else {
-            Logger.keychain.error("[Debug] 账户列表编码失败")
+            Logger.keychain.error("[Debug] Account list encoding failed")
             return false
         }
         UserDefaults.standard.set(data, forKey: debugKeyPrefix + "accounts")
-        Logger.keychain.debug("[Debug] 保存 \(accounts.count) 个账户到 UserDefaults")
+        Logger.keychain.debug("[Debug] Saved \(accounts.count) accounts to UserDefaults")
         return true
     }
 
@@ -182,15 +182,15 @@ class KeychainManager {
     /// - Returns: Account list, returns nil if not found
     func loadAccounts() -> [Account]? {
         guard let data = UserDefaults.standard.data(forKey: debugKeyPrefix + "accounts") else {
-            Logger.keychain.debug("[Debug] 账户列表不存在")
+            Logger.keychain.debug("[Debug] Account list not found")
             return nil
         }
         let decoder = JSONDecoder()
         guard let accounts = try? decoder.decode([Account].self, from: data) else {
-            Logger.keychain.error("[Debug] 账户列表解码失败")
+            Logger.keychain.error("[Debug] Account list decoding failed")
             return nil
         }
-        Logger.keychain.debug("[Debug] 读取 \(accounts.count) 个账户")
+        Logger.keychain.debug("[Debug] Loaded \(accounts.count) accounts")
         return accounts
     }
 
@@ -199,7 +199,7 @@ class KeychainManager {
     @discardableResult
     func deleteAccounts() -> Bool {
         UserDefaults.standard.removeObject(forKey: debugKeyPrefix + "accounts")
-        Logger.keychain.debug("[Debug] 删除账户列表")
+        Logger.keychain.debug("[Debug] Deleted account list")
         return true
     }
     #else
@@ -211,12 +211,12 @@ class KeychainManager {
         let encoder = JSONEncoder()
         guard let jsonData = try? encoder.encode(accounts),
               let jsonString = String(data: jsonData, encoding: .utf8) else {
-            Logger.keychain.error("账户列表编码失败")
+            Logger.keychain.error("Account list encoding failed")
             return false
         }
         let result = save(key: "accounts", value: jsonString)
         if result {
-            Logger.keychain.debug("保存 \(accounts.count) 个账户到 Keychain")
+            Logger.keychain.debug("Saved \(accounts.count) accounts to Keychain")
         }
         return result
     }
@@ -230,10 +230,10 @@ class KeychainManager {
         }
         let decoder = JSONDecoder()
         guard let accounts = try? decoder.decode([Account].self, from: jsonData) else {
-            Logger.keychain.error("账户列表解码失败")
+            Logger.keychain.error("Account list decoding failed")
             return nil
         }
-        Logger.keychain.debug("读取 \(accounts.count) 个账户")
+        Logger.keychain.debug("Loaded \(accounts.count) accounts")
         return accounts
     }
 
@@ -275,7 +275,7 @@ class KeychainManager {
         if status == errSecSuccess {
             return true
         } else {
-            Logger.keychain.error("Keychain 保存失败: \(key), 状态码: \(status)")
+            Logger.keychain.error("Keychain save failed: \(key), status: \(status)")
             return false
         }
     }
@@ -300,7 +300,7 @@ class KeychainManager {
            let value = String(data: data, encoding: .utf8) {
             return value
         } else if status != errSecItemNotFound {
-            Logger.keychain.error("Keychain 读取失败: \(key), 状态码: \(status)")
+            Logger.keychain.error("Keychain load failed: \(key), status: \(status)")
         }
 
         return nil
@@ -321,7 +321,7 @@ class KeychainManager {
         if status == errSecSuccess || status == errSecItemNotFound {
             return true
         } else {
-            Logger.keychain.error("Keychain 删除失败: \(key), 状态码: \(status)")
+            Logger.keychain.error("Keychain delete failed: \(key), status: \(status)")
             return false
         }
     }

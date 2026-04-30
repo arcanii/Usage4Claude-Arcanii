@@ -40,7 +40,7 @@ extension UserSettings {
                 accounts[index].alias = alias
             }
             let refreshed = accounts[index]
-            Logger.settings.notice("刷新账户: \(refreshed.displayName)")
+            Logger.settings.notice("Account refreshed: \(refreshed.displayName)")
             return refreshed
         }
 
@@ -48,7 +48,7 @@ extension UserSettings {
         if accounts.count == 1 {
             currentAccountId = account.id
         }
-        Logger.settings.notice("添加账户: \(account.displayName)")
+        Logger.settings.notice("Account added: \(account.displayName)")
         return account
     }
 
@@ -65,7 +65,7 @@ extension UserSettings {
             NotificationCenter.default.post(name: .accountChanged, object: nil)
         }
 
-        Logger.settings.notice("删除账户: \(account.displayName)")
+        Logger.settings.notice("Account removed: \(account.displayName)")
     }
 
     /// Switch to the specified account. No-op if it's already current or not in
@@ -76,7 +76,7 @@ extension UserSettings {
         guard accounts.contains(where: { $0.id == account.id }) else { return }
 
         currentAccountId = account.id
-        Logger.settings.notice("切换到账户: \(account.displayName)")
+        Logger.settings.notice("Switched to account: \(account.displayName)")
         NotificationCenter.default.post(name: .accountChanged, object: nil)
     }
 
@@ -87,7 +87,7 @@ extension UserSettings {
         // Bind to a local before the OSLog autoclosure so the implicit-self capture
         // rule doesn't fire on `accounts[index]`.
         let displayName = accounts[index].displayName
-        Logger.settings.notice("更新账户别名: \(displayName)")
+        Logger.settings.notice("Account alias updated: \(displayName)")
     }
 
     /// Account list for display (returns the published array as-is).

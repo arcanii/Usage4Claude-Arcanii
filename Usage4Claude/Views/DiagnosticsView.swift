@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// Diagnostics view component
 /// Displayed at the bottom of the authentication settings page, providing connection test and report export functionality
@@ -71,6 +72,16 @@ struct DiagnosticsView: View {
                     }
                 }
                 .help("Copy a redacted debug snapshot of credential state to the clipboard")
+
+                // Export rolling usage history as CSV (timestamps + per-limit percentages
+                // + Extra Usage spend). Lifetime cap is ~7 days at 1-minute refresh.
+                Button(action: { exportUsageHistory() }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "square.and.arrow.up")
+                        Text("Export history (CSV)")
+                    }
+                }
+                .help("Export the rolling usage history as a CSV file")
             }
 
             // Status message
@@ -283,6 +294,36 @@ struct DetailedReportView: View {
             .background(Color(NSColor.windowBackgroundColor))
         }
         .frame(width: 700, height: 600)
+    }
+}
+
+// MARK: - Usage history export
+
+extension DiagnosticsView {
+    /// Show an NSSavePanel and write the CSV from UsageHistoryStore. Default
+    /// filename includes the date for one-off shares; the user can rename in the
+    /// dialog. No-op if the user cancels.
+    fileprivate func exportUsageHistory() {
+        let panel = NSSavePanel()
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+        panel.nameFieldStringValue = "U4Claude-usage-\(dateFormatter.string(from: Date())).csv"
+        panel.allowedContentTypes = [.commaSeparatedText]
+        panel.canCreateDirectories = true
+        panel.title = "Export usage history"
+
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+
+        let csv = UsageHistoryStore.shared.exportCSV()
+        do {
+            try csv.write(to: url, atomically: true, encoding: .utf8)
+        } catch {
+            let alert = NSAlert()
+            alert.messageText = "Export failed"
+            alert.informativeText = error.localizedDescription
+            alert.alertStyle = .warning
+            alert.runModal()
+        }
     }
 }
 

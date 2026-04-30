@@ -2,47 +2,32 @@
 
 Companion to [ARCANII_DESIGN.md](ARCANII_DESIGN.md). Items grouped by priority and tagged with rough effort. None are scheduled — pick one when there's time.
 
-## P0 — User-visible bugs / friction
+## Status as of v1.2.0
 
-- [ ] **Auto-prompt re-login on session expiry.** When `UsageError.sessionExpired` fires, the menu bar shows the placeholder icon and the popover surfaces an error message — but the user has to manually navigate to Auth Settings and re-run the WebLogin flow. Should detect `.sessionExpired`, post a notification, and open the WebLoginCoordinator directly. **(M)**
+✅ All P0 (3 items) and P1 (5 items) — landed in the v1.2.0 commits.
+✅ All P2 (5 items) — landed in v1.2.0.
+✅ P3-1 account-switching shortcut, P3-3 CSV export — landed in v1.2.0.
+🟡 P3-2 (Sparkle) and P3-4 (Widget) — deferred to their own sessions, see below.
 
-- [ ] **Extra Usage 403 swallows session-invalid errors silently.** `fetchExtraUsage` returns `.success(nil)` for any 403, treating it as "feature not enabled". When the session is actually expired, the main API surfaces it but the Extra Usage code path masks it. Apply the same `permission_error` body inspection as `fetchMainUsage`, then defer to the main API's error. **(S)**
+## Deferred — own session each
 
-- [ ] **Cloudflare HTML detection is a substring search.** `fetchMainUsage` checks for `<!DOCTYPE html>` or `<html` in the response body to identify a Cloudflare challenge. This will misfire on any future API error that happens to embed HTML. Switch to inspecting `Content-Type: text/html` on the response. **(XS)**
+- [ ] **Sparkle (or equivalent) for in-app updates.** `UpdateChecker` only opens the DMG download URL — the user has to drag the new app into Applications themselves. Sparkle would make this a one-click update with a signature-verified delta. Requires hosting an appcast feed (GitHub Pages works), generating an EdDSA signing key, and replacing the `NSAlert` flow with Sparkle's. **(L)**
 
-## P1 — Reliability & DX
+- [ ] **Widget / Live Activity.** macOS 14+ allows widgets in Notification Center. Could mirror the menu bar rings in a larger format and show the Extra Usage spend trend. Requires a new widget extension target. **(M)**
 
-- [ ] **`DataRefreshManager.init` schedules a daily update check before credentials exist.** First launch fires a GitHub Releases request that's wasted if the user is still on the welcome screen. Move `scheduleDailyUpdateCheck` into `startRefreshing` or guard on `hasValidCredentials`. **(XS)**
+## Cross-cutting follow-ups (new since v1.2.0)
 
-- [ ] **No tests.** No XCTest target. The error-mapping logic in `ClaudeAPIService.fetchMainUsage`, the smart-mode interval calculation in `UserSettings`, and the version comparison in `UpdateChecker.isNewerVersion` are pure functions begging for unit tests. **(M)**
+- [ ] **Add tests for `UsageResponse.toUsageData()` and `ExtraUsageResponse.toExtraUsageData()`.** Both are pure JSON → struct transformations with non-trivial fallback logic for legacy fields. Currently live inside `ClaudeAPIService.swift`; extracting just the response models into their own file would unlock testing them in the existing SwiftPM suite. **(S)**
 
-- [ ] **Adopt async/await in `ClaudeAPIService`.** `fetchUsage` uses `DispatchGroup` + completion handlers, which obscures the parallel-fetch + merge logic and makes cancellation awkward. A `Task.withTaskGroup` rewrite would be ~half the lines. **(M)**
+- [ ] **Migrate `fetchOrganizations` to async/await internally.** Three callsites (`AuthSettingsView`, `WelcomeView`, `WebLoginCoordinator`) still use the completion-handler form; converting them at the same time gives the public API a clean `async throws -> [Organization]` shape. **(S)**
 
-- [ ] **`UserSettings.swift` is 1290 lines.** Mixes display config, refresh logic, smart-mode counters, account list, debug flags, notification thresholds, and launch-at-login. Splitting into `UserSettings`, `DisplayPreferences`, `RefreshPreferences`, `AccountStore`, and `LaunchAtLogin` would make each piece testable in isolation. **(L)**
+- [ ] **Persist usage history more efficiently.** v1.2.0 writes the full JSON file on every fetch tick. For very long-running installs that adds up. Move to NDJSON (append-only) with periodic compaction, or use a tiny SQLite. **(M)**
 
-- [ ] **Notarization profile name is hard-coded in the build script.** `Usage4Claude-Arcanii-notarize` is the default; can be overridden via `NOTARY_PROFILE` env var. Move into a gitignored `scripts/build.config` (or `.env`) so other contributors can ship their own builds without editing the script. **(S)**
+- [ ] **Surface usage history in the popover.** v1.2.0 captures the data and exports CSV, but the popover still only shows the latest snapshot. A small sparkline of the last N hours (or a separate "History" tab in the detail view) would make the data visible without exporting. **(M)**
 
-## P2 — Polish
+- [ ] **Validate the auto-relogin throttle in practice.** v1.2.0 prompts re-login on the first `.sessionExpired` after a previously valid session, then blocks until the next successful fetch resets the flag. If a user dismisses the WebLogin window without logging in, the next refresh tick won't re-prompt — they'd have to manually trigger a refresh. Probably fine, but worth a real-world check. **(XS — verification only)**
 
-- [ ] **Mixed-language log messages.** `Logger.menuBar.error("API 请求失败: ...")` etc. — half English, half Chinese (inherited from upstream). Pick one (English, since this is the Arcanii fork). **(S)**
-
-- [ ] **`art/` is untracked.** The icon source PNG (`Usage4Claude-Arcanii.png`) lives outside the repo. Either commit it to `docs/images/` or delete it. Pick one. **(XS)**
-
-- [ ] **`build/release/U4Claude-v1.0.0.dmg` is checked into the working tree (but ignored by `.gitignore`).** Remove from disk; the canonical release artifact is now built fresh by the script into `build/Usage4Claude-Release-<version>/`. **(XS)**
-
-- [ ] **About tab shows "Usage4Claude" + "(Arcanii Mod)" stacked.** Could just say "U4Claude" since that's the actual product/binary name. Cosmetic. **(XS)**
-
-- [ ] **Spoofed Chrome 131 user-agent.** Real Chrome marches on; eventually Cloudflare's heuristics may flag a stale UA. Either bump periodically or fetch the current major from a config. **(S — but recurring)**
-
-## P3 — New features
-
-- [ ] **Sparkle (or equivalent) for in-app updates.** `UpdateChecker` only opens the DMG download URL — the user has to drag the new app into Applications themselves. Sparkle would make this a one-click update with a signature-verified delta. Requires hosting an appcast feed. **(L)**
-
-- [ ] **Account-switching keyboard shortcut.** Multi-account is supported but switching requires right-click → menu. A global hotkey (or `⌘1/⌘2/...` while popover is open) would help heavy users. **(S)**
-
-- [ ] **CSV / JSON export of usage history.** App currently shows only the latest snapshot. Persisting a rolling window (e.g. last 30 days, sampled at refresh intervals) and exposing an export button in DiagnosticsView would help users track spend trends. **(M)**
-
-- [ ] **Widget / Live Activity.** macOS 14+ allows widgets in Notification Center. Could mirror the menu bar rings in a larger format. **(M)**
+- [ ] **Bump Chrome user-agent recurringly.** v1.2.0 set it to Chrome 140; real Chrome will be ahead of that within months. Either add a build step that fetches the current major from a known config endpoint, or set a calendar reminder to bump quarterly. **(S — recurring)**
 
 ## Effort key
 

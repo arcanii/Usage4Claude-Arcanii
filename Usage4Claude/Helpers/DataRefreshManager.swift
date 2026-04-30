@@ -107,6 +107,7 @@ class DataRefreshManager: ObservableObject {
                     self.usageData = data
                     self.errorMessage = nil
                     self.sessionExpiredPrompted = false
+                    UsageHistoryStore.shared.append(data)
 
                     // Check if usage notifications need to be sent
                     if self.settings.notificationsEnabled {
@@ -135,7 +136,7 @@ class DataRefreshManager: ObservableObject {
 
                 case .failure(let error):
                     self.errorMessage = error.localizedDescription
-                    Logger.menuBar.error("API 请求失败: \(error.localizedDescription)")
+                    Logger.menuBar.error("API request failed: \(error.localizedDescription)")
 
                     // First sessionExpired hit → prompt user to re-login. Skip on subsequent
                     // ticks until a successful fetch resets the flag, so we don't re-pop
@@ -225,7 +226,7 @@ class DataRefreshManager: ObservableObject {
         if settings.refreshMode == .smart {
             settings.currentMonitoringMode = .active
             settings.unchangedCount = 0
-            Logger.menuBar.debug("用户打开界面，切换到活跃模式")
+            Logger.menuBar.debug("Popover opened by user; switching to active mode")
         }
 
         // If less than 30 seconds since last refresh, skip
@@ -254,7 +255,7 @@ class DataRefreshManager: ObservableObject {
         if settings.refreshMode == .smart {
             settings.currentMonitoringMode = .active
             settings.unchangedCount = 0
-            Logger.menuBar.debug("用户主动刷新，切换到活跃模式")
+            Logger.menuBar.debug("Manual refresh; switching to active mode")
         }
 
         // Update state
@@ -352,30 +353,30 @@ class DataRefreshManager: ObservableObject {
 
         // Only schedule verification if the reset time is in the future
         guard timeUntilReset > 0 else {
-            Logger.menuBar.debug("重置时间已过，跳过验证安排")
+            Logger.menuBar.debug("Reset time already past; skipping verification scheduling")
             return
         }
 
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm:ss"
         formatter.timeZone = TimeZone.current
-        Logger.menuBar.debug("安排重置验证 - 重置时间: \(formatter.string(from: resetsAt))")
+        Logger.menuBar.debug("Scheduling reset verification — reset time: \(formatter.string(from: resetsAt))")
 
         // Verify 1 second after reset
         timerManager.schedule(TimerID.resetVerify1, interval: timeUntilReset + 1, repeats: false) { [weak self] in
-            Logger.menuBar.debug("重置验证 +1秒 - 开始刷新")
+            Logger.menuBar.debug("Reset verification +1s — refreshing")
             self?.fetchUsage()
         }
 
         // Verify 10 seconds after reset
         timerManager.schedule(TimerID.resetVerify2, interval: timeUntilReset + 10, repeats: false) { [weak self] in
-            Logger.menuBar.debug("重置验证 +10秒 - 开始刷新")
+            Logger.menuBar.debug("Reset verification +10s — refreshing")
             self?.fetchUsage()
         }
 
         // Verify 30 seconds after reset
         timerManager.schedule(TimerID.resetVerify3, interval: timeUntilReset + 30, repeats: false) { [weak self] in
-            Logger.menuBar.debug("重置验证 +30秒 - 开始刷新")
+            Logger.menuBar.debug("Reset verification +30s — refreshing")
             self?.fetchUsage()
         }
     }
@@ -392,7 +393,7 @@ class DataRefreshManager: ObservableObject {
         if settings.simulateUpdateAvailable {
             hasAvailableUpdate = true
             latestVersion = "2.0.0"
-            Logger.menuBar.debug("模拟更新已启用，显示更新通知")
+            Logger.menuBar.debug("Simulated update enabled; showing update notification")
         } else {
             // Even in Debug mode, perform real update checks
             checkForUpdatesInBackground()
@@ -401,7 +402,7 @@ class DataRefreshManager: ObservableObject {
                 self?.checkForUpdatesInBackground()
             }
 
-            Logger.menuBar.info("Debug 模式：真实更新检查已启动")
+            Logger.menuBar.info("Debug mode: real update check started")
         }
         #else
         // Release mode: always perform real update checks
@@ -412,7 +413,7 @@ class DataRefreshManager: ObservableObject {
             self?.checkForUpdatesInBackground()
         }
 
-        Logger.menuBar.info("每日更新检查已启动")
+        Logger.menuBar.info("Daily update check started")
         #endif
     }
 

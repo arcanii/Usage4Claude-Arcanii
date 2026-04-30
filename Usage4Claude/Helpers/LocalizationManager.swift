@@ -29,7 +29,7 @@ class LocalizationManager: ObservableObject {
             .sink { [weak self] _ in
                 // Increment trigger on language change; all views using .id(updateTrigger) will be recreated
                 self?.updateTrigger += 1
-                Logger.localization.debug("语言已切换，触发视图更新")
+                Logger.localization.debug("Language switched; triggering view refresh")
             }
     }
     

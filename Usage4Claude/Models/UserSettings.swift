@@ -940,7 +940,7 @@ class UserSettings: ObservableObject {
         keychain.deleteCredentials()
         organizationId = ""
         sessionKey = ""
-        Logger.settings.notice("已清除所有认证信息")
+        Logger.settings.notice("Cleared all credentials")
     }
     
     /// Update smart monitoring mode

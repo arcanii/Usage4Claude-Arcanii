@@ -34,12 +34,9 @@ struct AboutView: View {
             
             // App name and version
             VStack(spacing: 4) {
-                Text("Usage4Claude")
+                Text("U4Claude")
                     .font(.title)
                     .fontWeight(.bold)
-                Text("(Arcanii Mod)")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
 
                 Text("\(L.SettingsAbout.version(appVersion)) (\(buildNumber))")
                     .font(.subheadline)

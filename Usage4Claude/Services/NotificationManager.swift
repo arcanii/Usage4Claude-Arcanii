@@ -47,7 +47,7 @@ class NotificationManager {
             // Try to access notification center — if properly signed, this won't trap
             // But since we can't catch EXC_BREAKPOINT, be conservative
         }
-        Logger.menuBar.info("通知不可用: 应用未在沙盒中运行")
+        Logger.menuBar.info("Notifications unavailable: app not running in sandbox")
         return false
     }()
 
@@ -60,9 +60,9 @@ class NotificationManager {
         guard notificationsAvailable else { return }
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { granted, error in
             if let error = error {
-                Logger.menuBar.error("请求通知权限失败: \(error.localizedDescription)")
+                Logger.menuBar.error("Notification permission request failed: \(error.localizedDescription)")
             }
-            Logger.menuBar.info("通知权限: \(granted ? "已授权" : "未授权")")
+            Logger.menuBar.info("Notification permission: \(granted ? "granted" : "denied")")
         }
     }
 
@@ -199,11 +199,11 @@ class NotificationManager {
 
         UNUserNotificationCenter.current().add(request) { error in
             if let error = error {
-                Logger.menuBar.error("发送用量警告通知失败: \(error.localizedDescription)")
+                Logger.menuBar.error("Failed to deliver usage-warning notification: \(error.localizedDescription)")
             }
         }
 
-        Logger.menuBar.info("已发送用量警告: \(limitType.displayName) \(Int(percentage))%")
+        Logger.menuBar.info("Usage warning delivered: \(limitType.displayName) \(Int(percentage))%")
     }
 
     /// Send usage reset notification
@@ -222,11 +222,11 @@ class NotificationManager {
 
         UNUserNotificationCenter.current().add(request) { error in
             if let error = error {
-                Logger.menuBar.error("发送重置通知失败: \(error.localizedDescription)")
+                Logger.menuBar.error("Failed to deliver reset notification: \(error.localizedDescription)")
             }
         }
 
-        Logger.menuBar.info("已发送重置通知: \(limitType.displayName)")
+        Logger.menuBar.info("Reset notification delivered: \(limitType.displayName)")
     }
 
     /// Reset all notification records

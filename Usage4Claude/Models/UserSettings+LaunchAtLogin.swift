@@ -21,9 +21,9 @@ extension UserSettings {
             try SMAppService.mainApp.register()
             defaults.set(true, forKey: "launchAtLogin")
             syncLaunchAtLoginStatus()
-            Logger.settings.notice("开机启动已启用")
+            Logger.settings.notice("Launch-at-login enabled")
         } catch {
-            Logger.settings.error("启用开机启动失败: \(error.localizedDescription)")
+            Logger.settings.error("Enabling launch-at-login failed: \(error.localizedDescription)")
             isSyncingLaunchStatus = true
             DispatchQueue.main.async {
                 self.launchAtLogin = false
@@ -48,7 +48,7 @@ extension UserSettings {
         if currentStatus == .notRegistered || currentStatus == .notFound {
             defaults.set(false, forKey: "launchAtLogin")
             syncLaunchAtLoginStatus()
-            Logger.settings.notice("开机启动服务未注册，已更新设置")
+            Logger.settings.notice("Launch-at-login service not registered; preference updated")
             return
         }
 
@@ -56,9 +56,9 @@ extension UserSettings {
             try SMAppService.mainApp.unregister()
             defaults.set(false, forKey: "launchAtLogin")
             syncLaunchAtLoginStatus()
-            Logger.settings.notice("开机启动已禁用")
+            Logger.settings.notice("Launch-at-login disabled")
         } catch {
-            Logger.settings.error("禁用开机启动失败: \(error.localizedDescription)")
+            Logger.settings.error("Disabling launch-at-login failed: \(error.localizedDescription)")
             isSyncingLaunchStatus = true
             DispatchQueue.main.async {
                 self.launchAtLogin = true
@@ -91,6 +91,6 @@ extension UserSettings {
             }
         }
 
-        Logger.settings.debug("开机启动状态: \(String(describing: status))")
+        Logger.settings.debug("Launch-at-login status: \(String(describing: status))")
     }
 }

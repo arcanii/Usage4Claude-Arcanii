@@ -376,14 +376,18 @@ class MenuBarUI {
     private func createAccountSubmenu(target: AnyObject?) -> NSMenu {
         let submenu = NSMenu()
 
-        for account in settings.accounts {
+        // Bind ⌘1..⌘9 to the first nine accounts so heavy users can switch without
+        // navigating the right-click menu chain. Tenth and beyond have no shortcut.
+        for (index, account) in settings.accounts.enumerated() {
+            let shortcut = (index < 9) ? String(index + 1) : ""
             let item = NSMenuItem(
                 title: account.displayName,
                 action: #selector(MenuBarManager.switchAccount(_:)),
-                keyEquivalent: ""
+                keyEquivalent: shortcut
             )
             item.target = target
             item.representedObject = account
+            item.keyEquivalentModifierMask = [.command]
 
             // Show checkmark for the currently selected account
             if account.id == settings.currentAccountId {

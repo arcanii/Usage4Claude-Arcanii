@@ -432,7 +432,7 @@ class ClaudeAPIService {
     func cancelAllRequests() {
         currentTask?.cancel()
         currentTask = nil
-        Logger.api.debug("已取消所有网络请求")
+        Logger.api.debug("Cancelled all network requests")
     }
 
     // MARK: - Debug Mock Data
