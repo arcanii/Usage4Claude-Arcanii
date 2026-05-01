@@ -17,6 +17,14 @@ A personal fork of [**f-is-h/Usage4Claude**](https://github.com/f-is-h/Usage4Cla
 
 **A macOS menu-bar app for real-time monitoring of your Claude AI usage — with Liquid Glass rings, a desktop widget, and one-click in-app updates.**
 
+<img src="docs/images/ClaudeUsage.png" width="256" alt="Claude Usage">
+<img src="docs/images/Widget.png" width="256" alt="Widget">
+
+
+
+
+
+
 [What's different](#-whats-different-in-this-fork) • [Install](#-install) • [Features](#-features) • [User guide](#-user-guide) • [FAQ](#-faq)
 
 </div>
