@@ -6,6 +6,30 @@
         <description>Updates to U4Claude (Arcanii Mod) — Claude.ai usage menu bar app for macOS.</description>
         <language>en</language>
         <item>
+            <title>v1.6.0</title>
+            <pubDate>Fri, 01 May 2026 00:00:00 +0000</pubDate>
+            <sparkle:version>11</sparkle:version>
+            <sparkle:shortVersionString>1.6.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <link>https://github.com/arcanii/Usage4Claude-Arcanii/releases/tag/v1.6.0</link>
+            <description><![CDATA[
+                <h2>v1.6.0 — U4Claude learns to remember</h2>
+                <p>History is now visible — both in the popover and on the desktop.</p>
+                <ul>
+                    <li><strong>24-hour sparkline strip</strong> under every limit row in the popover, color-matched and live-updating.</li>
+                    <li><strong>Four new desktop widget kinds</strong>: Large Dashboard (all 5 limits), Sparkline (small/medium with 24h trend), Dual Sparkline (medium 5h + 7d side-by-side), and ExtraLarge (full kitchen-sink dashboard with sparkline strip).</li>
+                    <li><strong>Storage rebuilt</strong> on NDJSON in the App Group container — O(1) line append per fetch instead of v1.5.x's full-file rewrite. One-time migration drains the legacy file on first launch.</li>
+                    <li>14 new tests for the storage layer; total 35 → 49.</li>
+                </ul>
+                <p>Add the new widgets via right-click desktop → Edit Widgets… → search "Claude Usage". See <a href="https://github.com/arcanii/Usage4Claude-Arcanii/blob/main/docs/RELEASES/v1.6.0.md">the full release notes</a>.</p>
+            ]]></description>
+            <enclosure
+                url="https://github.com/arcanii/Usage4Claude-Arcanii/releases/download/v1.6.0/U4Claude-v1.6.0.dmg"
+                sparkle:edSignature="jLlgD2PWMGT5bW+cDj+gmTlpy1IKNJ6VNEjwsb6HwU48N2ok1tam1q50b411Gu29ua4na5hcNTwQ7Un874gAAA=="
+                length="7179077"
+                type="application/octet-stream"/>
+        </item>
+        <item>
             <title>v1.5.1</title>
             <pubDate>Fri, 01 May 2026 00:00:00 +0000</pubDate>
             <sparkle:version>10</sparkle:version>

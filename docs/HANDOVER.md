@@ -10,7 +10,7 @@ A macOS menu bar app that polls the **private** `claude.ai/api/organizations/<id
 - **Product name:** `U4Claude.app` (renamed from upstream's `Usage4Claude.app` so both can coexist)
 - **macOS deployment target:** **26.0** (Tahoe). Bumped from 13.0 in v1.4.0. We use the macOS 26 Liquid Glass APIs unconditionally.
 - **Universal binary** (x86_64 + arm64).
-- **Current version:** v1.5.1 — see [RELEASES/](RELEASES/).
+- **Current version:** v1.6.0 — see [RELEASES/](RELEASES/).
 
 ## Read these next, in order
 

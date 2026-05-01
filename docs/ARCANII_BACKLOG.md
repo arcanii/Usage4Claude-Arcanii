@@ -2,7 +2,7 @@
 
 Companion to [ARCANII_DESIGN.md](ARCANII_DESIGN.md). Items grouped by effort. None are scheduled — pick one when there's time.
 
-## Status as of v1.5.1
+## Status as of v1.6.0
 
 ✅ All P0 (3 items) and P1 (5 items) — shipped in v1.2.0.
 ✅ All P2 (5 items) — shipped in v1.2.0.
@@ -12,13 +12,18 @@ Companion to [ARCANII_DESIGN.md](ARCANII_DESIGN.md). Items grouped by effort. No
 
 - [ ] **Localize the Extra Usage currency symbol.** Display strings still hardcode `$` regardless of the user's billing currency. Upstream fixed this in v2.6.1 (commit `4dc411b`) by mapping `ExtraUsageData.currency` (USD/EUR/JPY/KRW/GBP/etc.) to the right symbol. Skipped during the v1.5.1 v2.6.1 backport because Bryan is billed in USD — flag for non-USD users if the fork ever picks them up. Touches `extra_usage.usage_amount` / `extra_usage.remaining_amount` in all 5 locales plus `formattedCompactAmount`. **(S)**
 
-- [ ] **Persist usage history more efficiently.** v1.2.0 writes the full JSON file on every fetch tick. For very long-running installs that adds up. Move to NDJSON (append-only) with periodic compaction, or use a tiny SQLite. **(M)**
-
-- [ ] **Surface usage history in the popover.** v1.2.0 captures the data and exports CSV, but the popover still only shows the latest snapshot. A small sparkline of the last N hours (or a separate "History" tab in the detail view) would make the data visible without exporting. **(M)**
-
 - [ ] **Bump Chrome user-agent recurringly.** v1.4.1 sets it to Chrome 148; real Chrome keeps marching on. Either add a build step that fetches the current major from a known config endpoint, or set a calendar reminder to bump quarterly. **(S — recurring)**
 
 - [ ] **Bundle ID cleanup for the widget.** Xcode auto-named the widget bundle `com.arcanii.Usage4Claude.Usage4ClaudeWidget` (awkward double "Widget"). Renaming to `com.arcanii.Usage4Claude.Widget` would invalidate the App Group profile that's already provisioned for the current id, so it's not free — but cleaner long-term. **(S)**
+
+- [ ] **iOS continuity for Control Center accessory widgets.** Planned for v1.6.0 but dropped — `.accessoryCircular` / `.accessoryRectangular` / `.accessoryInline` widget families are iOS/watchOS only on macOS Widget extensions. Bringing them in via iOS continuity (a separate target with iOS deployment) would unlock pin-to-Control-Center variants on macOS Sonoma+. Not free — adds App Store / TestFlight / signing complexity. **(M, optional)**
+
+## Closed in v1.6.0
+
+- ✅ **NDJSON history store** — replaced the per-fetch full-file JSON rewrite with an O(1) append into `~/Library/Group Containers/.../usage-history.ndjson`. Migration on first launch drains the legacy file. Capped at 10k samples; compaction on launch.
+- ✅ **History surfaced in the popover** — every limit row now shows a 24h sparkline strip (color-matched to the row, live-updating via `@ObservedObject UsageHistoryStore.shared`).
+- ✅ **Four new widget kinds** — Large Dashboard (all 5 limits), Sparkline (small + medium, ring + 24h trend), Dual Sparkline (medium, 5h + 7d side-by-side), ExtraLarge (full dashboard + combined sparkline strip).
+- ✅ **Reusable `SparklineView`** — pure SwiftUI Path-based component shared between popover and widget extension (zero AppKit / `L.*` / `UserSettings` dependencies).
 
 ## Closed in v1.5.1
 
