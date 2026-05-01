@@ -25,7 +25,8 @@ let package = Package(
             path: "Usage4Claude/Helpers",
             sources: [
                 "SemverCompare.swift",
-                "ClaudeAPIResponseModels.swift"
+                "ClaudeAPIResponseModels.swift",
+                "UsageHistorySample.swift"
             ]
         ),
         .testTarget(

@@ -57,6 +57,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Helpers/UsageSnapshot.swift,
+				Helpers/UsageHistorySample.swift,
 			);
 			target = 930691872FA41FF900C8AE18 /* Usage4ClaudeWidgetExtension */;
 		};
