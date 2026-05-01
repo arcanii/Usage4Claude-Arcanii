@@ -37,37 +37,73 @@ struct MiniProgressIcon: View {
     }
 }
 
+// MARK: - LimitType ↔ HistoryLimitType bridge
+
+extension LimitType {
+    /// Map the main-app `LimitType` to the shared-layer `HistoryLimitType`
+    /// used by `UsageHistorySample` lookups. Names diverge slightly because
+    /// the shared enum lives outside the main app's settings vocabulary.
+    var historyType: HistoryLimitType {
+        switch self {
+        case .fiveHour:     return .fiveHour
+        case .sevenDay:     return .sevenDay
+        case .opusWeekly:   return .opus
+        case .sonnetWeekly: return .sonnet
+        case .extraUsage:   return .extraUsage
+        }
+    }
+}
+
 // MARK: - Unified Limit Row Component
 
-/// Unified limit row component (supports all 5 limit types)
+/// Unified limit row component (supports all 5 limit types).
+/// Renders the limit's mini icon + name + reset/remaining value with a
+/// 24-hour sparkline strip beneath. The sparkline reactively updates on
+/// each successful fetch via `UsageHistoryStore.shared` (ObservableObject).
 struct UnifiedLimitRow: View {
+    @ObservedObject private var history = UsageHistoryStore.shared
     let type: LimitType
     let data: UsageData
     let showRemainingMode: Bool
 
+    /// History window for the sparkline. 24 h gives enough resolution to see
+    /// burn rate without zooming in to noise.
+    private let historyWindow: TimeInterval = 24 * 3600
+
     var body: some View {
-        HStack(spacing: 8) {
-            // Icon (with percentage number and progress arc)
-            MiniProgressIcon(type: type, color: iconColor, percentage: percentageValue ?? 0)
+        VStack(alignment: .leading, spacing: 3) {
+            HStack(spacing: 8) {
+                // Icon (with percentage number and progress arc)
+                MiniProgressIcon(type: type, color: iconColor, percentage: percentageValue ?? 0)
 
-            // Limit type name
-            Text(limitName)
-                .font(.system(size: 12))
-                .foregroundColor(.secondary)
+                // Limit type name
+                Text(limitName)
+                    .font(.system(size: 12))
+                    .foregroundColor(.secondary)
 
-            Spacer()
+                Spacer()
 
-            // Right side: reset time or remaining quota
-            Text(displayValue)
-                .font(.system(size: 12))
-                .fontWeight(.medium)
-                .id(showRemainingMode ? "remaining" : "reset")  // Force recognition as different views
-                .transition(.asymmetric(
-                    insertion: .move(edge: .top).combined(with: .opacity),
-                    removal: .move(edge: .bottom).combined(with: .opacity)
-                ))
+                // Right side: reset time or remaining quota
+                Text(displayValue)
+                    .font(.system(size: 12))
+                    .fontWeight(.medium)
+                    .id(showRemainingMode ? "remaining" : "reset")  // Force recognition as different views
+                    .transition(.asymmetric(
+                        insertion: .move(edge: .top).combined(with: .opacity),
+                        removal: .move(edge: .bottom).combined(with: .opacity)
+                    ))
+            }
+
+            SparklineView(
+                values: history.recentValues(for: type.historyType, maxAge: historyWindow),
+                color: iconColor,
+                lineWidth: 1.2,
+                showFill: true,
+                showCurrentDot: false
+            )
+            .frame(height: 14)
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, 4)
         .padding(.horizontal, 12)
         .background(Color.gray.opacity(0.1))
         .cornerRadius(8)

@@ -71,12 +71,11 @@ struct UsageDetailView: View {
     private var dynamicHeight: CGFloat {
         let activeCount = activeDisplayTypes.count
 
-        // Use unified dynamic calculation to ensure consistent bottom margin
-        // Base height: total height of fixed content including ring, title, top/bottom margins
-        // Actual row height: text(12pt) + vertical padding(12pt) + background height ≈ 26pt
-        // Row spacing: 5pt
+        // Base height: title + main ring + bottom margin.
+        // Row height: HStack content (22) + vstack spacing (3) + sparkline (14) +
+        // vertical padding (8) ≈ 47pt. Padded to 48 for breathing room.
         let baseHeight: CGFloat = 190
-        let rowHeight: CGFloat = 26
+        let rowHeight: CGFloat = 48
         let spacing: CGFloat = 5
 
         // Single limit always shows 2 rows; dual and 3+ limits show corresponding row count

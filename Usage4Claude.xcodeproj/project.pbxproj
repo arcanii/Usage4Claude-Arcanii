@@ -58,6 +58,7 @@
 			membershipExceptions = (
 				Helpers/UsageSnapshot.swift,
 				Helpers/UsageHistorySample.swift,
+				Helpers/SparklineView.swift,
 			);
 			target = 930691872FA41FF900C8AE18 /* Usage4ClaudeWidgetExtension */;
 		};
