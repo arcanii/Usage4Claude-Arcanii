@@ -2,7 +2,7 @@
 
 Companion to [ARCANII_DESIGN.md](ARCANII_DESIGN.md). Items grouped by effort. None are scheduled — pick one when there's time.
 
-## Status as of v1.4.0
+## Status as of v1.4.1
 
 ✅ All P0 (3 items) and P1 (5 items) — shipped in v1.2.0.
 ✅ All P2 (5 items) — shipped in v1.2.0.
@@ -18,13 +18,15 @@ Companion to [ARCANII_DESIGN.md](ARCANII_DESIGN.md). Items grouped by effort. No
 
 - [ ] **Surface usage history in the popover.** v1.2.0 captures the data and exports CSV, but the popover still only shows the latest snapshot. A small sparkline of the last N hours (or a separate "History" tab in the detail view) would make the data visible without exporting. **(M)**
 
-- [ ] **Ring illumination slider.** v1.3.1 added a glass-tube glow on the popover rings (stacked-shadow + `.glassEffect(in:)`). The intensity is hard-coded. Expose a slider in General Settings ("Ring illumination" 0–100%) that scales the shadow opacities and radii so users can dial it from "off" through "subtle" to "vivid". State lives on `UserSettings`; rings read it in their `.shadow` modifiers. The macOS-26 `.glassEffect(in:)` itself isn't easily continuous so it could just toggle on/off at a threshold (e.g. only apply above 50%). **(S)**
-
-- [ ] **Validate the auto-relogin throttle in practice.** v1.2.0 prompts re-login on the first `.sessionExpired` after a previously valid session, then blocks until the next successful fetch resets the flag. If a user dismisses the WebLogin window without logging in, the next refresh tick won't re-prompt — they'd have to manually trigger a refresh. Probably fine, but worth a real-world check. **(XS — verification only)**
-
-- [ ] **Bump Chrome user-agent recurringly.** v1.4.0 still sets it to Chrome 140; real Chrome marches on. Either add a build step that fetches the current major from a known config endpoint, or set a calendar reminder to bump quarterly. **(S — recurring)**
+- [ ] **Bump Chrome user-agent recurringly.** v1.4.1 sets it to Chrome 148; real Chrome keeps marching on. Either add a build step that fetches the current major from a known config endpoint, or set a calendar reminder to bump quarterly. **(S — recurring)**
 
 - [ ] **Bundle ID cleanup for the widget.** Xcode auto-named the widget bundle `com.arcanii.Usage4Claude.Usage4ClaudeWidget` (awkward double "Widget"). Renaming to `com.arcanii.Usage4Claude.Widget` would invalidate the App Group profile that's already provisioned for the current id, so it's not free — but cleaner long-term. **(S)**
+
+## Closed in v1.4.1
+
+- ✅ **Ring illumination slider** — exposed in General Settings ("Popover Appearance" card). Scales shadow opacity/radius linearly; gates `.glassEffect(in:)` at a 0.5 threshold.
+- ✅ **Auto-relogin throttle validated and fixed** — the `sessionExpiredPrompted` flag now clears on explicit user retry (manual refresh, popover-open fetch), so dismissing WebLogin no longer leaves the user stuck waiting for an impossible successful fetch to unstick the prompt.
+- ✅ **Chrome user-agent bumped** — 140 → 148 (current macOS Chrome stable as of 2026-05).
 
 ## Effort key
 

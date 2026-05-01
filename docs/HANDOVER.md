@@ -10,7 +10,7 @@ A macOS menu bar app that polls the **private** `claude.ai/api/organizations/<id
 - **Product name:** `U4Claude.app` (renamed from upstream's `Usage4Claude.app` so both can coexist)
 - **macOS deployment target:** **26.0** (Tahoe). Bumped from 13.0 in v1.4.0. We use the macOS 26 Liquid Glass APIs unconditionally.
 - **Universal binary** (x86_64 + arm64).
-- **Current version:** v1.4.0 — see [RELEASES/](RELEASES/).
+- **Current version:** v1.4.1 — see [RELEASES/](RELEASES/).
 
 ## Read these next, in order
 
@@ -141,5 +141,5 @@ The main app writes on each successful `fetchUsage`; the widget reads on each ti
 ## Pinned versions
 
 - Sparkle: `2.9.1` (pinned in `Usage4Claude.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved`)
-- Spoofed Chrome user-agent: `140.0.0.0` (in `ClaudeAPIHeaderBuilder.swift`)
+- Spoofed Chrome user-agent: `148.0.0.0` (in `ClaudeAPIHeaderBuilder.swift`)
 - Tools required on the build machine: `xcodebuild` (Xcode 26.0+), `create-dmg` (`brew install create-dmg`), Sparkle's `sign_update` (download from sparkle-project releases; default location `/tmp/sparkle-tools/bin/sign_update`, override via `SIGN_UPDATE` env var)

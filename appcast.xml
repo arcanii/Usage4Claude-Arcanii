@@ -6,6 +6,28 @@
         <description>Updates to U4Claude (Arcanii Mod) — Claude.ai usage menu bar app for macOS.</description>
         <language>en</language>
         <item>
+            <title>v1.4.1</title>
+            <pubDate>Fri, 01 May 2026 00:00:00 +0000</pubDate>
+            <sparkle:version>8</sparkle:version>
+            <sparkle:shortVersionString>1.4.1</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <link>https://github.com/arcanii/Usage4Claude-Arcanii/releases/tag/v1.4.1</link>
+            <description><![CDATA[
+                <h2>v1.4.1 — Quick-wins polish</h2>
+                <ul>
+                    <li><strong>Ring illumination slider.</strong> New "Popover Appearance" card in General Settings — drag from 0% (off) through subtle to 100% (vivid, the v1.4.0 default) to dial the popover ring glow. Above 50% the macOS-26 Liquid Glass material is layered in; below it the slider just dims the surrounding shadows.</li>
+                    <li><strong>Auto-relogin recovers from a dismissed login window.</strong> The session-expired throttle now clears on explicit retry (manual refresh or popover-open fetch), so the WebLogin window re-prompts on the next failure instead of latching forever.</li>
+                    <li><strong>Spoofed Chrome user-agent bumped 140 → 148</strong> to keep up with Cloudflare's heuristics.</li>
+                </ul>
+                <p>See <a href="https://github.com/arcanii/Usage4Claude-Arcanii/blob/main/docs/RELEASES/v1.4.1.md">the full release notes</a>.</p>
+            ]]></description>
+            <enclosure
+                url="https://github.com/arcanii/Usage4Claude-Arcanii/releases/download/v1.4.1/U4Claude-v1.4.1.dmg"
+                sparkle:edSignature="KuMkceYCxMeGiQQsPqfG8FIH+H4t+FBSbxnqNQBAwkIy2i1/ywio0G01GxNUqOCOkWlcOIMwsIxcdN8994W+Aw=="
+                length="6642521"
+                type="application/octet-stream"/>
+        </item>
+        <item>
             <title>v1.4.0</title>
             <pubDate>Fri, 01 May 2026 00:00:00 +0000</pubDate>
             <sparkle:version>7</sparkle:version>

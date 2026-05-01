@@ -464,6 +464,16 @@ class UserSettings: ObservableObject {
         }
     }
 
+    /// Popover ring illumination level (0.0 = no glow, 1.0 = full vivid glow).
+    /// Scales the stacked-shadow opacity/radius and gates the macOS-26
+    /// `.glassEffect(in:)` material above a 0.5 threshold.
+    @Published var ringIlluminationLevel: Double {
+        didSet {
+            defaults.set(ringIlluminationLevel, forKey: "ringIlluminationLevel")
+            NotificationCenter.default.post(name: .settingsChanged, object: nil)
+        }
+    }
+
     /// First launch flag
     @Published var isFirstLaunch: Bool {
         didSet {
@@ -791,6 +801,10 @@ class UserSettings: ObservableObject {
             self.customDisplayTypes = [.fiveHour, .sevenDay]
         }
 
+        // Default to full illumination so v1.4.0 visuals are unchanged for users
+        // who never touch the slider.
+        self.ringIlluminationLevel = defaults.object(forKey: "ringIlluminationLevel") as? Double ?? 1.0
+
         // Check if this is the first launch (first launch if credentials were never saved)
         if !defaults.bool(forKey: "hasLaunched") {
             self.isFirstLaunch = true
@@ -916,6 +930,7 @@ class UserSettings: ObservableObject {
         timeFormatPreference = .system
         displayMode = .smart
         customDisplayTypes = [.fiveHour, .sevenDay, .extraUsage]
+        ringIlluminationLevel = 1.0
         notificationsEnabled = true
 
         // Reset smart mode state

@@ -60,6 +60,9 @@
 "settings.general.interface_language" = "界面语言";
 "settings.general.language_hint" = "更改界面显示语言";
 "settings.general.reset_button" = "恢复默认设置";
+"settings.general.popover_section" = "弹出窗外观";
+"settings.general.popover_hint" = "调整菜单栏弹出窗中使用量圆环的视觉效果";
+"settings.general.ring_illumination" = "圆环发光";
 "icon_style.color_translucent" = "彩色通透";
 "icon_style.color_with_background" = "彩色背景";
 "icon_style.monochrome" = "单色主题";

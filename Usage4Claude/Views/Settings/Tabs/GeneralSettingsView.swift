@@ -251,6 +251,32 @@ struct GeneralSettingsView: View {
                     }
                 }
                 
+                // Popover appearance card — ring illumination slider
+                SettingCard(
+                    icon: "sparkles",
+                    iconColor: .yellow,
+                    title: L.SettingsGeneral.popoverSection,
+                    hint: L.SettingsGeneral.popoverHint
+                ) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text(L.SettingsGeneral.ringIllumination)
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                                .foregroundColor(.secondary)
+                            Spacer()
+                            Text("\(Int(settings.ringIlluminationLevel * 100))%")
+                                .font(.caption)
+                                .fontWeight(.medium)
+                                .foregroundColor(.primary)
+                                .monospacedDigit()
+                        }
+                        Slider(value: $settings.ringIlluminationLevel, in: 0...1, step: 0.05)
+                            .tint(.yellow)
+                            .focusable(false)
+                    }
+                }
+
                 // Notification settings card
                 SettingCard(
                     icon: "bell.badge",

@@ -17,6 +17,9 @@ struct UsageDetailView: View {
     /// Menu action callback
     var onMenuAction: ((MenuAction) -> Void)? = nil
     @StateObject private var localization = LocalizationManager.shared
+    /// Live-updating settings — observed so the ring illumination slider
+    /// re-renders the popover while the user drags it from General Settings.
+    @ObservedObject private var settings = UserSettings.shared
     
     /// Loading animation effect type
     enum LoadingAnimationType: Int, CaseIterable {
@@ -277,17 +280,21 @@ struct UsageDetailView: View {
                                     startPoint: .top,
                                     endPoint: .bottom
                                 )
+                                // User-tunable illumination: scales shadow opacity/radius
+                                // linearly; gates the Liquid Glass material above 0.5 since
+                                // the material itself isn't continuously dimmable.
+                                let illumination = settings.ringIlluminationLevel
                                 Circle()
                                     .trim(from: 0, to: CGFloat(primary.percentage) / 100.0)
                                     .stroke(
                                         primaryGlass,
                                         style: StrokeStyle(lineWidth: 10, lineCap: .round)
                                     )
-                                    .glassEffect(in: Circle().stroke(lineWidth: 10))
+                                    .ringGlass(when: illumination >= 0.5, in: Circle().stroke(lineWidth: 10))
                                     .frame(width: 100, height: 100)
                                     .rotationEffect(.degrees(-90))
-                                    .shadow(color: primaryColor, radius: 2)
-                                    .shadow(color: primaryColor.opacity(0.55), radius: 5)
+                                    .shadow(color: primaryColor.opacity(illumination), radius: 2 * illumination)
+                                    .shadow(color: primaryColor.opacity(0.55 * illumination), radius: 5 * illumination)
                                     .animation(.easeInOut, value: primary.percentage)
                             }
 
@@ -323,17 +330,18 @@ struct UsageDetailView: View {
                                             startPoint: .top,
                                             endPoint: .bottom
                                         )
+                                        let illumination = settings.ringIlluminationLevel
                                         Circle()
                                             .trim(from: 0, to: CGFloat(percentage) / 100.0)
                                             .stroke(
                                                 sevenGlass,
                                                 style: StrokeStyle(lineWidth: 3, lineCap: .round)
                                             )
-                                            .glassEffect(in: Circle().stroke(lineWidth: 3))
+                                            .ringGlass(when: illumination >= 0.5, in: Circle().stroke(lineWidth: 3))
                                             .frame(width: 114, height: 114)
                                             .rotationEffect(.degrees(-90))
-                                            .shadow(color: sevenColor, radius: 1.5)
-                                            .shadow(color: sevenColor.opacity(0.55), radius: 4)
+                                            .shadow(color: sevenColor.opacity(illumination), radius: 1.5 * illumination)
+                                            .shadow(color: sevenColor.opacity(0.55 * illumination), radius: 4 * illumination)
                                             .animation(.easeInOut, value: percentage)
                                     }
                                 }
@@ -528,6 +536,21 @@ struct UsageDetailView: View {
             UserSettings.shared.debugKeepDetailWindowOpen ? Color.white : Color.clear
         )
         #endif
+    }
+}
+
+// Conditional macOS-26 Liquid Glass overlay for the popover rings.
+// The Glass material itself doesn't expose a continuous intensity knob, so the
+// illumination slider gates it on/off at a 0.5 threshold while the surrounding
+// shadows scale linearly.
+private extension View {
+    @ViewBuilder
+    func ringGlass(when apply: Bool, in shape: some Shape) -> some View {
+        if apply {
+            self.glassEffect(in: shape)
+        } else {
+            self
+        }
     }
 }
 

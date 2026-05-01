@@ -60,6 +60,9 @@
 "settings.general.interface_language" = "インターフェース言語";
 "settings.general.language_hint" = "表示言語を変更";
 "settings.general.reset_button" = "デフォルトに戻す";
+"settings.general.popover_section" = "ポップオーバーの外観";
+"settings.general.popover_hint" = "メニューバーポップオーバーの使用量リングの見た目を調整します";
+"settings.general.ring_illumination" = "リングの発光";
 "icon_style.color_translucent" = "カラー透明";
 "icon_style.color_with_background" = "カラー背景付き";
 "icon_style.monochrome" = "モノクローム";

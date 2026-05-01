@@ -38,7 +38,7 @@ class ClaudeAPIHeaderBuilder {
             // Browser identifier — bump periodically as real Chrome marches on, otherwise
             // Cloudflare's heuristics may flag a stale UA. Backlog has a recurring "bump
             // Chrome user-agent" item to track this.
-            "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+            "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
 
             // Origin and referrer information
             "origin": "https://claude.ai",

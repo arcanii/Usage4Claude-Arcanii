@@ -228,6 +228,11 @@ class DataRefreshManager: ObservableObject {
             return
         }
 
+        // Explicit user action — clear the session-expired throttle so a still-failing
+        // fetch re-prompts the login window. Otherwise, once a user dismisses WebLogin
+        // without logging in, the flag stays latched until a successful fetch (which
+        // can't happen without a valid session) and the popup never reappears.
+        sessionExpiredPrompted = false
         fetchUsage()
     }
 
@@ -250,6 +255,10 @@ class DataRefreshManager: ObservableObject {
             settings.unchangedCount = 0
             Logger.menuBar.debug("Manual refresh; switching to active mode")
         }
+
+        // Explicit user action — clear the session-expired throttle (see
+        // refreshOnPopoverOpen for the rationale).
+        sessionExpiredPrompted = false
 
         // Update state
         lastManualRefreshTime = now

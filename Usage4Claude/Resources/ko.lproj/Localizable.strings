@@ -60,6 +60,9 @@
 "settings.general.interface_language" = "인터페이스 언어";
 "settings.general.language_hint" = "인터페이스 표시 언어 변경";
 "settings.general.reset_button" = "기본값으로 복원";
+"settings.general.popover_section" = "팝오버 모양";
+"settings.general.popover_hint" = "메뉴 막대 팝오버에서 사용량 링의 시각적 처리를 조정합니다";
+"settings.general.ring_illumination" = "링 발광";
 "icon_style.color_translucent" = "컬러 반투명";
 "icon_style.color_with_background" = "컬러 배경";
 "icon_style.monochrome" = "단색 테마";

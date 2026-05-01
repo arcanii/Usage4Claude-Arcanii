@@ -96,6 +96,9 @@ enum L {
         static var interfaceLanguage: String { localized("settings.general.interface_language") }
         static var languageHint: String { localized("settings.general.language_hint") }
         static var resetButton: String { localized("settings.general.reset_button") }
+        static var popoverSection: String { localized("settings.general.popover_section") }
+        static var popoverHint: String { localized("settings.general.popover_hint") }
+        static var ringIllumination: String { localized("settings.general.ring_illumination") }
     }
     
     // MARK: - Settings Authentication

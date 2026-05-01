@@ -60,6 +60,9 @@
 "settings.general.interface_language" = "Interface Language";
 "settings.general.language_hint" = "Change the interface display language";
 "settings.general.reset_button" = "Reset to Defaults";
+"settings.general.popover_section" = "Popover Appearance";
+"settings.general.popover_hint" = "Tune the visual treatment of the usage rings in the menu bar popover";
+"settings.general.ring_illumination" = "Ring Illumination";
 "icon_style.color_translucent" = "Color Translucent";
 "icon_style.color_with_background" = "Color with Background";
 "icon_style.monochrome" = "Monochrome";

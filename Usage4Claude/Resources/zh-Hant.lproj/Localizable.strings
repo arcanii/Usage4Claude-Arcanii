@@ -60,6 +60,9 @@
 "settings.general.interface_language" = "介面語言";
 "settings.general.language_hint" = "變更介面顯示語言";
 "settings.general.reset_button" = "恢復預設設定";
+"settings.general.popover_section" = "彈出視窗外觀";
+"settings.general.popover_hint" = "調整選單列彈出視窗中使用量環的視覺效果";
+"settings.general.ring_illumination" = "環狀發光";
 "icon_style.color_translucent" = "彩色通透";
 "icon_style.color_with_background" = "彩色背景";
 "icon_style.monochrome" = "單色主題";
