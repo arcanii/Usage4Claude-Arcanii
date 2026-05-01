@@ -204,10 +204,3 @@ struct Usage4ClaudeWidget: Widget {
         .supportedFamilies([.systemSmall, .systemMedium])
     }
 }
-
-@main
-struct Usage4ClaudeWidgetBundle: WidgetBundle {
-    var body: some Widget {
-        Usage4ClaudeWidget()
-    }
-}
