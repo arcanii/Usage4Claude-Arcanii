@@ -10,7 +10,7 @@ A macOS menu bar app that polls the **private** `claude.ai/api/organizations/<id
 - **Product name:** `U4Claude.app` (renamed from upstream's `Usage4Claude.app` so both can coexist)
 - **macOS deployment target:** **26.0** (Tahoe). Bumped from 13.0 in v1.4.0. We use the macOS 26 Liquid Glass APIs unconditionally.
 - **Universal binary** (x86_64 + arm64).
-- **Current version:** v1.4.1 — see [RELEASES/](RELEASES/).
+- **Current version:** v1.5.0 — see [RELEASES/](RELEASES/).
 
 ## Read these next, in order
 
@@ -76,7 +76,7 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test
 ```
 
-Currently 11 tests, all in `SemverCompareTests.swift`. The test target is a SwiftPM package that lives alongside the `.xcodeproj`; it cherry-picks `Usage4Claude/Helpers/SemverCompare.swift` as its only source. To extend coverage, extract additional pure functions into `Usage4Claude/Helpers/` and add them to `Package.swift`'s `Usage4ClaudeCore` target's `sources` array.
+Currently 35 tests across `SemverCompareTests.swift`, `UsageResponseTests.swift`, and `ExtraUsageResponseTests.swift`. The test target is a SwiftPM package that lives alongside the `.xcodeproj`; it cherry-picks pure-function source files (`SemverCompare.swift`, `ClaudeAPIResponseModels.swift`) from `Usage4Claude/Helpers/`. To extend coverage, extract additional dependency-free helpers into `Usage4Claude/Helpers/` and add them to `Package.swift`'s `Usage4ClaudeCore` target's `sources` array. Anything that touches `L.*`, `UserSettings`, or `Logger` should stay in a sibling `+Formatting`-style file (see `UsageData+Formatting.swift`) so the test target doesn't have to drag in those dependencies.
 
 ## Releasing
 

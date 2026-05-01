@@ -23,7 +23,10 @@ let package = Package(
         .target(
             name: "Usage4ClaudeCore",
             path: "Usage4Claude/Helpers",
-            sources: ["SemverCompare.swift"]
+            sources: [
+                "SemverCompare.swift",
+                "ClaudeAPIResponseModels.swift"
+            ]
         ),
         .testTarget(
             name: "Usage4ClaudeCoreTests",

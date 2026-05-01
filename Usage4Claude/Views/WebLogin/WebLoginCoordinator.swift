@@ -155,47 +155,45 @@ final class WebLoginCoordinator: ObservableObject {
     private func validateSessionKey(_ sessionKey: String) {
         loginState = .validating
 
-        let apiService = ClaudeAPIService()
-        apiService.fetchOrganizations(sessionKey: sessionKey) { [weak self] result in
+        Task { @MainActor [weak self] in
             guard let self = self else { return }
+            let apiService = ClaudeAPIService()
+            do {
+                let organizations = try await apiService.fetchOrganizations(sessionKey: sessionKey)
 
-            DispatchQueue.main.async {
-                switch result {
-                case .success(let organizations):
-                    if let firstOrg = organizations.first {
-                        let candidate = Account(
-                            sessionKey: sessionKey,
-                            organizationId: firstOrg.uuid,
-                            organizationName: firstOrg.name,
-                            alias: nil
-                        )
-
-                        // addAccount returns the canonical entry — either the freshly inserted
-                        // account or the existing same-org account refreshed with this sessionKey.
-                        let stored = UserSettings.shared.addAccount(candidate)
-                        UserSettings.shared.switchToAccount(stored)
-
-                        self.loginState = .success(accountName: stored.displayName)
-                        self.onAccountCreated?(stored)
-
-                        Logger.settings.notice("WebLogin: account created — \(stored.displayName)")
-                    } else {
-                        self.loginState = .failed(message: L.Error.noOrganizationsFound)
-                    }
-
-                case .failure(let error):
-                    let message: String
-                    if let usageError = error as? UsageError {
-                        message = usageError.localizedDescription
-                    } else {
-                        message = error.localizedDescription
-                    }
-                    self.loginState = .failed(message: message)
-                    Logger.settings.error("WebLogin: validation failed — \(message)")
-
-                    // Resume monitoring after validation failure
-                    self.startCookieMonitoring()
+                guard let firstOrg = organizations.first else {
+                    self.loginState = .failed(message: L.Error.noOrganizationsFound)
+                    return
                 }
+
+                let candidate = Account(
+                    sessionKey: sessionKey,
+                    organizationId: firstOrg.uuid,
+                    organizationName: firstOrg.name,
+                    alias: nil
+                )
+
+                // addAccount returns the canonical entry — either the freshly inserted
+                // account or the existing same-org account refreshed with this sessionKey.
+                let stored = UserSettings.shared.addAccount(candidate)
+                UserSettings.shared.switchToAccount(stored)
+
+                self.loginState = .success(accountName: stored.displayName)
+                self.onAccountCreated?(stored)
+
+                Logger.settings.notice("WebLogin: account created — \(stored.displayName)")
+            } catch {
+                let message: String
+                if let usageError = error as? UsageError {
+                    message = usageError.localizedDescription
+                } else {
+                    message = error.localizedDescription
+                }
+                self.loginState = .failed(message: message)
+                Logger.settings.error("WebLogin: validation failed — \(message)")
+
+                // Resume monitoring after validation failure
+                self.startCookieMonitoring()
             }
         }
     }

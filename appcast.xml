@@ -6,6 +6,29 @@
         <description>Updates to U4Claude (Arcanii Mod) — Claude.ai usage menu bar app for macOS.</description>
         <language>en</language>
         <item>
+            <title>v1.5.0</title>
+            <pubDate>Fri, 01 May 2026 00:00:00 +0000</pubDate>
+            <sparkle:version>9</sparkle:version>
+            <sparkle:shortVersionString>1.5.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <link>https://github.com/arcanii/Usage4Claude-Arcanii/releases/tag/v1.5.0</link>
+            <description><![CDATA[
+                <h2>v1.5.0 — API refactor + test coverage</h2>
+                <p><strong>No user-visible changes.</strong> Same UI, same data flow, same widget. Internal-only release.</p>
+                <ul>
+                    <li>Response models (<code>UsageResponse</code>, <code>ExtraUsageResponse</code>, <code>UsageData</code>, <code>ExtraUsageData</code>, etc.) extracted into a dependency-free file so the SwiftPM test target can cover them.</li>
+                    <li>24 new tests for <code>toUsageData()</code> and <code>toExtraUsageData()</code> — including the legacy-field fallback for Extra Usage and the fractional-second rounding for reset times. Test count 11 → 35.</li>
+                    <li><code>fetchOrganizations</code> migrated to <code>async throws -> [Organization]</code>; all three callsites (auth settings, welcome, web login) updated together.</li>
+                </ul>
+                <p>See <a href="https://github.com/arcanii/Usage4Claude-Arcanii/blob/main/docs/RELEASES/v1.5.0.md">the full release notes</a>.</p>
+            ]]></description>
+            <enclosure
+                url="https://github.com/arcanii/Usage4Claude-Arcanii/releases/download/v1.5.0/U4Claude-v1.5.0.dmg"
+                sparkle:edSignature="ta+/GvmDC/dobduZOZ4dG5grskkYXSXJjBzMEHaeYNJxuhpJGqYcrSgXItbnlnwPoirrxxqN12XfKrqBDsRnBA=="
+                length="6644193"
+                type="application/octet-stream"/>
+        </item>
+        <item>
             <title>v1.4.1</title>
             <pubDate>Fri, 01 May 2026 00:00:00 +0000</pubDate>
             <sparkle:version>8</sparkle:version>

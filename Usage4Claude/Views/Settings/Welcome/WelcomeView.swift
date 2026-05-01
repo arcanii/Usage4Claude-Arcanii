@@ -140,27 +140,25 @@ struct WelcomeView: View {
     ///   - sessionKey: Session Key
     ///   - completion: Completion callback, returns whether it succeeded
     private func fetchOrganizationAndCreateAccount(sessionKey: String, completion: @escaping (Bool) -> Void) {
-        let apiService = ClaudeAPIService()
-        apiService.fetchOrganizations(sessionKey: sessionKey) { result in
-            switch result {
-            case .success(let organizations):
-                if !organizations.isEmpty {
-                    DispatchQueue.main.async {
-                        for org in organizations {
-                            let newAccount = Account(
-                                sessionKey: sessionKey,
-                                organizationId: org.uuid,
-                                organizationName: org.name,
-                                alias: nil
-                            )
-                            settings.addAccount(newAccount)
-                        }
-                    }
-                    completion(true)
-                } else {
+        Task { @MainActor in
+            let apiService = ClaudeAPIService()
+            do {
+                let organizations = try await apiService.fetchOrganizations(sessionKey: sessionKey)
+                guard !organizations.isEmpty else {
                     completion(false)
+                    return
                 }
-            case .failure:
+                for org in organizations {
+                    let newAccount = Account(
+                        sessionKey: sessionKey,
+                        organizationId: org.uuid,
+                        organizationName: org.name,
+                        alias: nil
+                    )
+                    settings.addAccount(newAccount)
+                }
+                completion(true)
+            } catch {
                 completion(false)
             }
         }

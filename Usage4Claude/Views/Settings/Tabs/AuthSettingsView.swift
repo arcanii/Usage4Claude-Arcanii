@@ -507,46 +507,46 @@ struct AuthSettingsView: View {
         isValidating = true
         validationError = nil
 
-        let apiService = ClaudeAPIService()
-        apiService.fetchOrganizations(sessionKey: newSessionKey) { result in
-            DispatchQueue.main.async {
+        Task { @MainActor in
+            let apiService = ClaudeAPIService()
+            do {
+                let organizations = try await apiService.fetchOrganizations(sessionKey: newSessionKey)
                 isValidating = false
 
-                switch result {
-                case .success(let organizations):
-                    if !organizations.isEmpty {
-                        let useAlias = organizations.count == 1
-                        for (index, org) in organizations.enumerated() {
-                            let candidate = Account(
-                                sessionKey: newSessionKey,
-                                organizationId: org.uuid,
-                                organizationName: org.name,
-                                alias: (useAlias && !newAlias.isEmpty) ? newAlias : nil
-                            )
-                            // addAccount returns the canonical entry (refreshed if same orgId already existed)
-                            let stored = settings.addAccount(candidate)
-                            // Switch to the first added/refreshed account
-                            if index == 0 {
-                                settings.switchToAccount(stored)
-                            }
-                        }
-                        // Show hint for multiple organizations
-                        if organizations.count > 1 {
-                            successMessage = String(format: L.Account.multiOrgAdded, organizations.count)
-                        }
-                        // Close add account interface
-                        withAnimation {
-                            isAddingAccount = false
-                        }
-                    } else {
-                        validationError = L.Error.noOrganizationsFound
+                guard !organizations.isEmpty else {
+                    validationError = L.Error.noOrganizationsFound
+                    return
+                }
+
+                let useAlias = organizations.count == 1
+                for (index, org) in organizations.enumerated() {
+                    let candidate = Account(
+                        sessionKey: newSessionKey,
+                        organizationId: org.uuid,
+                        organizationName: org.name,
+                        alias: (useAlias && !newAlias.isEmpty) ? newAlias : nil
+                    )
+                    // addAccount returns the canonical entry (refreshed if same orgId already existed)
+                    let stored = settings.addAccount(candidate)
+                    // Switch to the first added/refreshed account
+                    if index == 0 {
+                        settings.switchToAccount(stored)
                     }
-                case .failure(let error):
-                    if let usageError = error as? UsageError {
-                        validationError = usageError.localizedDescription
-                    } else {
-                        validationError = error.localizedDescription
-                    }
+                }
+                // Show hint for multiple organizations
+                if organizations.count > 1 {
+                    successMessage = String(format: L.Account.multiOrgAdded, organizations.count)
+                }
+                // Close add account interface
+                withAnimation {
+                    isAddingAccount = false
+                }
+            } catch {
+                isValidating = false
+                if let usageError = error as? UsageError {
+                    validationError = usageError.localizedDescription
+                } else {
+                    validationError = error.localizedDescription
                 }
             }
         }
