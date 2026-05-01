@@ -237,6 +237,6 @@ extension ExtraUsageData {
         guard enabled, let used = used, let limit = limit else {
             return "-"
         }
-        return String(format: "$%.0f/$%.0f", used, limit)
+        return String(format: "$%.2f/$%.0f", used, limit)
     }
 }

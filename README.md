@@ -229,6 +229,7 @@ For the architecture map, error mapping table, and release runbook, see [`docs/H
 - [x] **v1.4.0** — desktop widget extension + App Group snapshot
 - [x] **v1.4.1** — ring illumination slider, auto-relogin throttle fix, Chrome UA bump
 - [x] **v1.5.0** — API response models extracted, 24 new transform tests, `fetchOrganizations` async/await migration
+- [x] **v1.5.1** — backported upstream v2.6.1 fixes: HTTP/3 disabled on API requests (proxy-friendliness), Extra Usage shown with cents precision
 
 See [`docs/RELEASES/`](docs/RELEASES/) for full per-version notes.
 

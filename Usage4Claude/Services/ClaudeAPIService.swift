@@ -125,6 +125,10 @@ class ClaudeAPIService {
 
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
+        // Force HTTP/2 over TCP. macOS may opportunistically pick HTTP/3 (QUIC,
+        // UDP) which slips around system proxies that only intercept TCP — see
+        // upstream Usage4Claude commit 9feb1fc.
+        request.assumesHTTP3Capable = false
 
         // Use unified header builder to add complete browser headers for Cloudflare bypass
         ClaudeAPIHeaderBuilder.applyHeaders(
@@ -237,6 +241,7 @@ class ClaudeAPIService {
 
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
+        request.assumesHTTP3Capable = false  // see fetchUsage for rationale
 
         let actualSessionKey = sessionKey ?? settings.sessionKey
         ClaudeAPIHeaderBuilder.applyHeaders(
@@ -301,6 +306,7 @@ class ClaudeAPIService {
 
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
+        request.assumesHTTP3Capable = false  // see fetchUsage for rationale
 
         // Use unified header builder to add complete browser headers
         ClaudeAPIHeaderBuilder.applyHeaders(

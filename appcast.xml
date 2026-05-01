@@ -6,6 +6,27 @@
         <description>Updates to U4Claude (Arcanii Mod) — Claude.ai usage menu bar app for macOS.</description>
         <language>en</language>
         <item>
+            <title>v1.5.1</title>
+            <pubDate>Fri, 01 May 2026 00:00:00 +0000</pubDate>
+            <sparkle:version>10</sparkle:version>
+            <sparkle:shortVersionString>1.5.1</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <link>https://github.com/arcanii/Usage4Claude-Arcanii/releases/tag/v1.5.1</link>
+            <description><![CDATA[
+                <h2>v1.5.1 — Upstream v2.6.1 backports</h2>
+                <ul>
+                    <li><strong>HTTP/3 disabled</strong> on all Claude API requests — keeps usage traffic on HTTP/2 over TCP so it can't slip around TCP-only system proxies as opportunistic UDP/QUIC.</li>
+                    <li><strong>Extra Usage shows cents</strong> — <code>$0.45/$50</code> instead of <code>$0/$50</code>. Limit stays whole-dollar; the <em>used</em> portion gets two decimal places.</li>
+                </ul>
+                <p>See <a href="https://github.com/arcanii/Usage4Claude-Arcanii/blob/main/docs/RELEASES/v1.5.1.md">the full release notes</a>.</p>
+            ]]></description>
+            <enclosure
+                url="https://github.com/arcanii/Usage4Claude-Arcanii/releases/download/v1.5.1/U4Claude-v1.5.1.dmg"
+                sparkle:edSignature="cajjUAZJf1VFkchYUOqVgOgCQQmpTyito3wp/VQD6mY1MwWE0wHsVpllIb2y5eUQwBUVfMndbwvdCDo8zGi1CQ=="
+                length="6999651"
+                type="application/octet-stream"/>
+        </item>
+        <item>
             <title>v1.5.0</title>
             <pubDate>Fri, 01 May 2026 00:00:00 +0000</pubDate>
             <sparkle:version>9</sparkle:version>
