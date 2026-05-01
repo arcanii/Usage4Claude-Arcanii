@@ -498,6 +498,42 @@ rm -rf "$ARCHIVE_PATH"
 print_success "Cleanup done"
 
 # ============================================
+# Prune older release build directories
+# ============================================
+# Every build leaves a sibling like build/Usage4Claude-Release-1.5.x. macOS
+# LaunchServices scans those paths and registers the old appex as a valid
+# widget extension — chronod then keeps showing the old widget-kind list
+# until the directory is removed. Once this build has succeeded, the
+# previous sibling dirs are dead weight (the DMGs live on GitHub Releases
+# and the source is git-tagged). Drop them, and explicitly unregister
+# their appex with LaunchServices so chronod refreshes.
+if [ "$BUILD_CONFIG" = "Release" ]; then
+    print_header "Pruning older release builds"
+    PRUNED=0
+    LSREG=/System/Library/Frameworks/CoreServices.framework/Versions/Current/Frameworks/LaunchServices.framework/Versions/Current/Support/lsregister
+
+    while IFS= read -r -d '' old; do
+        # Unregister the old app from LaunchServices first so chronod drops
+        # the stale widget-kind list it cached at install time.
+        if [ -d "$old/${PRODUCT_NAME}.app" ] && [ -x "$LSREG" ]; then
+            "$LSREG" -u "$old/${PRODUCT_NAME}.app" 2>/dev/null || true
+        fi
+        rm -rf "$old"
+        print_success "Pruned $(basename "$old")"
+        PRUNED=$((PRUNED + 1))
+    done < <(find "$BUILD_DIR" -mindepth 1 -maxdepth 1 -type d -name "${PROJECT_NAME}-${BUILD_CONFIG}-*" ! -path "$EXPORT_DIR" -print0 2>/dev/null)
+
+    if [ "$PRUNED" -eq 0 ]; then
+        print_info "No older release builds to prune"
+    else
+        # Restart chronod so it re-reads the now-cleaned LaunchServices state
+        # before the user opens Edit Widgets…
+        killall chronod 2>/dev/null || true
+        print_info "Restarted chronod (Edit Widgets… should now reflect the new build)"
+    fi
+fi
+
+# ============================================
 # Summary
 # ============================================
 print_header "Build complete 🎉"
