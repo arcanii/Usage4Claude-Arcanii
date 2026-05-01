@@ -222,20 +222,15 @@ print_info "Starting compile..."
 print_info "Configuration: $BUILD_CONFIG"
 print_info "Target: Any Mac (Universal Binary)"
 
-# Release builds sign with Developer ID for distribution; Debug uses project default.
-# Manual style avoids Xcode's "conflicting provisioning settings" error when overriding
-# the project's automatic-signing identity. Developer ID Application signing does not
-# require a provisioning profile.
-ARCHIVE_SIGN_ARGS=()
-if [ "$BUILD_CONFIG" = "Release" ]; then
-    ARCHIVE_SIGN_ARGS=(
-        CODE_SIGN_IDENTITY="Developer ID Application"
-        CODE_SIGN_STYLE=Manual
-        DEVELOPMENT_TEAM="$DEVELOPMENT_TEAM"
-        PROVISIONING_PROFILE_SPECIFIER=
-        OTHER_CODE_SIGN_FLAGS=
-    )
-fi
+# Use the project's automatic signing for both Debug and Release. The export
+# step (via ExportOptions.plist `method = developer-id`) re-signs the Release
+# archive with the Developer ID Application identity. Manual signing here used
+# to be the path, but adding the App Groups capability for the widget broke it
+# (App Groups + Manual style requires a pre-issued provisioning profile per
+# bundle ID; Automatic + -allowProvisioningUpdates lets Xcode auto-generate).
+ARCHIVE_SIGN_ARGS=(
+    DEVELOPMENT_TEAM="$DEVELOPMENT_TEAM"
+)
 
 if [ "$VERBOSE" = true ]; then
     # Verbose mode: stream xcodebuild output
@@ -245,6 +240,7 @@ if [ "$VERBOSE" = true ]; then
         -configuration "$BUILD_CONFIG" \
         -archivePath "$ARCHIVE_PATH" \
         -destination "generic/platform=macOS,name=Any Mac" \
+        -allowProvisioningUpdates \
         "${ARCHIVE_SIGN_ARGS[@]}"
     ARCHIVE_RESULT=$?
 else
@@ -256,6 +252,7 @@ else
         -configuration "$BUILD_CONFIG" \
         -archivePath "$ARCHIVE_PATH" \
         -destination "generic/platform=macOS,name=Any Mac" \
+        -allowProvisioningUpdates \
         "${ARCHIVE_SIGN_ARGS[@]}" \
         >> "$LOG_FILE" 2>&1
     ARCHIVE_RESULT=$?
@@ -312,7 +309,8 @@ if [ "$VERBOSE" = true ]; then
     xcodebuild -exportArchive \
         -archivePath "$ARCHIVE_PATH" \
         -exportPath "$EXPORT_DIR" \
-        -exportOptionsPlist "$EXPORT_OPTIONS_PLIST"
+        -exportOptionsPlist "$EXPORT_OPTIONS_PLIST" \
+        -allowProvisioningUpdates
     EXPORT_RESULT=$?
 else
     print_info "Exporting..."
@@ -320,6 +318,7 @@ else
         -archivePath "$ARCHIVE_PATH" \
         -exportPath "$EXPORT_DIR" \
         -exportOptionsPlist "$EXPORT_OPTIONS_PLIST" \
+        -allowProvisioningUpdates \
         >> "$LOG_FILE" 2>&1
     EXPORT_RESULT=$?
 fi

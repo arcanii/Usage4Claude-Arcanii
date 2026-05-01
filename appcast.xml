@@ -6,6 +6,29 @@
         <description>Updates to U4Claude (Arcanii Mod) — Claude.ai usage menu bar app for macOS.</description>
         <language>en</language>
         <item>
+            <title>v1.4.0</title>
+            <pubDate>Fri, 01 May 2026 00:00:00 +0000</pubDate>
+            <sparkle:version>7</sparkle:version>
+            <sparkle:shortVersionString>1.4.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <link>https://github.com/arcanii/Usage4Claude-Arcanii/releases/tag/v1.4.0</link>
+            <description><![CDATA[
+                <h2>v1.4.0 — Desktop widget</h2>
+                <p>Drag the new "Claude Usage" widget onto your desktop (Edit Widgets → search for it). Two sizes:</p>
+                <ul>
+                    <li><strong>Small</strong> — single ring with percentage and reset countdown.</li>
+                    <li><strong>Medium</strong> — both 5-hour and 7-day rings side-by-side.</li>
+                </ul>
+                <p>The widget reads from an App Group snapshot the main app writes on every successful fetch — no extra API calls, no Cloudflare to dodge, no session-expiry handling. WidgetCenter is pinged on each fetch so the rings update immediately.</p>
+                <p>Also: switched the build script to automatic signing with <code>-allowProvisioningUpdates</code> so the App Group entitlements work end-to-end without pre-issued provisioning profiles.</p>
+            ]]></description>
+            <enclosure
+                url="https://github.com/arcanii/Usage4Claude-Arcanii/releases/download/v1.4.0/U4Claude-v1.4.0.dmg"
+                sparkle:edSignature="iYJS7MV3RTmCa6NkIqNCp+KXOAWrMrh7cRtNgxHIjXynMQ6CsU8GEmeTiZVuWn2/uQ9MnKad1eCcCDvBJg7eAQ=="
+                length="6636907"
+                type="application/octet-stream"/>
+        </item>
+        <item>
             <title>v1.3.2</title>
             <pubDate>Fri, 01 May 2026 00:00:00 +0000</pubDate>
             <sparkle:version>6</sparkle:version>
