@@ -14,41 +14,8 @@
 import WidgetKit
 import SwiftUI
 
-// MARK: - Timeline entry
-
-struct UsageEntry: TimelineEntry {
-    let date: Date
-    let snapshot: UsageSnapshot?
-}
-
-// MARK: - Timeline provider
-
-struct UsageTimelineProvider: TimelineProvider {
-    func placeholder(in context: Context) -> UsageEntry {
-        UsageEntry(date: Date(), snapshot: Self.demoSnapshot)
-    }
-
-    func getSnapshot(in context: Context, completion: @escaping (UsageEntry) -> Void) {
-        completion(UsageEntry(date: Date(), snapshot: UsageSnapshotStore.read() ?? Self.demoSnapshot))
-    }
-
-    func getTimeline(in context: Context, completion: @escaping (Timeline<UsageEntry>) -> Void) {
-        let now = Date()
-        let entry = UsageEntry(date: now, snapshot: UsageSnapshotStore.read())
-        // Refresh every 15 min in the absence of a push from the main app.
-        let next = now.addingTimeInterval(15 * 60)
-        completion(Timeline(entries: [entry], policy: .after(next)))
-    }
-
-    private static let demoSnapshot = UsageSnapshot(
-        capturedAt: Date(),
-        fiveHour: .init(percentage: 42, resetsAt: Date().addingTimeInterval(3600 * 2.5)),
-        sevenDay: .init(percentage: 73, resetsAt: Date().addingTimeInterval(3600 * 24 * 4)),
-        opus: nil,
-        sonnet: nil,
-        extraUsage: nil
-    )
-}
+// Timeline entry + provider live in `SharedWidgetTypes.swift`. This file's
+// kind uses `SnapshotOnlyProvider` (no history needed for the rings view).
 
 // MARK: - Views
 
@@ -161,34 +128,7 @@ private struct MediumView: View {
     }
 }
 
-// MARK: - Helpers
-
-/// Match the main app's color palette: green low, yellow/orange middle, red high.
-private func ringColor(for percentage: Double, fallback: Color = .green) -> Color {
-    switch percentage {
-    case ..<50: return .green
-    case ..<70: return .yellow
-    case ..<90: return .orange
-    default: return .red
-    }
-}
-
-private func resetText(for resetsAt: Date) -> String {
-    let interval = resetsAt.timeIntervalSinceNow
-    guard interval > 0 else { return "Resetting" }
-
-    let totalMinutes = Int(ceil(interval / 60))
-    if totalMinutes < 60 { return "\(totalMinutes)m left" }
-
-    let hours = totalMinutes / 60
-    let minutes = totalMinutes % 60
-    if hours < 24 {
-        return minutes == 0 ? "\(hours)h left" : "\(hours)h \(minutes)m left"
-    }
-    let days = hours / 24
-    let h = hours % 24
-    return h == 0 ? "\(days)d left" : "\(days)d \(h)h left"
-}
+// `ringColor` and `resetText` helpers live in `SharedWidgetTypes.swift`.
 
 // MARK: - Widget definition
 
@@ -196,7 +136,7 @@ struct Usage4ClaudeWidget: Widget {
     let kind: String = "com.arcanii.Usage4Claude.Widget"
 
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: kind, provider: UsageTimelineProvider()) { entry in
+        StaticConfiguration(kind: kind, provider: SnapshotOnlyProvider()) { entry in
             UsageWidgetView(entry: entry)
         }
         .configurationDisplayName("Claude Usage")
