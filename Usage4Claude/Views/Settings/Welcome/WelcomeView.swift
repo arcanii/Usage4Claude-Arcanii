@@ -617,34 +617,12 @@ struct SetupStepView: View {
         case faq
     }
 
-    /// Generate GitHub README URL based on current language
-    /// - Parameter section: README section
-    /// - Returns: GitHub README URL for the corresponding language and section
+    /// GitHub README URL for the requested section. The fork ships only the
+    /// English README; the localized variants were removed in v1.5.x cleanup.
     private func getGitHubReadmeURL(section: ReadmeSection) -> String {
         let baseURL = "https://github.com/arcanii/Usage4Claude-Arcanii/blob/main"
-        let language = settings.language
-
-        switch language {
-        case .english:
-            let anchor = section == .initialSetup ? "#initial-setup" : "#-faq"
-            return "\(baseURL)/README.md\(anchor)"
-
-        case .chinese:
-            let anchor = section == .initialSetup ? "#首次配置" : "#-常见问题"
-            return "\(baseURL)/docs/README.zh-CN.md\(anchor)"
-
-        case .chineseTraditional:
-            let anchor = section == .initialSetup ? "#首次設定" : "#-常見問題"
-            return "\(baseURL)/docs/README.zh-TW.md\(anchor)"
-
-        case .japanese:
-            let anchor = section == .initialSetup ? "#初期設定" : "#-よくある質問"
-            return "\(baseURL)/docs/README.ja.md\(anchor)"
-
-        case .korean:
-            let anchor = section == .initialSetup ? "#초기-설정" : "#-자주-묻는-질문"
-            return "\(baseURL)/docs/README.ko.md\(anchor)"
-        }
+        let anchor = section == .initialSetup ? "#initial-setup" : "#-faq"
+        return "\(baseURL)/README.md\(anchor)"
     }
 }
 
