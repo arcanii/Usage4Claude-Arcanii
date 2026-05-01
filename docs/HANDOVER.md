@@ -10,14 +10,14 @@ A macOS menu bar app that polls the **private** `claude.ai/api/organizations/<id
 - **Product name:** `U4Claude.app` (renamed from upstream's `Usage4Claude.app` so both can coexist)
 - **macOS deployment target:** **26.0** (Tahoe). Bumped from 13.0 in v1.4.0. We use the macOS 26 Liquid Glass APIs unconditionally.
 - **Universal binary** (x86_64 + arm64).
-- **Current version:** v1.4.0 — see [docs/RELEASES/](docs/RELEASES/).
+- **Current version:** v1.4.0 — see [RELEASES/](RELEASES/).
 
 ## Read these next, in order
 
-1. **[docs/ARCANII_DESIGN.md](docs/ARCANII_DESIGN.md)** — module map, data flow, error mapping table. The "what's where" reference.
-2. **[docs/ARCANII_BACKLOG.md](docs/ARCANII_BACKLOG.md)** — open follow-ups with effort tags. All P0/P1/P2/P3 items have shipped.
-3. **[docs/RELEASES/](docs/RELEASES/)** — per-version release notes. v1.0.0 (initial fork) through v1.4.0 (widget).
-4. **[docs/WIDGET_SETUP.md](docs/WIDGET_SETUP.md)** — kept around in case the widget target ever needs to be rebuilt; unused for everyday work.
+1. **[ARCANII_DESIGN.md](ARCANII_DESIGN.md)** — module map, data flow, error mapping table. The "what's where" reference.
+2. **[ARCANII_BACKLOG.md](ARCANII_BACKLOG.md)** — open follow-ups with effort tags. All P0/P1/P2/P3 items have shipped.
+3. **[RELEASES/](RELEASES/)** — per-version release notes. v1.0.0 (initial fork) through v1.4.0 (widget).
+4. **[WIDGET_SETUP.md](WIDGET_SETUP.md)** — kept around in case the widget target ever needs to be rebuilt; unused for everyday work.
 
 ## Repo layout
 
@@ -117,7 +117,7 @@ Both the main app and widget use **static** `Info.plist` files (`Config/Info.pli
 
 ### Adding a new Xcode TARGET — don't hand-edit pbxproj
 
-The widget extension target was originally attempted via hand-rolled pbxproj surgery. It worked at the build-graph level but always failed at signing because Apple's automatic-signing dance needs to register the new bundle id with the developer portal, which is gated on interactive Apple-ID auth in Xcode → Preferences → Accounts. Adding new targets is much more reliable through **File → New → Target** in Xcode UI, then reconciling the generated source/plist/entitlements files with what's already in the repo. See [docs/WIDGET_SETUP.md](docs/WIDGET_SETUP.md) for the dance done for the widget — same pattern works for any future extension.
+The widget extension target was originally attempted via hand-rolled pbxproj surgery. It worked at the build-graph level but always failed at signing because Apple's automatic-signing dance needs to register the new bundle id with the developer portal, which is gated on interactive Apple-ID auth in Xcode → Preferences → Accounts. Adding new targets is much more reliable through **File → New → Target** in Xcode UI, then reconciling the generated source/plist/entitlements files with what's already in the repo. See [WIDGET_SETUP.md](WIDGET_SETUP.md) for the dance done for the widget — same pattern works for any future extension.
 
 ### `UsageSnapshot.swift` is shared across targets
 
@@ -136,7 +136,7 @@ The main app writes on each successful `fetchUsage`; the widget reads on each ti
 - **Adding a new Settings field?** It's a `@Published` on `UserSettings`, persisted to `UserDefaults` in the `didSet`, restored in `init()`, and rendered in `Views/Settings/Tabs/GeneralSettingsView.swift` (or split if it belongs to its own concern — see the existing `+Accounts` / `+LaunchAtLogin` / `+SmartMode` extensions for the pattern).
 - **Changing the popover UI?** `Views/UsageDetailView.swift`. The ring rendering with the glass-tube gradient + `.shadow` glow + `.glassEffect(in:)` is around the `if refreshState.isRefreshing` branches.
 - **Tweaking smart-mode refresh timing?** `Models/UserSettings+SmartMode.swift` — the active → idleShort → idleMedium → idleLong tier transitions and tick counts.
-- **Debugging an API failure?** `Services/ClaudeAPIService.swift`. The error mapping table is at the top of [docs/ARCANII_DESIGN.md](docs/ARCANII_DESIGN.md). 403 with `permission_error` body → `.sessionExpired` (auto-prompts re-login); 403 without that body or with HTML response → `.cloudflareBlocked`.
+- **Debugging an API failure?** `Services/ClaudeAPIService.swift`. The error mapping table is at the top of [ARCANII_DESIGN.md](ARCANII_DESIGN.md). 403 with `permission_error` body → `.sessionExpired` (auto-prompts re-login); 403 without that body or with HTML response → `.cloudflareBlocked`.
 
 ## Pinned versions
 
