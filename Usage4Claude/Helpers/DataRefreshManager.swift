@@ -10,6 +10,7 @@ import Foundation
 import Combine
 import OSLog
 import WidgetKit
+import AppKit
 
 /// Data refresh manager
 /// Responsible for managing all data refreshing, timers, update checks, and reset verification logic
@@ -52,6 +53,11 @@ class DataRefreshManager: ObservableObject {
     private var sessionExpiredPrompted = false
     /// App Nap prevention activity token
     private var refreshActivity: NSObjectProtocol?
+    /// System-wake observer token. Triggers an immediate fetch a few seconds
+    /// after the Mac wakes from sleep so we don't sit on stale data while
+    /// waiting for the next regular timer fire (which can be up to 10 min
+    /// away in idleLong smart-mode).
+    private var wakeObserver: NSObjectProtocol?
 
     // MARK: - Timer Identifiers
 
@@ -69,6 +75,26 @@ class DataRefreshManager: ObservableObject {
     init() {
         // App-update polling is owned by Sparkle (SPUStandardUpdaterController in
         // AppDelegate). This manager is now strictly about Claude usage data refresh.
+        setupWakeObserver()
+    }
+
+    /// Subscribe to the system wake notification so we can refresh data
+    /// promptly after the Mac wakes from sleep. Without this, smart-mode's
+    /// idleLong tier can leave the popover sitting on stale data for up to
+    /// 10 minutes after wake. Backported from upstream commit `de671c6`.
+    private func setupWakeObserver() {
+        wakeObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didWakeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Logger.menuBar.debug("System woke from sleep — refreshing usage")
+            // Wait a few seconds for the network stack to come back before
+            // hitting Claude's API.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3) { [weak self] in
+                self?.fetchUsage()
+            }
+        }
     }
 
     // MARK: - Data Fetching
@@ -217,9 +243,19 @@ class DataRefreshManager: ObservableObject {
 
         // User opened the detail view, force switch to active mode (1-minute refresh)
         if settings.refreshMode == .smart {
+            // If we were in any idle tier, the running timer is still on the
+            // longer interval. `updateSmartMonitoringMode` won't restart it for
+            // us (its switchToActiveMode path early-returns when already active),
+            // so do the restart here. Backported from upstream `de671c6`.
+            let wasIdle = settings.currentMonitoringMode != .active
             settings.currentMonitoringMode = .active
             settings.unchangedCount = 0
-            Logger.menuBar.debug("Popover opened by user; switching to active mode")
+            if wasIdle {
+                restartTimer()
+                Logger.menuBar.debug("Popover opened from idle mode; restarted timer at active interval")
+            } else {
+                Logger.menuBar.debug("Popover opened by user; already in active mode")
+            }
         }
 
         // If less than 30 seconds since last refresh, skip
@@ -251,9 +287,16 @@ class DataRefreshManager: ObservableObject {
 
         // User manually refreshed, force switch to active mode (1-minute refresh)
         if settings.refreshMode == .smart {
+            // Same idle→active timer-restart fix as refreshOnPopoverOpen.
+            let wasIdle = settings.currentMonitoringMode != .active
             settings.currentMonitoringMode = .active
             settings.unchangedCount = 0
-            Logger.menuBar.debug("Manual refresh; switching to active mode")
+            if wasIdle {
+                restartTimer()
+                Logger.menuBar.debug("Manual refresh from idle mode; restarted timer at active interval")
+            } else {
+                Logger.menuBar.debug("Manual refresh; already in active mode")
+            }
         }
 
         // Explicit user action — clear the session-expired throttle (see
@@ -389,6 +432,10 @@ class DataRefreshManager: ObservableObject {
     func cleanup() {
         timerManager.invalidateAll()
         endRefreshActivity()
+        if let observer = wakeObserver {
+            NSWorkspace.shared.notificationCenter.removeObserver(observer)
+            wakeObserver = nil
+        }
     }
 
     deinit {

@@ -6,7 +6,11 @@ import XCTest
 ///
 /// Specs the production code intends to honor:
 /// - 5-hour data is always parsed (utilization + resets_at).
-/// - 7-day, Opus, and Sonnet are nil when the field is missing OR when
+/// - 7-day always emits a placeholder. Every Claude account has a 7-day limit
+///   even before usage starts; when `seven_day` is missing OR returns
+///   (utilization=0, resets_at=null), the transform yields a 0% placeholder
+///   so the UI can still display the row from day one.
+/// - Opus and Sonnet are nil when the field is missing OR when
 ///   utilization=0 AND resets_at=nil (the API's "no data" sentinel).
 /// - resets_at strings are rounded to the nearest whole second so the UI
 ///   countdown doesn't jitter across `.645` / `.159` fractional boundaries.
@@ -68,12 +72,30 @@ final class UsageResponseTests: XCTestCase {
         XCTAssertNil(usage.fiveHour?.resetsAt)
     }
 
-    // MARK: - 7-day / Opus / Sonnet — "no data" sentinel
+    // MARK: - 7-day limit (always emits a placeholder)
 
-    func testSevenDayWithZeroUtilizationAndNoResetIsNil() throws {
-        // The API uses (utilization=0, resets_at=null) to mean "no data" —
-        // production code maps this to nil so the UI hides the row entirely
-        // instead of showing a phantom 0%.
+    func testSevenDayMissingFieldReturnsZeroPlaceholder() throws {
+        // Every Claude account has a 7-day limit; when the API doesn't include
+        // a `seven_day` field at all (e.g. brand-new accounts), production
+        // code emits a 0% placeholder so the UI can still display the row.
+        let json = """
+        {
+            "five_hour": { "utilization": 10, "resets_at": "2026-05-01T15:00:00.000Z" },
+            "seven_day": null,
+            "seven_day_oauth_apps": null,
+            "seven_day_opus": null,
+            "seven_day_sonnet": null
+        }
+        """
+        let usage = try decode(json).toUsageData()
+        XCTAssertNotNil(usage.sevenDay)
+        XCTAssertEqual(usage.sevenDay?.percentage, 0)
+        XCTAssertNil(usage.sevenDay?.resetsAt)
+    }
+
+    func testSevenDayWithZeroUtilizationAndNoResetReturnsZeroPlaceholder() throws {
+        // Same intent as the missing-field case: when the API returns
+        // (utilization=0, resets_at=null) the row is shown with 0%, not hidden.
         let json = """
         {
             "five_hour": { "utilization": 10, "resets_at": "2026-05-01T15:00:00.000Z" },
@@ -84,7 +106,9 @@ final class UsageResponseTests: XCTestCase {
         }
         """
         let usage = try decode(json).toUsageData()
-        XCTAssertNil(usage.sevenDay)
+        XCTAssertNotNil(usage.sevenDay)
+        XCTAssertEqual(usage.sevenDay?.percentage, 0)
+        XCTAssertNil(usage.sevenDay?.resetsAt)
     }
 
     func testSevenDayWithRealDataIsParsed() throws {

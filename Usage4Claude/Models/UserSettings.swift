@@ -988,12 +988,11 @@ class UserSettings: ObservableObject {
             var types: [LimitType] = []
 
             // In canonical order: fiveHour -> sevenDay -> extraUsage -> opus -> sonnet
-            if data.fiveHour != nil {
-                types.append(.fiveHour)
-            }
-            if data.sevenDay != nil {
-                types.append(.sevenDay)
-            }
+            // 5-hour and 7-day always show in smart mode — every Claude account
+            // is subject to both limits, so there's no scenario where hiding
+            // them is correct. Backported from upstream commit `fffff55`.
+            types.append(.fiveHour)
+            types.append(.sevenDay)
             if data.extraUsage?.enabled == true {
                 types.append(.extraUsage)
             }

@@ -53,9 +53,26 @@ XCODEPROJ="${PROJECT_ROOT}/${PROJECT_NAME}.xcodeproj"
 BUILD_DIR="${PROJECT_ROOT}/build"
 DEVELOPMENT_TEAM="386M76FV3K"
 NOTARY_PROFILE="${NOTARY_PROFILE:-Usage4Claude-Arcanii-notarize}"
-# Sparkle's sign_update tool. Override via env var if installed elsewhere; the
-# build step is skipped (with a hint) when the tool isn't reachable.
-SIGN_UPDATE="${SIGN_UPDATE:-/tmp/sparkle-tools/bin/sign_update}"
+# Sparkle's sign_update tool. Resolution order (first hit wins):
+#   1. $SIGN_UPDATE env var (explicit override)
+#   2. /tmp/sparkle-tools/bin/sign_update (developer-installed copy)
+#   3. The Sparkle SPM artifact's bundled sign_update inside DerivedData
+#      (always available after at least one Xcode build, but its path is
+#      derived from a hash so we glob)
+# Step 3 is a fallback for the common case where /tmp gets cleared after a
+# reboot — the SPM artifact persists across reboots and signs identically.
+if [ -z "$SIGN_UPDATE" ]; then
+    if [ -x "/tmp/sparkle-tools/bin/sign_update" ]; then
+        SIGN_UPDATE="/tmp/sparkle-tools/bin/sign_update"
+    else
+        SPM_SIGN_UPDATE="$(ls -1 ~/Library/Developer/Xcode/DerivedData/Usage4Claude-*/SourcePackages/artifacts/sparkle/Sparkle/bin/sign_update 2>/dev/null | head -1)"
+        if [ -n "$SPM_SIGN_UPDATE" ] && [ -x "$SPM_SIGN_UPDATE" ]; then
+            SIGN_UPDATE="$SPM_SIGN_UPDATE"
+        else
+            SIGN_UPDATE="/tmp/sparkle-tools/bin/sign_update"  # default for warning text
+        fi
+    fi
+fi
 
 # Optional: source a gitignored override file so contributors can use their own
 # Developer ID team and notary profile without editing this script. See

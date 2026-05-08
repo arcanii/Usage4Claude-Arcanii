@@ -2,7 +2,7 @@
 
 Companion to [ARCANII_DESIGN.md](ARCANII_DESIGN.md). Items grouped by effort. None are scheduled — pick one when there's time.
 
-## Status as of v1.6.0
+## Status as of v1.6.1
 
 ✅ All P0 (3 items) and P1 (5 items) — shipped in v1.2.0.
 ✅ All P2 (5 items) — shipped in v1.2.0.
@@ -17,6 +17,13 @@ Companion to [ARCANII_DESIGN.md](ARCANII_DESIGN.md). Items grouped by effort. No
 - [ ] **Bundle ID cleanup for the widget.** Xcode auto-named the widget bundle `com.arcanii.Usage4Claude.Usage4ClaudeWidget` (awkward double "Widget"). Renaming to `com.arcanii.Usage4Claude.Widget` would invalidate the App Group profile that's already provisioned for the current id, so it's not free — but cleaner long-term. **(S)**
 
 - [ ] **iOS continuity for Control Center accessory widgets.** Planned for v1.6.0 but dropped — `.accessoryCircular` / `.accessoryRectangular` / `.accessoryInline` widget families are iOS/watchOS only on macOS Widget extensions. Bringing them in via iOS continuity (a separate target with iOS deployment) would unlock pin-to-Control-Center variants on macOS Sonoma+. Not free — adds App Store / TestFlight / signing complexity. **(M, optional)**
+
+## Closed in v1.6.1
+
+- ✅ **Refresh on system wake** — `DataRefreshManager` subscribes to `NSWorkspace.didWakeNotification` and fetches ~3s post-wake. Backport of upstream `de671c6`.
+- ✅ **Smart-mode idle→active timer restart** — popover-open and manual refresh now restart the timer when transitioning out of an idle tier. Same upstream commit.
+- ✅ **Always show 5h + 7d in smart mode** — `getActiveDisplayTypes` no longer hides them when data is missing. Backport of upstream `fffff55`.
+- ✅ **7-day placeholder for new accounts** — `toUsageData()` emits a 0% placeholder when 7-day data is absent. `addAccount` posts `.accountChanged` after the first add. Backport of upstream `1192f35`.
 
 ## Closed in v1.6.0
 

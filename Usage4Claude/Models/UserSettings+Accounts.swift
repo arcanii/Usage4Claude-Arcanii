@@ -44,11 +44,20 @@ extension UserSettings {
             return refreshed
         }
 
+        let wasFirstAccount = accounts.isEmpty
         accounts.append(account)
         if accounts.count == 1 {
             currentAccountId = account.id
         }
         Logger.settings.notice("Account added: \(account.displayName)")
+
+        // First-account adds need to wake DataRefreshManager so the popover
+        // and widget pick up the brand-new account immediately, instead of
+        // waiting for the next timer fire. Backported from upstream `1192f35`.
+        if wasFirstAccount {
+            NotificationCenter.default.post(name: .accountChanged, object: nil)
+        }
+
         return account
     }
 

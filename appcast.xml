@@ -6,6 +6,29 @@
         <description>Updates to U4Claude (Arcanii Mod) — Claude.ai usage menu bar app for macOS.</description>
         <language>en</language>
         <item>
+            <title>v1.6.1</title>
+            <pubDate>Fri, 01 May 2026 00:00:00 +0000</pubDate>
+            <sparkle:version>12</sparkle:version>
+            <sparkle:shortVersionString>1.6.1</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <link>https://github.com/arcanii/Usage4Claude-Arcanii/releases/tag/v1.6.1</link>
+            <description><![CDATA[
+                <h2>v1.6.1 — Upstream backport pass</h2>
+                <p>Three small bug fixes from upstream's v3.0.0 cycle, applied to this fork:</p>
+                <ul>
+                    <li><strong>Refresh on system wake</strong> — usage updates immediately after the Mac wakes from sleep instead of waiting up to 10 minutes for the next timer fire.</li>
+                    <li><strong>Idle-mode timer restart</strong> — opening the popover or hitting manual refresh from a smart-mode idle tier now correctly restarts the timer at the active 1-min interval instead of running on the old longer one.</li>
+                    <li><strong>5-hour and 7-day always shown in smart mode</strong>; <strong>7-day shows for new accounts</strong> with a 0% placeholder when no data has accumulated yet.</li>
+                </ul>
+                <p>See <a href="https://github.com/arcanii/Usage4Claude-Arcanii/blob/main/docs/RELEASES/v1.6.1.md">the full release notes</a>.</p>
+            ]]></description>
+            <enclosure
+                url="https://github.com/arcanii/Usage4Claude-Arcanii/releases/download/v1.6.1/U4Claude-v1.6.1.dmg"
+                sparkle:edSignature="TCj4J1x861fH0l1TvI7KUEYOKMz8Ps5WAtvWFjIVKHiMmp62jjmHkvwrBDBG87wJ/lniuRBdSua0IQ+LPHQRBw=="
+                length="7180840"
+                type="application/octet-stream"/>
+        </item>
+        <item>
             <title>v1.6.0</title>
             <pubDate>Fri, 01 May 2026 00:00:00 +0000</pubDate>
             <sparkle:version>11</sparkle:version>

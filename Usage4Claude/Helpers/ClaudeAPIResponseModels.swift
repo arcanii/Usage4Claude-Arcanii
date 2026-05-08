@@ -69,14 +69,14 @@ nonisolated struct UsageResponse: Codable, Sendable {
         // Parse 5-hour limit data
         let fiveHourData = parseLimitData(five_hour)
 
-        // Parse 7-day limit data (only when present and valid)
-        let sevenDayData: UsageData.LimitData? = {
+        // Parse 7-day limit data. Every Claude account has a 7-day limit;
+        // for brand-new accounts the API may return a missing field or
+        // (utilization=0, resets_at=null). Emit a 0% placeholder either way
+        // so the UI can show the row from day one. Backported from upstream
+        // commit `1192f35`.
+        let sevenDayData: UsageData.LimitData = {
             guard let sevenDay = seven_day else {
-                return nil
-            }
-            // If utilization is 0 and resets_at is nil, treat as no data
-            if sevenDay.utilization == 0 && sevenDay.resets_at == nil {
-                return nil
+                return UsageData.LimitData(percentage: 0, resetsAt: nil)
             }
             let parsed = parseLimitData(sevenDay)
             return UsageData.LimitData(percentage: parsed.percentage, resetsAt: parsed.resetsAt)
