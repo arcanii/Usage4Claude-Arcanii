@@ -16,6 +16,8 @@
 "menu.quit" = "退出 Usage4Claude";
 "menu.account" = "账户";
 "menu.account_prefix" = "账户:";
+"menu.reset_widgets" = "重置小组件";
+"menu.reset_widgets_help" = "恢复卡在旧数据或黑色状态的小组件。按住 ⌥ 键单击可同时重启小组件服务。";
 
 // MARK: - Usage Detail View
 "usage.title" = "Claude 使用情况";

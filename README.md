@@ -240,6 +240,7 @@ For the architecture map, error mapping table, and release runbook, see [`docs/H
 - [x] **v1.5.1** — backported upstream v2.6.1 fixes: HTTP/3 disabled on API requests (proxy-friendliness), Extra Usage shown with cents precision
 - [x] **v1.6.0** — usage history visible: 24h sparkline under every popover row, plus four new desktop widget kinds (Large Dashboard, Sparkline, Dual-Sparkline, ExtraLarge). Storage rebuilt on NDJSON in the App Group container.
 - [x] **v1.6.1** — three upstream backports: refresh on system wake, idle→active timer restart, 7-day placeholder for new accounts.
+- [x] **v1.6.2** — "Reset Widgets" recovery action in the popover `…` menu (medium reset; ⌥-click for hard reset via chronod restart).
 
 See [`docs/RELEASES/`](docs/RELEASES/) for full per-version notes.
 

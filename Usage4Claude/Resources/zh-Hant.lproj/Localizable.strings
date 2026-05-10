@@ -16,6 +16,8 @@
 "menu.quit" = "結束 Usage4Claude";
 "menu.account" = "帳戶";
 "menu.account_prefix" = "帳戶:";
+"menu.reset_widgets" = "重設小工具";
+"menu.reset_widgets_help" = "恢復卡在舊資料或黑色狀態的小工具。按住 ⌥ 鍵點按可同時重新啟動小工具服務。";
 
 // MARK: - Usage Detail View
 "usage.title" = "Claude 使用狀況";

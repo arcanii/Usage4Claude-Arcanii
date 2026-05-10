@@ -2,7 +2,7 @@
 
 Companion to [ARCANII_DESIGN.md](ARCANII_DESIGN.md). Items grouped by effort. None are scheduled — pick one when there's time.
 
-## Status as of v1.6.1
+## Status as of v1.6.2
 
 ✅ All P0 (3 items) and P1 (5 items) — shipped in v1.2.0.
 ✅ All P2 (5 items) — shipped in v1.2.0.
@@ -17,6 +17,10 @@ Companion to [ARCANII_DESIGN.md](ARCANII_DESIGN.md). Items grouped by effort. No
 - [ ] **Bundle ID cleanup for the widget.** Xcode auto-named the widget bundle `com.arcanii.Usage4Claude.Usage4ClaudeWidget` (awkward double "Widget"). Renaming to `com.arcanii.Usage4Claude.Widget` would invalidate the App Group profile that's already provisioned for the current id, so it's not free — but cleaner long-term. **(S)**
 
 - [ ] **iOS continuity for Control Center accessory widgets.** Planned for v1.6.0 but dropped — `.accessoryCircular` / `.accessoryRectangular` / `.accessoryInline` widget families are iOS/watchOS only on macOS Widget extensions. Bringing them in via iOS continuity (a separate target with iOS deployment) would unlock pin-to-Control-Center variants on macOS Sonoma+. Not free — adds App Store / TestFlight / signing complexity. **(M, optional)**
+
+## Closed in v1.6.2
+
+- ✅ **In-app "Reset Widgets" recovery** — popover `…` menu now has a Reset Widgets action: default click does a medium reset (snapshot rewrite + timeline reload + config cache invalidation), ⌥-click escalates to a hard reset (`killall chronod`). Backed by new `WidgetReloader` helper. Removes the need to drop to Terminal when chronod state wedges.
 
 ## Closed in v1.6.1
 

@@ -6,6 +6,28 @@
         <description>Updates to U4Claude (Arcanii Mod) — Claude.ai usage menu bar app for macOS.</description>
         <language>en</language>
         <item>
+            <title>v1.6.2</title>
+            <pubDate>Fri, 01 May 2026 00:00:00 +0000</pubDate>
+            <sparkle:version>13</sparkle:version>
+            <sparkle:shortVersionString>1.6.2</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <link>https://github.com/arcanii/Usage4Claude-Arcanii/releases/tag/v1.6.2</link>
+            <description><![CDATA[
+                <h2>v1.6.2 — In-app widget recovery</h2>
+                <p>New <strong>Reset Widgets</strong> menu item in the popover's <code>…</code> menu. Two tiers:</p>
+                <ul>
+                    <li><strong>Click</strong> — medium reset: writes a fresh App Group snapshot, invalidates WidgetKit's configuration cache, and reloads all timelines. No subprocess; fixes most rendering glitches.</li>
+                    <li><strong>⌥-click</strong> — hard reset: medium + restarts <code>chronod</code> via <code>killall</code>. Last-resort recovery for the cache wedge that produced opaque-black widget tiles after the v1.6.1 install. Triggers a TCC prompt on first run.</li>
+                </ul>
+                <p>See <a href="https://github.com/arcanii/Usage4Claude-Arcanii/blob/main/docs/RELEASES/v1.6.2.md">the full release notes</a>.</p>
+            ]]></description>
+            <enclosure
+                url="https://github.com/arcanii/Usage4Claude-Arcanii/releases/download/v1.6.2/U4Claude-v1.6.2.dmg"
+                sparkle:edSignature="Yio/3xXDpaSsyZmI5HHPZLCWCQWXMGXl49ndZhomeenAJINpP1P89CkMbdhdIdjyNOBsBTc2O3IKAWG7mxtqAw=="
+                length="7188771"
+                type="application/octet-stream"/>
+        </item>
+        <item>
             <title>v1.6.1</title>
             <pubDate>Fri, 01 May 2026 00:00:00 +0000</pubDate>
             <sparkle:version>12</sparkle:version>

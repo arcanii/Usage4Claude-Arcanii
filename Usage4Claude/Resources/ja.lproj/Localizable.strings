@@ -16,6 +16,8 @@
 "menu.quit" = "Usage4Claudeを終了";
 "menu.account" = "アカウント";
 "menu.account_prefix" = "アカウント:";
+"menu.reset_widgets" = "ウィジェットをリセット";
+"menu.reset_widgets_help" = "古いデータや黒い表示で固まったウィジェットを復旧します。⌥キーを押しながらクリックするとウィジェットサービスも再起動します。";
 
 // MARK: - Usage Detail View
 "usage.title" = "Claude使用状況";

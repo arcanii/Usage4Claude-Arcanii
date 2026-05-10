@@ -24,6 +24,8 @@ enum L {
         static var quit: String { localized("menu.quit") }
         static var account: String { localized("menu.account") }
         static var accountPrefix: String { localized("menu.account_prefix") }
+        static var resetWidgets: String { localized("menu.reset_widgets") }
+        static var resetWidgetsHelp: String { localized("menu.reset_widgets_help") }
     }
 
     // MARK: - Account Management
