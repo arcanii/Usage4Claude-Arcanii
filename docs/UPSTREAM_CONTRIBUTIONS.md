@@ -6,9 +6,13 @@ Working tree for upstream work: `~/Desktop/github_repos/Usage4Claude-fork/` (ori
 
 ## Active
 
-| # | Title | State | Last update |
+*(none)*
+
+## Merged
+
+| # | Title | Merged | Notes |
 |---|---|---|---|
-| [#45](https://github.com/f-is-h/Usage4Claude/pull/45) | refactor: extract response models + add SwiftPM test target | **Open, awaiting f-is-h** | 2026-05-13: moved `ClaudeAPIResponseModels.swift` to `Models/` per his suggestion; comment posted asking for next look |
+| [#45](https://github.com/f-is-h/Usage4Claude/pull/45) | refactor: extract response models + add SwiftPM test target | 2026-05-13 (`3a960d72`) | First upstream contribution. Two review rounds (rebase + file move to `Models/`). 29 new tests covering `toUsageData()` and `toExtraUsageData()`. |
 
 ## Next PR candidates (queue, ordered by readiness)
 
