@@ -16,20 +16,14 @@ Working tree for upstream work: `~/Desktop/github_repos/Usage4Claude-fork/` (ori
 
 ## Next PR candidates (queue, ordered by readiness)
 
-### 1. `fetchOrganizations` → async/await migration  *(S, low risk)*
-- Mechanical: convert `func fetchOrganizations(sessionKey:completion:)` to `func fetchOrganizations(sessionKey:) async throws -> [Organization]`.
-- Three callsites to update in lockstep: `Views/Settings/Tabs/AuthSettingsView.validateAndAddAccount`, `Views/Settings/Welcome/WelcomeView.fetchOrganizationAndCreateAccount`, `Views/WebLogin/WebLoginCoordinator.validateSessionKey`.
-- ~70 lines. Closest to PR #45 in size/risk profile — good follow-on while goodwill is high.
-- Reference: our [Arcanii fork commit `0e585e4`](https://github.com/arcanii/Usage4Claude-Arcanii/commit/0e585e4) ("Release 1.5.0").
-
-### 2. Auto-prompt re-login on session expiry  *(M, mid risk — UX feature)*
+### 1. Auto-prompt re-login on session expiry  *(M, mid risk — UX feature)*
 - Currently upstream surfaces session-expired errors only as text in the popover; user has to navigate to Auth Settings manually.
 - Our fork (since v1.2.0) auto-pops the WebLogin window on the first `.sessionExpired` after a previously-valid session, throttled by a `sessionExpiredPrompted` flag that clears on explicit user retry (manual refresh, popover-open fetch).
 - Components: `.sessionExpired` `Notification.Name`, posted from `DataRefreshManager.fetchUsage`'s failure branch with throttle check; `MenuBarManager` subscription that calls `WebLoginWindowManager.shared.showLoginWindow()`; `WebLoginWindowManager` itself (already exists upstream for manual login — just needs the trigger).
 - ~100 lines but visibly useful. Worth filing an issue first to confirm f-is-h actually wants the auto-prompt UX (he might have deliberately not built it).
 - Reference: our v1.2.0 + v1.4.1 commits.
 
-### 3. NDJSON history persistence  *(M, low engineering risk)*
+### 2. NDJSON history persistence  *(M, low engineering risk)*
 - Replace the per-fetch full-file `usage-history.json` rewrite with NDJSON append (one JSON object per line).
 - O(1) per-fetch instead of O(N) rewrite; capped at 10k samples (~7 days at 1-min refresh); compaction on launch when over cap.
 - Migration: drain the legacy JSON file on first launch of the new build, dedupe by timestamp, delete legacy.
@@ -38,7 +32,7 @@ Working tree for upstream work: `~/Desktop/github_repos/Usage4Claude-fork/` (ori
 
 ## Proposals to file as issues first (no PR yet)
 
-### 4. Sparkle in-app updates  *(L, high decision-cost)*
+### 3. Sparkle in-app updates  *(L, high decision-cost)*
 - Replaces "manual download → drag to Applications → relaunch" with one-click EdDSA-signed updates.
 - **Why issue first**: huge architectural commitment. Requires generating + safeguarding a Sparkle EdDSA private signing key, per-release signing via `sign_update`, an `appcast.xml` kept current at the repo root, build-script changes, and the unfix-on-loss of the private key.
 - Pros to enumerate: better UX, security via signature verification, removes the ~290-line custom `UpdateChecker`.
@@ -46,13 +40,13 @@ Working tree for upstream work: `~/Desktop/github_repos/Usage4Claude-fork/` (ori
 - Reference our fork's v1.3.0+ implementation as proof-of-concept.
 - Decision: file proposal as a GitHub issue, gauge interest, only PR if green-lit.
 
-### 5. Desktop widget  *(L, on their roadmap)*
+### 4. Desktop widget  *(L, on their roadmap)*
 - Per upstream's README "Long-term Vision": *"More Display Methods → Desktop widgets, Browser extension icon usage display"*.
 - Adds: Widget extension target, App Group capability (`group.<theirBundleId>`), shared `UsageSnapshot` + `UsageSnapshotStore`, build-script signing pipeline for the appex, `WidgetCenter.shared.reloadAllTimelines()` calls in the main app's fetch path.
 - Worth issue-first to align on: App Group identifier choice, snapshot file format, which widget sizes to ship (we shipped 5 kinds; they may want fewer for initial scope).
 - Reference: our fork v1.4.0 (initial widget) + v1.6.0 (sparkline-based widgets).
 
-### 6. Sparkline-in-popover (history visualization)  *(M, depends on #3)*
+### 5. Sparkline-in-popover (history visualization)  *(M, depends on #2)*
 - Toward their "Data Analysis → Trend charts" long-term vision.
 - 14pt-tall sparkline strip under each limit row in `UnifiedLimitRow`, color-matched to the row.
 - Reusable `SparklineView` component — pure SwiftUI Path-based, no AppKit, shareable with widget extension if/when #5 lands.
@@ -64,6 +58,15 @@ Working tree for upstream work: `~/Desktop/github_repos/Usage4Claude-fork/` (ori
 *(Add here as we notice them in our fork or in their codebase.)*
 
 - [ ] **Cleanup of unused `extra_usage_format` / `extra_usage_remaining` legacy keys** in `Localizable.strings` (5 locales). Dead since the new `extra_usage.usage_amount` / `extra_usage.remaining_amount` keys replaced them. Pure cleanup PR.
+
+## Considered and deprioritized
+
+### `fetchOrganizations` → async/await migration (deferred)
+- Pure shape change: convert `func fetchOrganizations(sessionKey:completion:)` to `async throws -> [Organization]`.
+- Prototyped on branch `migrate-fetch-organizations-async` (deleted), built clean, 29 tests pass.
+- Skipped because: zero user-visible change, ~125-line diff for stylistic-only improvement, and post-PR `fetchOrganizations` would be the *only* async public method in a sea of completion-handler ones (`fetchUsage` and `fetchExtraUsage` still completion-handler). One-async-one-handler reads worse than all-handler.
+- Would be worth doing as a **bundled** "migrate all three to async/await" PR — ~250-300 lines, cohesive end-state, one review pass. Revisit if upstream signals interest in async-first direction.
+- Reference: our [Arcanii fork commit `0e585e4`](https://github.com/arcanii/Usage4Claude-Arcanii/commit/0e585e4) ("Release 1.5.0") has just the `fetchOrganizations` half; we never migrated the other two upstream-side.
 
 ## Skipped (not portable, not worth proposing)
 
