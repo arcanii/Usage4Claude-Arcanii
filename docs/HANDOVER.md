@@ -16,8 +16,9 @@ A macOS menu bar app that polls the **private** `claude.ai/api/organizations/<id
 
 1. **[ARCANII_DESIGN.md](ARCANII_DESIGN.md)** — module map, data flow, error mapping table. The "what's where" reference.
 2. **[ARCANII_BACKLOG.md](ARCANII_BACKLOG.md)** — open follow-ups with effort tags. All P0/P1/P2/P3 items have shipped.
-3. **[RELEASES/](RELEASES/)** — per-version release notes. v1.0.0 (initial fork) through v1.4.0 (widget).
-4. **[WIDGET_SETUP.md](WIDGET_SETUP.md)** — kept around in case the widget target ever needs to be rebuilt; unused for everyday work.
+3. **[UPSTREAM_CONTRIBUTIONS.md](UPSTREAM_CONTRIBUTIONS.md)** — log of what we've proposed (or plan to propose) back to f-is-h's repo. Companion to the backlog but upstream-facing.
+4. **[RELEASES/](RELEASES/)** — per-version release notes. v1.0.0 (initial fork) through v1.4.0 (widget).
+5. **[WIDGET_SETUP.md](WIDGET_SETUP.md)** — kept around in case the widget target ever needs to be rebuilt; unused for everyday work.
 
 ## Repo layout
 
