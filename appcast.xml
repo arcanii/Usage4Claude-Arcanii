@@ -6,6 +6,27 @@
         <description>Updates to U4Claude (Arcanii Mod) — Claude.ai usage menu bar app for macOS.</description>
         <language>en</language>
         <item>
+            <title>v1.6.3</title>
+            <pubDate>Tue, 12 May 2026 00:00:00 +0000</pubDate>
+            <sparkle:version>14</sparkle:version>
+            <sparkle:shortVersionString>1.6.3</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <link>https://github.com/arcanii/Usage4Claude-Arcanii/releases/tag/v1.6.3</link>
+            <description><![CDATA[
+                <h2>v1.6.3 — Two upstream polish backports</h2>
+                <ul>
+                    <li><strong>Japanese 24h-format hour suffix</strong> now uses the correct kanji <code>時</code> (U+6642) instead of the visually-identical Simplified Chinese <code>时</code> (U+65F6). Affects reset-time displays for Japanese-locale users.</li>
+                    <li><strong>Session Key hint text generalized</strong> — removed the obsolete <code>sk-ant-sid01-</code> reference in all 5 locales (Claude's current cookies use <code>sk-ant-sid</code> without the <code>01-</code> suffix).</li>
+                </ul>
+                <p>Both are upstream-merged behavior fixes (commits <code>753b6bc</code>, <code>48bccc9</code>). See <a href="https://github.com/arcanii/Usage4Claude-Arcanii/blob/main/docs/RELEASES/v1.6.3.md">the full release notes</a>.</p>
+            ]]></description>
+            <enclosure
+                url="https://github.com/arcanii/Usage4Claude-Arcanii/releases/download/v1.6.3/U4Claude-v1.6.3.dmg"
+                sparkle:edSignature="f+uvLJO/u/XVTHqJl8yejOGx37gYD+H0Dj1XdZ+uD8siVtA3c3CtRSl5HBaV0sdCmY9Qtw8d9UFFpzE58MbFCQ=="
+                length="7188772"
+                type="application/octet-stream"/>
+        </item>
+        <item>
             <title>v1.6.2</title>
             <pubDate>Fri, 01 May 2026 00:00:00 +0000</pubDate>
             <sparkle:version>13</sparkle:version>

@@ -32,7 +32,7 @@ class SensitiveDataRedactor {
     /// - Parameter key: Original Session Key
     /// - Returns: Redacted string
     /// - Note: For keys starting with sk-ant-, the prefix is preserved and the length is shown; otherwise returns "***"
-    /// - Example: "sk-ant-sid01-XXXXX..." -> "sk-ant-***...*** (128 chars)"
+    /// - Example: "sk-ant-sid...XXXXX" -> "sk-ant-***...*** (128 chars)"
     static func redactSessionKey(_ key: String) -> String {
         guard key.count > 20 else {
             return "***"
