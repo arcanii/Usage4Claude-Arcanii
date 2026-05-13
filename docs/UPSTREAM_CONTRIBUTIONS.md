@@ -6,7 +6,9 @@ Working tree for upstream work: `~/Desktop/github_repos/Usage4Claude-fork/` (ori
 
 ## Active
 
-*(none)*
+| # | Title | Type | State | Last update |
+|---|---|---|---|---|
+| [issue #50](https://github.com/f-is-h/Usage4Claude/issues/50) | Proposal: adopt Sparkle for in-app updates | Proposal | **Open, awaiting f-is-h** | 2026-05-13: filed as a discussion-not-PR. Three-way decision request: yes / "key burden too much" / not now. |
 
 ## Merged
 
@@ -32,13 +34,12 @@ Working tree for upstream work: `~/Desktop/github_repos/Usage4Claude-fork/` (ori
 
 ## Proposals to file as issues first (no PR yet)
 
-### 3. Sparkle in-app updates  *(L, high decision-cost)*
+### 3. Sparkle in-app updates  *(L, high decision-cost)* — **issue #50 filed**
 - Replaces "manual download → drag to Applications → relaunch" with one-click EdDSA-signed updates.
-- **Why issue first**: huge architectural commitment. Requires generating + safeguarding a Sparkle EdDSA private signing key, per-release signing via `sign_update`, an `appcast.xml` kept current at the repo root, build-script changes, and the unfix-on-loss of the private key.
-- Pros to enumerate: better UX, security via signature verification, removes the ~290-line custom `UpdateChecker`.
-- Cons to be honest about: key management burden, irreversible without orphaning installs.
-- Reference our fork's v1.3.0+ implementation as proof-of-concept.
-- Decision: file proposal as a GitHub issue, gauge interest, only PR if green-lit.
+- Filed as proposal-not-PR at [f-is-h/Usage4Claude#50](https://github.com/f-is-h/Usage4Claude/issues/50). Awaiting decision.
+- Pros enumerated: better UX, security via signature verification, removes the ~290-line custom `UpdateChecker`.
+- Cons honest about: key management burden, unfix-on-loss of private key.
+- PR scope (if green-lit): ~500 lines, mostly deletions of `UpdateChecker` + additions of build-script glue. See issue body for the breakdown.
 
 ### 4. Desktop widget  *(L, on their roadmap)*
 - Per upstream's README "Long-term Vision": *"More Display Methods → Desktop widgets, Browser extension icon usage display"*.
