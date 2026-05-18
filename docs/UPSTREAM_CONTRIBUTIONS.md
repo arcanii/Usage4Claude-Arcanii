@@ -4,6 +4,35 @@ Tracking what we've proposed back to [f-is-h/Usage4Claude](https://github.com/f-
 
 Working tree for upstream work: `~/Desktop/github_repos/Usage4Claude-fork/` (origin = `arcanii/Usage4Claude-fork`, upstream = `f-is-h/Usage4Claude`).
 
+## Divergence policy (decided 2026-05-18)
+
+**This fork stays Claude-only.** Upstream pivoted into a dual-provider
+(Claude + Codex) app starting at v3.0.0. From there on, the large
+majority of upstream commits are Codex feature-work that does not apply
+here.
+
+When syncing upstream, triage like this:
+
+1. **Is the commit Codex-shaped?** (filename contains `Codex`/`codex`,
+   or it touches `DataRefreshManager` / `DiagnosticManager` /
+   `GeneralSettingsView` / WebLogin *in service of* Codex, or it adds
+   Codex-only formatters/strings) → **skip.** Don't re-derive this each
+   time; Codex isn't coming to this fork unless that decision is
+   explicitly revisited.
+2. **Is it a genuine Claude-side bug fix or general improvement?**
+   (e.g. the v1.6.3 kanji + session-key-hint backports) → evaluate and
+   backport as usual.
+
+Reviewed up to upstream `a3a9f58` (v3.0.1, 2026-05-18): commits
+`a982843`, `d961bab`, `a83763b`, `ff93d51` all Codex-driven, none
+backported. `ff93d51`'s `formatDateMinute` helper looked generic but
+exists for Codex's arbitrary-minute reset window; Claude windows reset
+on the hour and we deliberately show hour precision, so porting it
+would be dead code or a readability regression.
+
+Porting Codex wholesale is a multi-week project, only justified if the
+maintainer actually uses OpenAI Codex CLI. Not planned.
+
 ## Active
 
 | # | Title | Type | State | Last update |
