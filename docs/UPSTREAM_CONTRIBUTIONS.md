@@ -37,7 +37,8 @@ maintainer actually uses OpenAI Codex CLI. Not planned.
 
 | # | Title | Type | State | Last update |
 |---|---|---|---|---|
-| [issue #50](https://github.com/f-is-h/Usage4Claude/issues/50) | Proposal: adopt Sparkle for in-app updates | Proposal | **Open, awaiting f-is-h** | 2026-05-13: filed as a discussion-not-PR. Three-way decision request: yes / "key burden too much" / not now. |
+| [PR #56](https://github.com/f-is-h/Usage4Claude/pull/56) | feat: adopt Sparkle for in-app updates (closes #50) | PR | **Open, awaiting f-is-h** | 2026-05-26: implementation PR for issue #50, branched off upstream v3.1.0 (`f55d4c2`). 14 files, +380/-555 (UpdateChecker.swift + polling plumbing deleted, Sparkle wired in). f-is-h needs to run `generate_keys` + replace the `SUPublicEDKey` placeholder in `Config/Info.plist` before merging. |
+| [issue #50](https://github.com/f-is-h/Usage4Claude/issues/50) | Proposal: adopt Sparkle for in-app updates | Proposal | **Green-lit 2026-05-24** | f-is-h: *"Please go ahead and open the PR, I'd love to get this in."* Implementation lives at PR #56. |
 
 ## Merged
 
