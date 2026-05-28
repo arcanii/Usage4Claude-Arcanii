@@ -11,7 +11,7 @@
 "menu.auth_settings" = "认证信息";
 "menu.check_updates" = "检查更新";
 "menu.about" = "关于";
-"menu.web_usage" = "访问 Claude 用量";
+"menu.claude_status" = "Claude 状态页面";
 "menu.github_sponsor" = "GitHub Sponsor";
 "menu.quit" = "退出 Usage4Claude";
 "menu.account" = "账户";
@@ -24,6 +24,7 @@
 "usage.not_started" = "开始使用后显示";
 "usage.reset_in" = "距离重置还剩";
 "usage.remaining" = "剩余时间";
+"usage.available" = "剩余用量";
 "usage.loading" = "加载中...";
 "usage.not_configured" = "未配置认证信息";
 "usage.go_to_settings" = "去设置认证信息";

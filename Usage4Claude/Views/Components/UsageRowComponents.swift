@@ -8,6 +8,45 @@
 
 import SwiftUI
 
+// MARK: - Detail Ring Trim Helpers
+
+/// Trim range for a `Circle().trim(from:to:)` stroke, expressed in unit fractions.
+struct UsageRingTrimRange: Equatable {
+    let from: CGFloat
+    let to: CGFloat
+}
+
+/// Pure-function helpers that translate a "used percentage" into the visual
+/// fill state of a ring, honoring the user's "show remaining" toggle.
+/// In remaining mode the ring fills the *available* quota slice (trim runs
+/// from `used` to `1.0`) and the center label flips to "Available".
+enum UsageRingDisplay {
+    static func clampedPercentage(_ percentage: Double) -> Double {
+        min(100, max(0, percentage))
+    }
+
+    /// Returns the integer percentage displayed in the ring's center label.
+    static func displayedPercentage(usedPercentage: Double, showRemainingMode: Bool) -> Double {
+        let used = clampedPercentage(usedPercentage)
+        return showRemainingMode ? 100 - used : used
+    }
+
+    static func usedFraction(_ usedPercentage: Double) -> CGFloat {
+        CGFloat(clampedPercentage(usedPercentage) / 100.0)
+    }
+
+    /// Returns the trim range for the stroke. In remaining mode the stroke
+    /// starts at the used fraction and runs to 1.0, so the visible arc covers
+    /// the *available* quota.
+    static func displayedTrimRange(usedPercentage: Double, showRemainingMode: Bool) -> UsageRingTrimRange {
+        let used = usedFraction(usedPercentage)
+        if showRemainingMode {
+            return UsageRingTrimRange(from: used, to: 1)
+        }
+        return UsageRingTrimRange(from: 0, to: used)
+    }
+}
+
 // MARK: - Mini Progress Icon Component
 
 /// Mini progress icon (with percentage number and progress arc, consistent with menu bar icon style)

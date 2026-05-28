@@ -105,8 +105,8 @@ class MenuBarManager: ObservableObject {
     
     // MARK: - Menu Actions
     
-    @objc func openWebUsage() {
-        if let url = URL(string: "https://claude.ai/settings/usage") {
+    @objc func openClaudeStatus() {
+        if let url = URL(string: "https://status.claude.com") {
             NSWorkspace.shared.open(url)
         }
     }
@@ -134,9 +134,9 @@ class MenuBarManager: ObservableObject {
         case .about:
             closePopover()
             openSettingsWindow(tab: 2)
-        case .webUsage:
+        case .claudeStatus:
             closePopover()
-            openWebUsage()
+            openClaudeStatus()
         case .quit:
             quitApp()
         }

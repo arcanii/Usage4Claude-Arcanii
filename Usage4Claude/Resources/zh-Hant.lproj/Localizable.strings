@@ -11,7 +11,7 @@
 "menu.auth_settings" = "認證資訊";
 "menu.check_updates" = "檢查更新";
 "menu.about" = "關於";
-"menu.web_usage" = "檢視 Claude 用量";
+"menu.claude_status" = "Claude 狀態頁面";
 "menu.github_sponsor" = "GitHub Sponsor";
 "menu.quit" = "結束 Usage4Claude";
 "menu.account" = "帳戶";
@@ -24,6 +24,7 @@
 "usage.not_started" = "開始使用後顯示";
 "usage.reset_in" = "距離重設還剩";
 "usage.remaining" = "剩餘時間";
+"usage.available" = "剩餘用量";
 "usage.loading" = "載入中...";
 "usage.not_configured" = "未設定認證資訊";
 "usage.go_to_settings" = "前往設定認證資訊";

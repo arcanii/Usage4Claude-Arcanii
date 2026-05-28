@@ -37,17 +37,22 @@ final class WebLoginCoordinator: ObservableObject {
     private var progressObservation: NSKeyValueObservation?
     private var onAccountCreated: ((Account) -> Void)?
     private var navigationDelegate: NavigationDelegate?
+    private var uiDelegate: UIDelegate?
 
-    /// List of domains allowed for navigation
+    /// List of domains allowed for navigation.
+    /// Base domains (e.g. `google.com`) cover all subdomains via the
+    /// `host.hasSuffix(".\(domain)")` check in `NavigationDelegate`.
+    /// `youtube.com` is here because Google OAuth bounces through
+    /// `accounts.youtube.com/CheckConnection` during the auth handshake.
     private let allowedDomains: Set<String> = [
         "claude.ai",
-        "accounts.google.com",
+        "google.com",
+        "youtube.com",
         "appleid.apple.com",
         "login.microsoftonline.com",
         "github.com",
-        "accounts.google.co.jp",
-        "accounts.google.com.hk",
-        "www.google.com",
+        "google.co.jp",
+        "google.com.hk",
         "challenges.cloudflare.com"
     ]
 
@@ -76,6 +81,10 @@ final class WebLoginCoordinator: ObservableObject {
         let delegate = NavigationDelegate(coordinator: self)
         webView.navigationDelegate = delegate
         self.navigationDelegate = delegate
+
+        let ui = UIDelegate(coordinator: self)
+        webView.uiDelegate = ui
+        self.uiDelegate = ui
 
         // Monitor loading progress
         progressObservation = webView.observe(\.estimatedProgress) { [weak self] webView, _ in
@@ -260,6 +269,36 @@ extension WebLoginCoordinator {
                 NSWorkspace.shared.open(url)
                 decisionHandler(.cancel)
             }
+        }
+    }
+}
+
+// MARK: - WKUIDelegate
+
+extension WebLoginCoordinator {
+
+    /// Handle pop-up windows triggered by `window.open()`.
+    /// Google OAuth's traditional flow opens a pop-up to complete authorization;
+    /// without this delegate the pop-up is silently dropped and login hangs.
+    /// We return `nil` and load the request back into the original web view, so
+    /// the entire OAuth round-trip stays in a single WKWebView instance — which
+    /// keeps cookies coherent even with a `.nonPersistent()` data store.
+    final class UIDelegate: NSObject, WKUIDelegate {
+        private weak var coordinator: WebLoginCoordinator?
+
+        init(coordinator: WebLoginCoordinator) {
+            self.coordinator = coordinator
+            super.init()
+        }
+
+        func webView(
+            _ webView: WKWebView,
+            createWebViewWith configuration: WKWebViewConfiguration,
+            for navigationAction: WKNavigationAction,
+            windowFeatures: WKWindowFeatures
+        ) -> WKWebView? {
+            webView.load(navigationAction.request)
+            return nil
         }
     }
 }

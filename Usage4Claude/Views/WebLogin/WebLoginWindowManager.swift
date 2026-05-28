@@ -47,6 +47,17 @@ final class WebLoginWindowManager {
 
         self.loginWindow = window
 
+        // Release the window reference when the user closes via window chrome.
+        // Without this, the WKWebView lives on indefinitely in the background,
+        // continuing to poll cookies and consume resources.
+        NotificationCenter.default.addObserver(
+            forName: NSWindow.willCloseNotification,
+            object: window,
+            queue: .main
+        ) { [weak self] _ in
+            self?.loginWindow = nil
+        }
+
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
     }

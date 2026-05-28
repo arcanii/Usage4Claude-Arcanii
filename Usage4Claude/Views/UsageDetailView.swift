@@ -45,7 +45,7 @@ struct UsageDetailView: View {
         case authSettings
         case checkForUpdates
         case about
-        case webUsage
+        case claudeStatus
         case quit
         case refresh
     }
@@ -57,7 +57,10 @@ struct UsageDetailView: View {
     @State private var showAnimationTypeHint = false
     // Display mode toggle (false: reset time, true: remaining time)
     @AppStorage("showRemainingMode") private var savedRemainingMode = false
-    @State private var showRemainingMode = false
+    // Eager-init from UserDefaults so the first paint already reflects the
+    // user's saved preference — avoids a visible flash where the ring renders
+    // in "Used" mode and then flips to "Available" once .onAppear fires.
+    @State private var showRemainingMode = UserDefaults.standard.bool(forKey: "showRemainingMode")
     
     // MARK: - Body
 
@@ -174,8 +177,8 @@ struct UsageDetailView: View {
                             Label(L.Menu.about, systemImage: "info.circle")
                         }
                         Divider()
-                        Button(action: { onMenuAction?(.webUsage) }) {
-                            Label(L.Menu.webUsage, systemImage: "safari")
+                        Button(action: { onMenuAction?(.claudeStatus) }) {
+                            Label(L.Menu.claudeStatus, systemImage: "safari")
                         }
                         // Recovery action for stuck/black widgets — chronod
                         // occasionally caches an old extension state across
@@ -298,8 +301,15 @@ struct UsageDetailView: View {
                                 // linearly; gates the Liquid Glass material above 0.5 since
                                 // the material itself isn't continuously dimmable.
                                 let illumination = settings.ringIlluminationLevel
+                                // Trim runs `from 0 to used` in normal mode, or
+                                // `from used to 1` in remaining mode so the arc
+                                // visually represents the *available* slice.
+                                let primaryRingRange = UsageRingDisplay.displayedTrimRange(
+                                    usedPercentage: primary.percentage,
+                                    showRemainingMode: showRemainingMode
+                                )
                                 Circle()
-                                    .trim(from: 0, to: CGFloat(primary.percentage) / 100.0)
+                                    .trim(from: primaryRingRange.from, to: primaryRingRange.to)
                                     .stroke(
                                         primaryGlass,
                                         style: StrokeStyle(lineWidth: 10, lineCap: .round)
@@ -309,7 +319,10 @@ struct UsageDetailView: View {
                                     .rotationEffect(.degrees(-90))
                                     .shadow(color: primaryColor.opacity(illumination), radius: 2 * illumination)
                                     .shadow(color: primaryColor.opacity(0.55 * illumination), radius: 5 * illumination)
-                                    .animation(.easeInOut, value: primary.percentage)
+                                    .animation(
+                                        .spring(response: 0.42, dampingFraction: 0.78, blendDuration: 0.05),
+                                        value: primaryRingRange
+                                    )
                             }
 
                             // 3. Outer thin ring (only shown when user has selected both 5h and 7d limits)
@@ -345,8 +358,12 @@ struct UsageDetailView: View {
                                             endPoint: .bottom
                                         )
                                         let illumination = settings.ringIlluminationLevel
+                                        let outerRingRange = UsageRingDisplay.displayedTrimRange(
+                                            usedPercentage: percentage,
+                                            showRemainingMode: showRemainingMode
+                                        )
                                         Circle()
-                                            .trim(from: 0, to: CGFloat(percentage) / 100.0)
+                                            .trim(from: outerRingRange.from, to: outerRingRange.to)
                                             .stroke(
                                                 sevenGlass,
                                                 style: StrokeStyle(lineWidth: 3, lineCap: .round)
@@ -356,32 +373,55 @@ struct UsageDetailView: View {
                                             .rotationEffect(.degrees(-90))
                                             .shadow(color: sevenColor.opacity(illumination), radius: 1.5 * illumination)
                                             .shadow(color: sevenColor.opacity(0.55 * illumination), radius: 4 * illumination)
-                                            .animation(.easeInOut, value: percentage)
+                                            .animation(
+                                                .spring(response: 0.42, dampingFraction: 0.78, blendDuration: 0.05),
+                                                value: outerRingRange
+                                            )
                                     }
                                 }
                             }
 
-                            // 4. Center display area: stacked percentages when both limits active
+                            // 4. Center display area: stacked percentages when both
+                            // limits active. Both percentages invert in remaining
+                            // mode so the numbers stay coherent with the ring
+                            // direction. The single-ring branch additionally swaps
+                            // its "Used"/"Available" label.
                             if activeDisplayTypes.contains(.fiveHour) &&
                                activeDisplayTypes.contains(.sevenDay) {
                                 let fhPct = data.fiveHour?.percentage ?? 0
                                 let sdPct = data.sevenDay?.percentage ?? 0
+                                let fhDisplay = UsageRingDisplay.displayedPercentage(
+                                    usedPercentage: fhPct,
+                                    showRemainingMode: showRemainingMode
+                                )
+                                let sdDisplay = UsageRingDisplay.displayedPercentage(
+                                    usedPercentage: sdPct,
+                                    showRemainingMode: showRemainingMode
+                                )
                                 VStack(spacing: 1) {
-                                    Text("\(Int(fhPct))%")
+                                    Text("\(Int(fhDisplay))%")
                                         .font(.system(size: 20, weight: .bold))
                                         .foregroundColor(colorForPercentage(fhPct))
-                                    Text("\(Int(sdPct))%")
+                                    Text("\(Int(sdDisplay))%")
                                         .font(.system(size: 20, weight: .bold))
                                         .foregroundColor(colorForSevenDay(sdPct))
                                 }
+                                .id(showRemainingMode ? "remaining-dual" : "used-dual")
+                                .transition(.scale(scale: 0.92).combined(with: .opacity))
                             } else {
+                                let centerDisplay = UsageRingDisplay.displayedPercentage(
+                                    usedPercentage: primary.percentage,
+                                    showRemainingMode: showRemainingMode
+                                )
                                 VStack(spacing: 2) {
-                                    Text("\(Int(primary.percentage))%")
+                                    Text("\(Int(centerDisplay))%")
                                         .font(.system(size: 28, weight: .bold))
-                                    Text(L.Usage.used)
+                                    Text(showRemainingMode ? L.Usage.available : L.Usage.used)
                                         .font(.caption)
                                         .foregroundColor(.secondary)
                                 }
+                                .id(showRemainingMode ? "remaining-single" : "used-single")
+                                .transition(.scale(scale: 0.92).combined(with: .opacity))
                             }
                         }
                     }
@@ -429,7 +469,10 @@ struct UsageDetailView: View {
                             }
                             .contentShape(Rectangle())
                             .onTapGesture {
-                                withAnimation(.easeInOut(duration: 0.2)) {
+                                // Match the spring curve used by the ring trim
+                                // animation so the ring fill, center label, and
+                                // row text all move together.
+                                withAnimation(.spring(response: 0.42, dampingFraction: 0.78, blendDuration: 0.05)) {
                                     showRemainingMode.toggle()
                                 }
                                 savedRemainingMode = showRemainingMode
@@ -447,7 +490,10 @@ struct UsageDetailView: View {
                             }
                             .contentShape(Rectangle())
                             .onTapGesture {
-                                withAnimation(.easeInOut(duration: 0.2)) {
+                                // Match the spring curve used by the ring trim
+                                // animation so the ring fill, center label, and
+                                // row text all move together.
+                                withAnimation(.spring(response: 0.42, dampingFraction: 0.78, blendDuration: 0.05)) {
                                     showRemainingMode.toggle()
                                 }
                                 savedRemainingMode = showRemainingMode
@@ -537,10 +583,10 @@ struct UsageDetailView: View {
         }
         .frame(width: 290, height: dynamicHeight)
         .id(localization.updateTrigger)  // Recreate view when language changes
-        .onAppear {
-            // Restore previously saved display mode
-            showRemainingMode = savedRemainingMode
-        }
+        // Note: showRemainingMode is eager-initialized from UserDefaults at
+        // the @State declaration, so no .onAppear restoration is needed —
+        // re-assigning here would cause a one-frame animation flash on
+        // every popover open.
         .onDisappear {
             // Clean up timer and reset state when view disappears
             stopRotationAnimation()

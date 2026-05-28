@@ -6,6 +6,28 @@
         <description>Updates to U4Claude (Arcanii Mod) — Claude.ai usage menu bar app for macOS.</description>
         <language>en</language>
         <item>
+            <title>v1.6.4</title>
+            <pubDate>Thu, 28 May 2026 00:00:00 +0000</pubDate>
+            <sparkle:version>15</sparkle:version>
+            <sparkle:shortVersionString>1.6.4</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <link>https://github.com/arcanii/Usage4Claude-Arcanii/releases/tag/v1.6.4</link>
+            <description><![CDATA[
+                <h2>v1.6.4 — Three upstream backports</h2>
+                <ul>
+                    <li><strong>Google sign-in via the WebLogin window now works.</strong> Added a <code>WKUIDelegate</code> so Google's <code>window.open()</code>-based OAuth flow no longer silently drops, broadened <code>allowedDomains</code> to base domains plus <code>youtube.com</code> (Google bounces through <code>accounts.youtube.com/CheckConnection</code>), and added a <code>willCloseNotification</code> observer so the WebView releases when you close the window via the red dot.</li>
+                    <li><strong>"View Claude Usage" menu item replaced with "Claude Status"</strong>, pointing at <a href="https://status.claude.com">status.claude.com</a>. More useful during outages than re-opening the usage page in a browser.</li>
+                    <li><strong>Detail rings now visually invert in remaining mode.</strong> Previously the row toggle only swapped subtitle text; now the ring itself drains from the top, the center label flips from "Used" to "Available", and the whole transition uses a snappier spring curve. Mode preference is also eager-loaded so there's no "Used"→"Available" flash when you open the popover.</li>
+                </ul>
+                <p>All three backported from upstream commits <code>94dabbf</code>, <code>5d022c5</code>, <code>fdeb0c1</code>. See <a href="https://github.com/arcanii/Usage4Claude-Arcanii/blob/main/docs/RELEASES/v1.6.4.md">the full release notes</a>.</p>
+            ]]></description>
+            <enclosure
+                url="https://github.com/arcanii/Usage4Claude-Arcanii/releases/download/v1.6.4/U4Claude-v1.6.4.dmg"
+                sparkle:edSignature="to3Ejf/lUpAmqc875i0jx8PB+Cn6eY7ABBSlU8DxYX8ns22LfU+PqoY7kh1+k94tPQCXIjBpOSI6aLp9imzTBg=="
+                length="7192536"
+                type="application/octet-stream"/>
+        </item>
+        <item>
             <title>v1.6.3</title>
             <pubDate>Tue, 12 May 2026 00:00:00 +0000</pubDate>
             <sparkle:version>14</sparkle:version>

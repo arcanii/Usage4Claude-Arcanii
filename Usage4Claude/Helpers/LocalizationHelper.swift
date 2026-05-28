@@ -19,7 +19,7 @@ enum L {
         static var authSettings: String { localized("menu.auth_settings") }
         static var checkUpdates: String { localized("menu.check_updates") }
         static var about: String { localized("menu.about") }
-        static var webUsage: String { localized("menu.web_usage") }
+        static var claudeStatus: String { localized("menu.claude_status") }
         static var githubSponsor: String { localized("menu.github_sponsor") }
         static var quit: String { localized("menu.quit") }
         static var account: String { localized("menu.account") }
@@ -56,6 +56,7 @@ enum L {
         static var notStarted: String { localized("usage.not_started") }
         static var resetIn: String { localized("usage.reset_in") }
         static var remaining: String { localized("usage.remaining") }
+        static var available: String { localized("usage.available") }
         static var loading: String { localized("usage.loading") }
         static var notConfigured: String { localized("usage.not_configured") }
         static var goToSettings: String { localized("usage.go_to_settings") }

@@ -303,16 +303,16 @@ class MenuBarUI {
 
         menu.addItem(NSMenuItem.separator())
 
-        // Visit Claude usage
-        let webItem = NSMenuItem(
-            title: L.Menu.webUsage,
-            action: #selector(MenuBarManager.openWebUsage),
+        // Claude status page
+        let statusItem = NSMenuItem(
+            title: L.Menu.claudeStatus,
+            action: #selector(MenuBarManager.openClaudeStatus),
             keyEquivalent: "w"
         )
-        webItem.target = target
-        webItem.keyEquivalentModifierMask = [.command, .shift] as NSEvent.ModifierFlags
-        setMenuItemIcon(webItem, systemName: "safari")
-        menu.addItem(webItem)
+        statusItem.target = target
+        statusItem.keyEquivalentModifierMask = [.command, .shift] as NSEvent.ModifierFlags
+        setMenuItemIcon(statusItem, systemName: "safari")
+        menu.addItem(statusItem)
 
         menu.addItem(NSMenuItem.separator())
 
