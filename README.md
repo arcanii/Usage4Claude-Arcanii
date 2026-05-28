@@ -45,6 +45,8 @@ This fork tracks the upstream feature set faithfully (all the features listed be
 | **Auto-relogin throttle** that recovers from a dismissed WebLogin window | v1.4.1 |
 | **Spoofed Chrome user-agent** kept current (148 as of 2026-05) | v1.4.1 |
 | **API response models extracted** with 50-test SwiftPM coverage; `fetchOrganizations` migrated to `async/await` | v1.5.0 |
+| **24h sparkline strip** under every limit row in the popover + **expanded widget gallery** to 6 kinds (small Trend, medium Trend, medium 5h+7d Trend, large Dashboard, extra-large Full Dashboard, original rings). History storage moved to NDJSON in the App Group container — O(1) append per fetch | v1.6.0 |
+| **In-app "Reset Widgets" recovery action** in the popover `…` menu — medium reset on click, hard reset (chronod restart) on ⌥-click — for unsticking chronod's render cache without dropping to Terminal | v1.6.2 |
 
 The fork is maintained by [@arcanii](https://github.com/arcanii) as a personal mod. Issues and PRs welcome here, but for **general** Usage4Claude contributions, please go upstream to [f-is-h/Usage4Claude](https://github.com/f-is-h/Usage4Claude) — that's the canonical project.
 
