@@ -44,7 +44,7 @@ This fork tracks the upstream feature set faithfully (all the features listed be
 | **Glass-tube popover rings** with a configurable illumination slider in General Settings → "Popover Appearance" | v1.3.1 / v1.4.1 |
 | **Auto-relogin throttle** that recovers from a dismissed WebLogin window | v1.4.1 |
 | **Spoofed Chrome user-agent** kept current (148 as of 2026-05) | v1.4.1 |
-| **API response models extracted** with 35-test SwiftPM coverage; `fetchOrganizations` migrated to `async/await` | v1.5.0 |
+| **API response models extracted** with 50-test SwiftPM coverage; `fetchOrganizations` migrated to `async/await` | v1.5.0 |
 
 The fork is maintained by [@arcanii](https://github.com/arcanii) as a personal mod. Issues and PRs welcome here, but for **general** Usage4Claude contributions, please go upstream to [f-is-h/Usage4Claude](https://github.com/f-is-h/Usage4Claude) — that's the canonical project.
 
@@ -118,7 +118,7 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
   xcodebuild -project Usage4Claude.xcodeproj -scheme Usage4Claude \
   -configuration Debug -allowProvisioningUpdates build
 
-# Run tests (35 tests, SwiftPM target)
+# Run tests (50 tests, SwiftPM target)
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test
 ```
 
@@ -140,7 +140,7 @@ For the full release pipeline (signed → notarized → stapled → Sparkle-sign
 ### Daily use
 
 - Click the menu bar icon → popover with detail rows.
-- Tap a row to toggle between *remaining time* and *reset time*.
+- Tap a row to toggle between *reset time* and *remaining quota* — the ring fill also inverts so the visible arc represents the slice you have left rather than the slice you've used *(fork, v1.6.4)*.
 - Long-press the ring (3 s) to cycle the loading-animation style.
 - `⌘R` to refresh; `⌘,` for General Settings; `⌘⇧A` for Auth Settings; `⌘Q` to quit.
 - Right-click the menu bar icon for the same menu the popover's `…` button shows.
@@ -242,6 +242,7 @@ For the architecture map, error mapping table, and release runbook, see [`docs/H
 - [x] **v1.6.1** — three upstream backports: refresh on system wake, idle→active timer restart, 7-day placeholder for new accounts.
 - [x] **v1.6.2** — "Reset Widgets" recovery action in the popover `…` menu (medium reset; ⌥-click for hard reset via chronod restart).
 - [x] **v1.6.3** — two upstream backports: Japanese kanji fix for the 24h hour suffix, session-key hint wording generalized.
+- [x] **v1.6.4** — three upstream backports: Google OAuth login fix (`WKUIDelegate` for `window.open()` popups + base-domain `allowedDomains`), "View Claude Usage" menu item replaced with "Claude Status" (status.claude.com), and detail rings now visually invert in remaining mode (fill drains from the top, center label flips Used ↔ Available).
 
 See [`docs/RELEASES/`](docs/RELEASES/) for full per-version notes.
 
