@@ -37,16 +37,16 @@ This fork tracks the upstream feature set faithfully (all the features listed be
 
 | Change | Since |
 |---|---|
-| **Bundled as `U4Claude.app`** with bundle id `com.arcanii.Usage4Claude` so it can coexist with the upstream `Usage4Claude.app` | v1.0.0 |
+| **In-app "Reset Widgets" recovery action** in the popover `…` menu — medium reset on click, hard reset (chronod restart) on ⌥-click — for unsticking chronod's render cache without dropping to Terminal | v1.6.2 |
+| **24h sparkline strip** under every limit row in the popover + **expanded widget gallery** to 6 kinds (small Trend, medium Trend, medium 5h+7d Trend, large Dashboard, extra-large Full Dashboard, original rings). History storage moved to NDJSON in the App Group container — O(1) append per fetch | v1.6.0 |
+| **API response models extracted** with 50-test SwiftPM coverage; `fetchOrganizations` migrated to `async/await` | v1.5.0 |
+| **Spoofed Chrome user-agent** kept current (148 as of 2026-05) | v1.4.1 |
+| **Auto-relogin throttle** that recovers from a dismissed WebLogin window | v1.4.1 |
+| **Glass-tube popover rings** with a configurable illumination slider in General Settings → "Popover Appearance" | v1.3.1 / v1.4.1 |
+| **Desktop widget** (small + medium) reading from an App Group snapshot — no extra API calls | v1.4.0 |
 | **macOS 26 / Tahoe minimum** (was 13.0) — uses Apple's Liquid Glass material unconditionally | v1.4.0 |
 | **One-click in-app updates** via [Sparkle](https://sparkle-project.org) (EdDSA-signed) — replaces the old "download → drag-to-Applications" flow | v1.3.0 |
-| **Desktop widget** (small + medium) reading from an App Group snapshot — no extra API calls | v1.4.0 |
-| **Glass-tube popover rings** with a configurable illumination slider in General Settings → "Popover Appearance" | v1.3.1 / v1.4.1 |
-| **Auto-relogin throttle** that recovers from a dismissed WebLogin window | v1.4.1 |
-| **Spoofed Chrome user-agent** kept current (148 as of 2026-05) | v1.4.1 |
-| **API response models extracted** with 50-test SwiftPM coverage; `fetchOrganizations` migrated to `async/await` | v1.5.0 |
-| **24h sparkline strip** under every limit row in the popover + **expanded widget gallery** to 6 kinds (small Trend, medium Trend, medium 5h+7d Trend, large Dashboard, extra-large Full Dashboard, original rings). History storage moved to NDJSON in the App Group container — O(1) append per fetch | v1.6.0 |
-| **In-app "Reset Widgets" recovery action** in the popover `…` menu — medium reset on click, hard reset (chronod restart) on ⌥-click — for unsticking chronod's render cache without dropping to Terminal | v1.6.2 |
+| **Bundled as `U4Claude.app`** with bundle id `com.arcanii.Usage4Claude` so it can coexist with the upstream `Usage4Claude.app` | v1.0.0 |
 
 The fork is maintained by [@arcanii](https://github.com/arcanii) as a personal mod. Issues and PRs welcome here, but for **general** Usage4Claude contributions, please go upstream to [f-is-h/Usage4Claude](https://github.com/f-is-h/Usage4Claude) — that's the canonical project.
 
