@@ -37,7 +37,7 @@ maintainer actually uses OpenAI Codex CLI. Not planned.
 
 | # | Title | Type | State | Last update |
 |---|---|---|---|---|
-| [PR #56](https://github.com/f-is-h/Usage4Claude/pull/56) | feat: adopt Sparkle for in-app updates (closes #50) | PR | **Open, awaiting f-is-h** | 2026-05-26: implementation PR for issue #50, branched off upstream v3.1.0 (`f55d4c2`). 14 files, +380/-555 (UpdateChecker.swift + polling plumbing deleted, Sparkle wired in). f-is-h needs to run `generate_keys` + replace the `SUPublicEDKey` placeholder in `Config/Info.plist` before merging. |
+| [PR #56](https://github.com/f-is-h/Usage4Claude/pull/56) | feat: adopt Sparkle for in-app updates (closes #50) | PR | **Open, fix-up push pending** | 2026-05-29: f-is-h's review landed — sandbox blocker (upstream is `ENABLE_APP_SANDBOX = YES` with no entitlements; our PR would fail on install) + 5 polish items. Agreed slicing: one fix-up push to `sparkle-in-app-updates` covering both (polish + sandbox). Our v1.7.0 (2026-05-29) is the proof-of-concept for the sandbox config; entitlements + Info.plist pattern is ready to mirror. See [HANDOVER.md "Where we are right now"](HANDOVER.md) for the full punch list. |
 | [issue #50](https://github.com/f-is-h/Usage4Claude/issues/50) | Proposal: adopt Sparkle for in-app updates | Proposal | **Green-lit 2026-05-24** | f-is-h: *"Please go ahead and open the PR, I'd love to get this in."* Implementation lives at PR #56. |
 
 ## Merged
@@ -107,8 +107,8 @@ maintainer actually uses OpenAI Codex CLI. Not planned.
 - **Anglicized code comments** — their convention is Chinese; respect their style.
 - **README rewrite for our fork branding** — obviously fork-only.
 - **`build.sh` auto-prune of older release dirs + `killall chronod`** — niche to our local-build pipeline.
-- **In-app "Reset Widgets" menu item** — depends on Sparkle-style local-update flow; only makes sense after #4 + #5 land, and even then it's mostly a fork-of-fork thing.
-- **`WidgetReloader` helper** — same dependency on widget + chronod-recovery flow.
+- **In-app "Reset Widgets" menu item** — depended on Sparkle-style local-update flow; only made sense after #4 + #5 land, and even then mostly a fork-of-fork thing. **Retired from our own fork in v1.7.0** because the hard-reset tier needed subprocess execution (`killall chronod`), blocked under App Sandbox. Definitively not portable.
+- **`WidgetReloader` helper** — deleted in our v1.7.0 along with Reset Widgets. Not portable for the same reason.
 - **Backported v2.6.1 fixes (cents precision, HTTP/3 disable)** — already in upstream main. N/A.
 
 ## Conventions per upstream's CONTRIBUTING.md

@@ -9,15 +9,33 @@ A macOS menu bar app that polls the **private** `claude.ai/api/organizations/<id
 - **Bundle id:** `com.arcanii.Usage4Claude`
 - **Product name:** `U4Claude.app` (renamed from upstream's `Usage4Claude.app` so both can coexist)
 - **macOS deployment target:** **26.0** (Tahoe). Bumped from 13.0 in v1.4.0. We use the macOS 26 Liquid Glass APIs unconditionally.
+- **App Sandbox:** **on** for both main app and widget since v1.7.0. Sparkle's bundled XPC services handle update install under sandbox. See the sandbox gotchas section below.
 - **Universal binary** (x86_64 + arm64).
-- **Current version:** v1.6.3 — see [RELEASES/](RELEASES/).
+- **Current version:** v1.7.0 (2026-05-29) — see [RELEASES/](RELEASES/).
+
+## Where we are right now (read if you're resuming a session)
+
+- **v1.7.0 shipped 2026-05-29.** First sandboxed release of the Arcanii fork. Bryan installed locally and reported "no issues so far" — we asked him to spot-check the `[SandboxBootstrap]` log line in Console.app and verify the widget still ticks. No further reports in.
+- **Upstream PR #56 is open and got a substantive review from f-is-h on 2026-05-29.** Review at <https://github.com/f-is-h/Usage4Claude/pull/56>. Five items:
+  1. **Blocker — App Sandbox.** Upstream ships `ENABLE_APP_SANDBOX = YES` with no entitlements file. Our PR would build clean and fail on install. f-is-h wants Sparkle's sandboxed XPC flow. **Our v1.7.0 is the proof-of-concept for this**; the entitlements + Info.plist pattern is now battle-tested and ready to drop into the upstream tree.
+  2. **Restore the rainbow update badge.** Wire `SPUUpdaterDelegate.updater(_:didFindValidUpdate:)` → `hasAvailableUpdate = true` so the existing badge state machine lights up alongside Sparkle's modal. Repoint `simulateUpdateAvailable` at the new state. Un-delete `MenuBarUI.createRainbowText` + `createBadgeIcon` + `MenuBarIconRenderer.addBadgeToImage` + the `hasUpdate` parameter chain (currently deleted in the PR).
+  3. **Markdown release notes in appcast.** Switch `<description>` template to `sparkle:format="markdown"` (Sparkle 2.9 supports natively) so we can paste from CHANGELOG.md without an HTML parallel.
+  4. **Docs filename mismatch.** `docs/RELEASING.md` referenced in 3 places (Info.plist, build.sh, appcast.xml) but actual file is `docs/SPARKLE_SETUP.md`. Rename references to match.
+  5. **Dead code scrub.** Orphaned `L.Update.*` localization keys (`LocalizationHelper.swift:181-211` + `.xcstrings`); the `notificationMessage` writer in `MenuBarManager`; rainbow banner at `UsageDetailView.swift:540-558`. Most of these get reused once #2 lands; the orphaned localization keys should be cleanly removed.
+  6. **README pass.** Intro + features sections still describe the manual DMG drag and the badge/rainbow as if untouched.
+- **Agreed slicing** (decided 2026-05-29): two fix-up pushes to `sparkle-in-app-updates` on `~/Desktop/github_repos/Usage4Claude-fork/`.
+  - **Push 1 (polish):** rainbow badge restore + Markdown appcast + RELEASING.md rename + dead code scrub + README pass. Low risk, mechanical given the scope.
+  - **Push 2 (sandbox):** entitlements file + `SUEnableInstallerLauncherService` Info.plist key + `ENABLE_APP_SANDBOX = YES` pbxproj flip. Mirror what shipped in our v1.7.0.
+  - Both go into the same PR; f-is-h explicitly offered to split sandbox into a follow-up if it helped, but they're cohesive enough that one PR keeps the review story clean.
+- **Queued tasks:** TaskList entries #17 (sandbox backport) and #18 (polish items). The task list also includes the v1.6.4 and v1.7.0 release tasks (all completed) for archaeological reference.
+- **No verification gate.** Bryan classified the user base as "experimental, ship and watch" — no local test rig for cross-sandbox-state Sparkle updates is required before pushing to upstream either.
 
 ## Read these next, in order
 
 1. **[ARCANII_DESIGN.md](ARCANII_DESIGN.md)** — module map, data flow, error mapping table. The "what's where" reference.
 2. **[ARCANII_BACKLOG.md](ARCANII_BACKLOG.md)** — open follow-ups with effort tags. All P0/P1/P2/P3 items have shipped.
 3. **[UPSTREAM_CONTRIBUTIONS.md](UPSTREAM_CONTRIBUTIONS.md)** — log of what we've proposed (or plan to propose) back to f-is-h's repo. Companion to the backlog but upstream-facing.
-4. **[RELEASES/](RELEASES/)** — per-version release notes. v1.0.0 (initial fork) through v1.4.0 (widget).
+4. **[RELEASES/](RELEASES/)** — per-version release notes. v1.0.0 (initial fork) through v1.7.0 (App Sandbox + Sparkle XPC).
 5. **[WIDGET_SETUP.md](WIDGET_SETUP.md)** — kept around in case the widget target ever needs to be rebuilt; unused for everyday work.
 
 ## Repo layout
@@ -44,7 +62,8 @@ Usage4Claude-Arcanii/
 │   ├── Info.plist                 Static main-app Info.plist with Sparkle SU* keys
 │   └── Usage4Claude.entitlements  Main-app entitlements (sandbox on + network.client +
 │                                   App Group + Sparkle XPC mach-lookup; v1.7.0+)
-├── Tests/Usage4ClaudeCoreTests/   SwiftPM XCTest suite (currently SemverCompare only)
+├── Tests/Usage4ClaudeCoreTests/   SwiftPM XCTest suite (50 tests: SemverCompare,
+│                                   UsageResponse, ExtraUsageResponse)
 ├── Package.swift                  Standalone SwiftPM package for `swift test`
 ├── docs/                          Design, backlog, release notes (per above)
 ├── scripts/
@@ -78,7 +97,7 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test
 ```
 
-Currently 35 tests across `SemverCompareTests.swift`, `UsageResponseTests.swift`, and `ExtraUsageResponseTests.swift`. The test target is a SwiftPM package that lives alongside the `.xcodeproj`; it cherry-picks pure-function source files (`SemverCompare.swift`, `ClaudeAPIResponseModels.swift`) from `Usage4Claude/Helpers/`. To extend coverage, extract additional dependency-free helpers into `Usage4Claude/Helpers/` and add them to `Package.swift`'s `Usage4ClaudeCore` target's `sources` array. Anything that touches `L.*`, `UserSettings`, or `Logger` should stay in a sibling `+Formatting`-style file (see `UsageData+Formatting.swift`) so the test target doesn't have to drag in those dependencies.
+Currently 50 tests across `SemverCompareTests.swift`, `UsageResponseTests.swift`, and `ExtraUsageResponseTests.swift`. The test target is a SwiftPM package that lives alongside the `.xcodeproj`; it cherry-picks pure-function source files (`SemverCompare.swift`, `ClaudeAPIResponseModels.swift`) from `Usage4Claude/Helpers/`. To extend coverage, extract additional dependency-free helpers into `Usage4Claude/Helpers/` and add them to `Package.swift`'s `Usage4ClaudeCore` target's `sources` array. Anything that touches `L.*`, `UserSettings`, or `Logger` should stay in a sibling `+Formatting`-style file (see `UsageData+Formatting.swift`) so the test target doesn't have to drag in those dependencies.
 
 ## Releasing
 
@@ -133,12 +152,37 @@ Both main app (sandbox-on since v1.7.0) and widget (sandbox-on) read/write to:
 ```
 The main app writes on each successful `fetchUsage`; the widget reads on each timeline tick. `WidgetCenter.shared.reloadAllTimelines()` from the main app's success path nudges the widget for an immediate refresh.
 
+### App Sandbox + Sparkle XPC (v1.7.0+)
+
+The main app's `Config/Usage4Claude.entitlements` requires four things to be in lockstep — drop any one and either the sandbox refuses to launch, network calls fail, or Sparkle's installer can't reach `/Applications`:
+
+- `com.apple.security.app-sandbox = true`
+- `com.apple.security.network.client = true` (HTTPS to claude.ai + raw.githubusercontent.com)
+- `com.apple.security.application-groups` array containing `group.com.arcanii.Usage4Claude` (shared with the widget)
+- `com.apple.security.temporary-exception.mach-lookup.global-name` array with `$(PRODUCT_BUNDLE_IDENTIFIER)-spks` and `$(PRODUCT_BUNDLE_IDENTIFIER)-spki` — these are Sparkle's Installer and Status XPC services bundled inside the Sparkle framework. Variable substitution is performed by Xcode at build time.
+
+`Config/Info.plist` also needs `SUEnableInstallerLauncherService = true`. `SUEnableDownloaderService` is deliberately omitted — Sparkle's [sandboxing guide](https://sparkle-project.org/documentation/sandboxing/) says the Downloader XPC is only needed when the main app *lacks* `network.client`, which we have.
+
+The SwiftPM Sparkle dependency bundles `Installer.xpc` + `Downloader.xpc` into the .app automatically — no pbxproj surgery required, no explicit framework embedding step. The DMG grows from ~6.9 MB (v1.6.4) to ~7.9 MB because of these services.
+
+### Sandbox transition bootstrap
+
+`UserSettings.init()` has a block at the very top, guarded by a one-shot `sandboxBootstrapped_v1.7` UserDefaults flag, that logs the first-sandboxed-launch event with presence checks for the major settings keys. **It does NOT migrate UserDefaults itself** — `cfprefsd` handles the carry-over from `~/Library/Preferences/com.arcanii.Usage4Claude.plist` to the container path transparently for same-bundle-ID transitions.
+
+Reading the legacy plist directly from inside the sandbox would need `com.apple.security.temporary-exception.files.absolute-path.read-only` for that file. We deliberately don't take on that entitlement — `cfprefsd` is reliable in practice for our migration pattern, and the entitlement would be permanent debt for a one-time concern.
+
+If a user reports settings reset after the v1.7.0 update, the `[SandboxBootstrap]` log line in Console.app shows which keys were absent at first launch, which tells us whether `cfprefsd` dropped the migration. The fallback is "reconfigure once" — we live with it.
+
+**Keychain items are NOT migrated** under sandbox transitions because the access group changes. Existing v1.3.0+ users re-pair via Auth Settings → Browser Login on first launch of v1.7.0+. This is documented in the release notes and is the price we paid for sandbox-on.
+
 ## Quick context for the most-likely next tasks
 
 - **Adding a new Settings field?** It's a `@Published` on `UserSettings`, persisted to `UserDefaults` in the `didSet`, restored in `init()`, and rendered in `Views/Settings/Tabs/GeneralSettingsView.swift` (or split if it belongs to its own concern — see the existing `+Accounts` / `+LaunchAtLogin` / `+SmartMode` extensions for the pattern).
 - **Changing the popover UI?** `Views/UsageDetailView.swift`. The ring rendering with the glass-tube gradient + `.shadow` glow + `.glassEffect(in:)` is around the `if refreshState.isRefreshing` branches.
 - **Tweaking smart-mode refresh timing?** `Models/UserSettings+SmartMode.swift` — the active → idleShort → idleMedium → idleLong tier transitions and tick counts.
 - **Debugging an API failure?** `Services/ClaudeAPIService.swift`. The error mapping table is at the top of [ARCANII_DESIGN.md](ARCANII_DESIGN.md). 403 with `permission_error` body → `.sessionExpired` (auto-prompts re-login); 403 without that body or with HTML response → `.cloudflareBlocked`.
+- **User reports "settings reset" after the v1.7.0 update?** Open `Console.app`, filter on the `U4Claude` subsystem, look for the `[SandboxBootstrap]` notice at first sandboxed launch. The three presence flags (`iconDisplayMode`, `displayMode`, `smartModeTier`) tell you which keys `cfprefsd` failed to carry over. The migrator deliberately doesn't try to fix it — see the "Sandbox transition bootstrap" gotcha for why.
+- **User reports "session expired" on v1.7.0?** That's expected behavior — see release notes. Auth Settings → Browser Login fixes it in one click. Not a bug unless they're seeing it repeatedly after re-pairing.
 
 ## Pinned versions
 

@@ -2,11 +2,12 @@
 
 Companion to [ARCANII_DESIGN.md](ARCANII_DESIGN.md). Items grouped by effort. None are scheduled — pick one when there's time.
 
-## Status as of v1.6.3
+## Status as of v1.7.0
 
 ✅ All P0 (3 items) and P1 (5 items) — shipped in v1.2.0.
 ✅ All P2 (5 items) — shipped in v1.2.0.
 ✅ All P3 (4 items) — shipped: account-switching shortcut + CSV export in v1.2.0; **Sparkle in-app updates** in v1.3.0/v1.3.2; **desktop widget** in v1.4.0.
+✅ **App Sandbox** flipped on in v1.7.0 — main app + widget both sandboxed. Cost: Reset Widgets retirement, one-click re-login on update.
 
 ## Open follow-ups
 
@@ -17,6 +18,18 @@ Companion to [ARCANII_DESIGN.md](ARCANII_DESIGN.md). Items grouped by effort. No
 - [ ] **Bundle ID cleanup for the widget.** Xcode auto-named the widget bundle `com.arcanii.Usage4Claude.Usage4ClaudeWidget` (awkward double "Widget"). Renaming to `com.arcanii.Usage4Claude.Widget` would invalidate the App Group profile that's already provisioned for the current id, so it's not free — but cleaner long-term. **(S)**
 
 - [ ] **iOS continuity for Control Center accessory widgets.** Planned for v1.6.0 but dropped — `.accessoryCircular` / `.accessoryRectangular` / `.accessoryInline` widget families are iOS/watchOS only on macOS Widget extensions. Bringing them in via iOS continuity (a separate target with iOS deployment) would unlock pin-to-Control-Center variants on macOS Sonoma+. Not free — adds App Store / TestFlight / signing complexity. **(M, optional)**
+
+## Closed in v1.7.0
+
+- ✅ **App Sandbox enabled** — `com.apple.security.app-sandbox = YES` for the main app with `network.client` + App Group + Sparkle XPC `mach-lookup` exceptions. `SUEnableInstallerLauncherService = YES` in `Config/Info.plist`. Widget was already sandboxed. The pattern is now ready to drop into upstream PR #56 as the answer to f-is-h's sandbox blocker.
+- ✅ **Sandbox transition bootstrap** in `UserSettings.init()` — logs `[SandboxBootstrap]` on first sandboxed launch with presence checks for major settings keys. Idempotent via `sandboxBootstrapped_v1.7` UserDefaults flag. Doesn't migrate plist directly (cfprefsd handles same-bundle-ID transitions); doesn't migrate Keychain (access-group change accepted as one-click re-login cost).
+- ✅ **Reset Widgets retired** — `Usage4Claude/Helpers/WidgetReloader.swift` deleted, popover `…` button removed, 10 locale strings cleaned. The hard-reset tier needed subprocess execution (`killall chronod`), blocked under App Sandbox. The medium tier alone wasn't worth the menu real estate. Normal `WidgetCenter.shared.reloadAllTimelines()` on each successful fetch covers most refresh issues.
+
+## Closed in v1.6.4
+
+- ✅ **Google OAuth login fix** — added `WKUIDelegate` to `WebLoginCoordinator` so Google's `window.open()`-based OAuth flow loads back into the same `WKWebView` instead of being silently dropped. Broadened `allowedDomains` to base domains plus `youtube.com` (Google bounces through `accounts.youtube.com/CheckConnection`). Added `NSWindow.willCloseNotification` observer in `WebLoginWindowManager` so the WebView reference is released when the user closes via the window's red dot. Backport of upstream `94dabbf`.
+- ✅ **"View Claude Usage" menu item replaced with "Claude Status"** pointing at status.claude.com — more useful during outages than re-opening the usage page in a browser (which duplicates what U4Claude already shows). Localization key renamed from `menu.web_usage` to `menu.claude_status` with upstream's canonical translations. Backport of upstream `5d022c5`.
+- ✅ **Detail rings now visually invert in remaining mode.** Previously the row-tap toggle only swapped subtitle text; now the ring's trim runs from `used` to 1.0 (filling the available slice) and the center label flips from "Used" to "Available". New pure-function helpers `UsageRingTrimRange` + `UsageRingDisplay` in `UsageRowComponents.swift`. Ring animation curve switched from `.easeInOut` to `.spring(response: 0.42, dampingFraction: 0.78)`. Mode preference eager-initialized from UserDefaults to kill the one-frame appear flash. Backport of upstream `fdeb0c1` (skipped the `DetailUsageRingSweep` cosmetic flourish — would muddle with our existing glow shadows).
 
 ## Closed in v1.6.3
 
