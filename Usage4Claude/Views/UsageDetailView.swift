@@ -180,21 +180,6 @@ struct UsageDetailView: View {
                         Button(action: { onMenuAction?(.claudeStatus) }) {
                             Label(L.Menu.claudeStatus, systemImage: "safari")
                         }
-                        // Recovery action for stuck/black widgets — chronod
-                        // occasionally caches an old extension state across
-                        // updates. Default click does the medium reset; ⌥-click
-                        // escalates to a chronod restart.
-                        Button(action: {
-                            let isOption = NSApp.currentEvent?.modifierFlags.contains(.option) ?? false
-                            if isOption {
-                                WidgetReloader.hardReset(currentData: usageData)
-                            } else {
-                                WidgetReloader.mediumReset(currentData: usageData)
-                            }
-                        }) {
-                            Label(L.Menu.resetWidgets, systemImage: "square.grid.2x2.fill")
-                        }
-                        .help(L.Menu.resetWidgetsHelp)
                         Divider()
                         Button(action: { onMenuAction?(.quit) }) {
                             Label(L.Menu.quit, systemImage: "power")

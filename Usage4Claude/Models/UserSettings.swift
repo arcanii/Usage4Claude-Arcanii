@@ -666,6 +666,51 @@ class UserSettings: ObservableObject {
     /// Private initializer (singleton pattern)
     /// Loads sensitive info from Keychain and other settings from UserDefaults
     private init() {
+        // MARK: - Sandbox Transition Bootstrap (v1.7.0)
+        //
+        // v1.7.0 flipped App Sandbox from off → on. UserDefaults now lives
+        // under ~/Library/Containers/com.arcanii.Usage4Claude/Data/Library/
+        // Preferences/ instead of ~/Library/Preferences/. cfprefsd handles
+        // the transparent move on first sandboxed launch — the legacy plist
+        // is read via cfprefsd's privileged path and its contents become
+        // available through NSUserDefaults.standard before this initializer
+        // runs.
+        //
+        // We can't read the legacy plist directly from inside the sandbox
+        // (the home-relative path resolves into the container; the user-
+        // home path is blocked by the sandbox). And we deliberately don't
+        // add a temporary-exception read entitlement just to verify the
+        // migration — cfprefsd is reliable enough in practice, and the
+        // entitlement would be permanent debt.
+        //
+        // What this block does: log the first-sandboxed-launch event with
+        // a couple of cheap presence checks so we can spot post-release
+        // reports of "settings reset" in our Logger output. If cfprefsd
+        // ever drops a migration, this gives us the breadcrumb we need.
+        //
+        // Keychain items are NOT migrated — the sandbox access-group
+        // change means existing accounts must be re-paired via WebLogin.
+        // The v1.7.0 release notes document this.
+        if !defaults.bool(forKey: "sandboxBootstrapped_v1.7") {
+            let hadIconMode = defaults.string(forKey: "iconDisplayMode") != nil
+            let hadDisplayMode = defaults.string(forKey: "displayMode") != nil
+            let hadSmartMode = defaults.string(forKey: "smartModeTier") != nil
+            let appGroupReachable = FileManager.default
+                .containerURL(forSecurityApplicationGroupIdentifier: "group.com.arcanii.Usage4Claude") != nil
+
+            Logger.settings.notice(
+                """
+                [SandboxBootstrap] First sandboxed launch. cfprefsd carry-over check — \
+                iconDisplayMode:\(hadIconMode, privacy: .public), \
+                displayMode:\(hadDisplayMode, privacy: .public), \
+                smartModeTier:\(hadSmartMode, privacy: .public). \
+                AppGroup reachable:\(appGroupReachable, privacy: .public).
+                """
+            )
+
+            defaults.set(true, forKey: "sandboxBootstrapped_v1.7")
+        }
+
         // MARK: - Load Multi-Account Data (v2.1.0)
 
         // Load account list from Keychain (using local variables to avoid initialization order issues)

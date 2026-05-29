@@ -42,7 +42,8 @@ Usage4Claude-Arcanii/
 │   └── Usage4ClaudeWidget.entitlements  sandbox + App Group + no network
 ├── Config/
 │   ├── Info.plist                 Static main-app Info.plist with Sparkle SU* keys
-│   └── Usage4Claude.entitlements  Main-app entitlements (sandbox off + App Group)
+│   └── Usage4Claude.entitlements  Main-app entitlements (sandbox on + network.client +
+│                                   App Group + Sparkle XPC mach-lookup; v1.7.0+)
 ├── Tests/Usage4ClaudeCoreTests/   SwiftPM XCTest suite (currently SemverCompare only)
 ├── Package.swift                  Standalone SwiftPM package for `swift test`
 ├── docs/                          Design, backlog, release notes (per above)
@@ -126,7 +127,7 @@ The widget extension target was originally attempted via hand-rolled pbxproj sur
 
 ### App Group container path
 
-Both main app (sandbox-off) and widget (sandbox-on) read/write to:
+Both main app (sandbox-on since v1.7.0) and widget (sandbox-on) read/write to:
 ```
 ~/Library/Group Containers/group.com.arcanii.Usage4Claude/usage-snapshot.json
 ```

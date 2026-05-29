@@ -37,7 +37,7 @@ This fork tracks the upstream feature set faithfully (all the features listed be
 
 | Change | Since |
 |---|---|
-| **In-app "Reset Widgets" recovery action** in the popover `…` menu — medium reset on click, hard reset (chronod restart) on ⌥-click — for unsticking chronod's render cache without dropping to Terminal | v1.6.2 |
+| **App Sandbox enabled** — `com.apple.security.app-sandbox = YES` with explicit `network.client`, App Group, and Sparkle XPC mach-lookup entitlements. Defense-in-depth + a verifiable "no telemetry" claim. Existing users need a one-click re-login after update (Keychain access-group change) | v1.7.0 |
 | **24h sparkline strip** under every limit row in the popover + **expanded widget gallery** to 6 kinds (small Trend, medium Trend, medium 5h+7d Trend, large Dashboard, extra-large Full Dashboard, original rings). History storage moved to NDJSON in the App Group container — O(1) append per fetch | v1.6.0 |
 | **API response models extracted** with 50-test SwiftPM coverage; `fetchOrganizations` migrated to `async/await` | v1.5.0 |
 | **Spoofed Chrome user-agent** kept current (148 as of 2026-05) | v1.4.1 |
@@ -194,7 +194,7 @@ Yes — all Claude products share the same usage quota, so a single `sessionKey`
 <details>
 <summary><b>Is my data safe?</b></summary>
 
-Yes. Session keys live in macOS Keychain (AES-256, hardware-protected on T2/Apple Silicon). The Organization ID lives in `UserDefaults` (it's not a credential, it's a UUID). Nothing leaves your Mac except the calls to `claude.ai/api/...` and (for updates) the raw GitHub host serving the Sparkle appcast. The widget extension is sandboxed with **no network** entitlement.
+Yes. Session keys live in macOS Keychain (AES-256, hardware-protected on T2/Apple Silicon). The Organization ID lives in `UserDefaults` (it's not a credential, it's a UUID). Nothing leaves your Mac except the calls to `claude.ai/api/...` and (for updates) the raw GitHub host serving the Sparkle appcast. **Both the main app and the widget extension run under App Sandbox** *(fork, v1.7.0)*; you can verify with `codesign -d --entitlements - /Applications/U4Claude.app` that the only outbound network capability is `network.client` and the only file access outside the container is the App Group + Sparkle's XPC services.
 
 </details>
 
@@ -245,6 +245,7 @@ For the architecture map, error mapping table, and release runbook, see [`docs/H
 - [x] **v1.6.2** — "Reset Widgets" recovery action in the popover `…` menu (medium reset; ⌥-click for hard reset via chronod restart).
 - [x] **v1.6.3** — two upstream backports: Japanese kanji fix for the 24h hour suffix, session-key hint wording generalized.
 - [x] **v1.6.4** — three upstream backports: Google OAuth login fix (`WKUIDelegate` for `window.open()` popups + base-domain `allowedDomains`), "View Claude Usage" menu item replaced with "Claude Status" (status.claude.com), and detail rings now visually invert in remaining mode (fill drains from the top, center label flips Used ↔ Available).
+- [x] **v1.7.0** — **App Sandbox enabled.** Main app now runs under `com.apple.security.app-sandbox = YES` with Sparkle's XPC services wired via `temporary-exception.mach-lookup.global-name`. Retires the v1.6.2 "Reset Widgets" feature (the hard-reset tier needed subprocess execution, blocked by sandbox; the medium tier wasn't worth the menu real estate alone). Existing users need a one-click re-login after update.
 
 See [`docs/RELEASES/`](docs/RELEASES/) for full per-version notes.
 

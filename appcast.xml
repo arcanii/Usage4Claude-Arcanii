@@ -6,6 +6,33 @@
         <description>Updates to U4Claude (Arcanii Mod) — Claude.ai usage menu bar app for macOS.</description>
         <language>en</language>
         <item>
+            <title>v1.7.0</title>
+            <pubDate>Fri, 29 May 2026 00:00:00 +0000</pubDate>
+            <sparkle:version>16</sparkle:version>
+            <sparkle:shortVersionString>1.7.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <link>https://github.com/arcanii/Usage4Claude-Arcanii/releases/tag/v1.7.0</link>
+            <description><![CDATA[
+                <h2>v1.7.0 — App Sandbox enabled</h2>
+                <p><strong>U4Claude now runs under macOS App Sandbox.</strong> Defense in depth, a verifiable "no telemetry" claim, and alignment with Apple's distribution direction.</p>
+                <h3>Heads-up on update</h3>
+                <ul>
+                    <li><strong>One-click re-login expected.</strong> App Sandbox isolates Keychain items into a per-app access group. You'll see "Authentication not configured" after the update; open <strong>Auth Settings → Browser Login</strong> and sign back into claude.ai (it should remember your browser session). Re-pair per account if you have multiple.</li>
+                    <li><strong>Settings should carry over.</strong> <code>cfprefsd</code> handles UserDefaults migration transparently. We log a <code>[SandboxBootstrap]</code> notice on first launch to catch any case where the carry-over doesn't take.</li>
+                </ul>
+                <h3>Also in this release</h3>
+                <ul>
+                    <li><strong>"Reset Widgets" retired.</strong> The hard-reset tier used a subprocess (<code>killall chronod</code>) which the sandbox forbids; the medium tier alone wasn't worth the menu real estate. Normal <code>WidgetCenter</code> reloads on every successful fetch handle most refresh issues.</li>
+                </ul>
+                <p>See <a href="https://github.com/arcanii/Usage4Claude-Arcanii/blob/main/docs/RELEASES/v1.7.0.md">the full release notes</a> for the entitlements + Info.plist details and a verification recipe.</p>
+            ]]></description>
+            <enclosure
+                url="https://github.com/arcanii/Usage4Claude-Arcanii/releases/download/v1.7.0/U4Claude-v1.7.0.dmg"
+                sparkle:edSignature="cYVN8jWGgICPHtPz8aVe/6od6x6l37r2tgI0R/WHGnETBEENgBdhSIpEKx3g/o7gk1Gjhiu6wugphaVyz1VpDg=="
+                length="7190393"
+                type="application/octet-stream"/>
+        </item>
+        <item>
             <title>v1.6.4</title>
             <pubDate>Thu, 28 May 2026 00:00:00 +0000</pubDate>
             <sparkle:version>15</sparkle:version>
