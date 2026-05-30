@@ -15,6 +15,8 @@ A macOS menu bar app that polls the **private** `claude.ai/api/organizations/<id
 
 ## Where we are right now (read if you're resuming a session)
 
+- **PR #56 fix-ups pushed 2026-05-30 — awaiting f-is-h's re-review.** Two commits on `sparkle-in-app-updates` (in `~/Desktop/github_repos/Usage4Claude-fork/`): `1a7ea48` (badge restore + polish, review items 2–6) and `6afd2c8` (App Sandbox entitlements, item 1). Debug build clean, 29 tests pass, no new warnings, no AI co-author trailers; pushed to `origin`, and a slicing-recap comment mapping commits→review-items is on the PR ([issuecomment-4581272906](https://github.com/f-is-h/Usage4Claude/pull/56#issuecomment-4581272906)). **Next:** respond to f-is-h's re-review. Code-truth notes that bit during the work: the badge helpers (`createRainbowText`/`createBadgeIcon`/`addBadgeToImage`) were never deleted by the PR — only their call sites — so restoring was re-wiring, not un-deletion; `L.Update.okButton` was kept (reused generically by diagnostics); upstream ships **6** locales as `.strings` (not 5 / `.xcstrings`); the entitlements omit the App Group (upstream has no widget), and `network.client` was already granted via `ENABLE_OUTGOING_NETWORK_CONNECTIONS`, so the lone real sandbox blocker was the Sparkle mach-lookup exception.
+
 - **v1.7.0 shipped 2026-05-29.** First sandboxed release of the Arcanii fork. Bryan installed locally and reported "no issues so far" — we asked him to spot-check the `[SandboxBootstrap]` log line in Console.app and verify the widget still ticks. No further reports in.
 - **Upstream PR #56 is open and got a substantive review from f-is-h on 2026-05-29.** Review at <https://github.com/f-is-h/Usage4Claude/pull/56>. Five items:
   1. **Blocker — App Sandbox.** Upstream ships `ENABLE_APP_SANDBOX = YES` with no entitlements file. Our PR would build clean and fail on install. f-is-h wants Sparkle's sandboxed XPC flow. **Our v1.7.0 is the proof-of-concept for this**; the entitlements + Info.plist pattern is now battle-tested and ready to drop into the upstream tree.
@@ -23,11 +25,11 @@ A macOS menu bar app that polls the **private** `claude.ai/api/organizations/<id
   4. **Docs filename mismatch.** `docs/RELEASING.md` referenced in 3 places (Info.plist, build.sh, appcast.xml) but actual file is `docs/SPARKLE_SETUP.md`. Rename references to match.
   5. **Dead code scrub.** Orphaned `L.Update.*` localization keys (`LocalizationHelper.swift:181-211` + `.xcstrings`); the `notificationMessage` writer in `MenuBarManager`; rainbow banner at `UsageDetailView.swift:540-558`. Most of these get reused once #2 lands; the orphaned localization keys should be cleanly removed.
   6. **README pass.** Intro + features sections still describe the manual DMG drag and the badge/rainbow as if untouched.
-- **Agreed slicing** (decided 2026-05-29): two fix-up pushes to `sparkle-in-app-updates` on `~/Desktop/github_repos/Usage4Claude-fork/`.
-  - **Push 1 (polish):** rainbow badge restore + Markdown appcast + RELEASING.md rename + dead code scrub + README pass. Low risk, mechanical given the scope.
-  - **Push 2 (sandbox):** entitlements file + `SUEnableInstallerLauncherService` Info.plist key + `ENABLE_APP_SANDBOX = YES` pbxproj flip. Mirror what shipped in our v1.7.0.
-  - Both go into the same PR; f-is-h explicitly offered to split sandbox into a follow-up if it helped, but they're cohesive enough that one PR keeps the review story clean.
-- **Queued tasks:** TaskList entries #17 (sandbox backport) and #18 (polish items). The task list also includes the v1.6.4 and v1.7.0 release tasks (all completed) for archaeological reference.
+- **Slicing — shipped 2026-05-30** (decided 2026-05-29): two commits on `sparkle-in-app-updates` in `~/Desktop/github_repos/Usage4Claude-fork/`.
+  - ✅ **Push 1 (polish) — `1a7ea48`:** rainbow badge restore (re-wired to Sparkle's `SPUUpdaterDelegate`) + Markdown appcast + RELEASING→SPARKLE_SETUP rename + dead-code scrub + README pass.
+  - ✅ **Push 2 (sandbox) — `6afd2c8`:** new `Config/Usage4Claude.entitlements` (app-sandbox + network.client + Sparkle XPC mach-lookup) wired via `CODE_SIGN_ENTITLEMENTS`, plus the `SUEnableInstallerLauncherService` Info.plist key. (Upstream already had `ENABLE_APP_SANDBOX = YES`, so no pbxproj flip; adapted from our v1.7.0 by dropping the App Group — upstream has no widget.)
+  - Both went into the one PR as separate commits; the PR comment offers to split the sandbox commit into a follow-up if f-is-h would rather land the polish first.
+- **Queued tasks:** done — the sandbox backport and polish items shipped in the two commits above. (The session TaskList doesn't persist across sessions, so the prior `#17` / `#18` references no longer resolve.)
 - **No verification gate.** Bryan classified the user base as "experimental, ship and watch" — no local test rig for cross-sandbox-state Sparkle updates is required before pushing to upstream either.
 
 ## Read these next, in order
