@@ -38,7 +38,7 @@ This fork tracks the upstream feature set faithfully (all the features listed be
 | Change | Since |
 |---|---|
 | **App Sandbox enabled** — `com.apple.security.app-sandbox = YES` with explicit `network.client`, App Group, and Sparkle XPC mach-lookup entitlements. Defense-in-depth + a verifiable "no telemetry" claim. Existing users need a one-click re-login after update (Keychain access-group change) | v1.7.0 |
-| **24h sparkline strip** under every limit row in the popover + **expanded widget gallery** to 6 kinds (small Trend, medium Trend, medium 5h+7d Trend, large Dashboard, extra-large Full Dashboard, original rings). History storage moved to NDJSON in the App Group container — O(1) append per fetch | v1.6.0 |
+| **24h sparkline strip** under every limit row in the popover + **expanded the widget gallery to 5 kinds** (original rings, ring + 24h sparkline, dual 5h/7d sparkline, large dashboard, extra-large full dashboard). History storage moved to NDJSON in the App Group container — O(1) append per fetch | v1.6.0 |
 | **API response models extracted** with 50-test SwiftPM coverage; `fetchOrganizations` migrated to `async/await` | v1.5.0 |
 | **Spoofed Chrome user-agent** kept current (148 as of 2026-05) | v1.4.1 |
 | **Auto-relogin throttle** that recovers from a dismissed WebLogin window | v1.4.1 |
@@ -67,7 +67,7 @@ The fork is maintained by [@arcanii](https://github.com/arcanii) as a personal m
 - **Multiple display modes**: Percentage Only, Icon Only, Icon + Percentage, Unified concentric rings
 - **Three icon styles**: Color Translucent, Color with Background, Monochrome (template — adapts to system menu bar)
 - **Glass-tube popover rings** with user-tunable illumination *(fork)*
-- **Desktop widget** (small + medium) *(fork)*
+- **Desktop widgets** — 5 kinds (rings, trend sparklines, and large / extra-large dashboards; small → extra-large) *(fork)*
 - **Time format**: System / 12-hour / 24-hour
 - **Appearance**: System / Light / Dark
 - **Localization**: English, 日本語, 简体中文, 繁體中文, 한국어
@@ -208,7 +208,7 @@ Some macOS versions and third-party tools (Bartender, Hidden Bar) auto-hide infr
 <details>
 <summary><b>How do I add the desktop widget?</b></summary>
 
-Run U4Claude at least once (so it writes the App Group snapshot), then right-click on your desktop → **Edit Widgets…** → search "Claude Usage" → drag the small or medium variant onto the desktop. The widget refreshes immediately on every successful main-app fetch.
+Run U4Claude at least once (so it writes the App Group snapshot), then right-click on your desktop → **Edit Widgets…** → search "Claude Usage" → drag your preferred kind — rings, sparkline, dual sparkline, or large / extra-large dashboard — onto the desktop. The widget refreshes immediately on every successful main-app fetch.
 
 </details>
 
@@ -250,10 +250,11 @@ For the architecture map, error mapping table, and release runbook, see [`docs/H
 See [`docs/RELEASES/`](docs/RELEASES/) for full per-version notes.
 
 ### Open
-- [ ] Move usage history to NDJSON / SQLite (avoid full-file rewrite per tick)
-- [ ] Sparkline overlay on popover rings (or "History" tab)
+- [ ] Richer history surface (e.g. a "History" tab). *(A sparkline overlay on the popover ring was explored and shelved — redundant with the per-row strips; see `docs/ARCANII_BACKLOG.md`.)*
+- [ ] Localize the Extra Usage currency symbol (deferred — USD-only billing today)
 - [ ] Recurring Chrome UA bump (cron / scheduled agent)
-- [ ] Widget bundle ID rename (deferred — breaks existing App Group profile)
+- [ ] Widget bundle ID rename (deferred — breaks the existing App Group profile)
+- [ ] iOS-continuity accessory widgets for Control Center (optional)
 
 See [`docs/ARCANII_BACKLOG.md`](docs/ARCANII_BACKLOG.md) for effort tags.
 

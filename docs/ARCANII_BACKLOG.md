@@ -19,6 +19,15 @@ Companion to [ARCANII_DESIGN.md](ARCANII_DESIGN.md). Items grouped by effort. No
 
 - [ ] **iOS continuity for Control Center accessory widgets.** Planned for v1.6.0 but dropped — `.accessoryCircular` / `.accessoryRectangular` / `.accessoryInline` widget families are iOS/watchOS only on macOS Widget extensions. Bringing them in via iOS continuity (a separate target with iOS deployment) would unlock pin-to-Control-Center variants on macOS Sonoma+. Not free — adds App Store / TestFlight / signing complexity. **(M, optional)**
 
+## Considered & rejected
+
+- **Sparkline overlay on the popover ring** — explored 2026-06-02 (DEBUG-gated prototype in `UsageDetailView`, then reverted). Idea: tuck a faint 24h trend of the primary limit into the hero ring's center well. Rejected because:
+  - **Smart mode (the default) always keeps 5h + 7d active** (`getActiveDisplayTypes` in `UserSettings.swift`), so the ring center is permanently the dual stacked-% layout — no room for a centered trend without crowding the numbers.
+  - It **duplicates the per-row 24h sparkline strips** — the 5-Hour row already shows the same trend directly below the ring.
+  - Gating to single-ring-only (Custom display, one circular limit) made it invisible in the default config.
+
+  The per-row strips are the right home for history; a dedicated "History" tab/view remains a possible future direction. **(prototype effort: ~half day; verified the idea, didn't ship)**
+
 ## Closed in v1.7.0
 
 - ✅ **App Sandbox enabled** — `com.apple.security.app-sandbox = YES` for the main app with `network.client` + App Group + Sparkle XPC `mach-lookup` exceptions. `SUEnableInstallerLauncherService = YES` in `Config/Info.plist`. Widget was already sandboxed. The pattern is now ready to drop into upstream PR #56 as the answer to f-is-h's sandbox blocker.
