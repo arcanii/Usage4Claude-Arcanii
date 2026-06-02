@@ -221,4 +221,42 @@ final class ExtraUsageResponseTests: XCTestCase {
         let extra = try decode(json).toExtraUsageData()
         XCTAssertNil(extra?.percentage)
     }
+
+    // MARK: - Currency symbol mapping
+
+    /// Build an enabled ExtraUsageData with the given currency via the public
+    /// decode path, then read its `currencySymbol`.
+    private func symbol(forCurrency code: String) throws -> String? {
+        let json = """
+        {
+            "is_enabled": true,
+            "monthly_credit_limit": 5000,
+            "currency": "\(code)",
+            "used_credits": 0
+        }
+        """
+        return try decode(json).toExtraUsageData()?.currencySymbol
+    }
+
+    func testCurrencySymbolMapsKnownCodes() throws {
+        XCTAssertEqual(try symbol(forCurrency: "USD"), "$")
+        XCTAssertEqual(try symbol(forCurrency: "EUR"), "€")
+        XCTAssertEqual(try symbol(forCurrency: "GBP"), "£")
+        XCTAssertEqual(try symbol(forCurrency: "JPY"), "¥")
+        XCTAssertEqual(try symbol(forCurrency: "KRW"), "₩")
+        XCTAssertEqual(try symbol(forCurrency: "CAD"), "CA$")
+        XCTAssertEqual(try symbol(forCurrency: "AUD"), "A$")
+        XCTAssertEqual(try symbol(forCurrency: "BRL"), "R$")
+        XCTAssertEqual(try symbol(forCurrency: "INR"), "₹")
+    }
+
+    func testCurrencySymbolIsCaseInsensitive() throws {
+        // toExtraUsageData() already uppercases; currencySymbol guards too.
+        XCTAssertEqual(try symbol(forCurrency: "eur"), "€")
+    }
+
+    func testCurrencySymbolFallsBackToCodeForUnknown() throws {
+        // Unmapped currency renders the raw (uppercased) code, not "$".
+        XCTAssertEqual(try symbol(forCurrency: "CHF"), "CHF")
+    }
 }

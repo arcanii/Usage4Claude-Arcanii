@@ -299,6 +299,24 @@ struct ExtraUsageData: Sendable {
     /// Currency unit
     let currency: String
 
+    /// Currency symbol for `currency` (ISO 4217 code → glyph), falling back to
+    /// the raw code for anything unmapped. Lets the formatting helpers render
+    /// the user's actual billing currency instead of a hardcoded "$".
+    var currencySymbol: String {
+        switch currency.uppercased() {
+        case "USD": return "$"
+        case "EUR": return "€"
+        case "GBP": return "£"
+        case "JPY": return "¥"
+        case "KRW": return "₩"
+        case "CAD": return "CA$"
+        case "AUD": return "A$"
+        case "BRL": return "R$"
+        case "INR": return "₹"
+        default: return currency
+        }
+    }
+
     /// Usage percentage (for unified display)
     var percentage: Double? {
         guard let used = used, let limit = limit, limit > 0 else {

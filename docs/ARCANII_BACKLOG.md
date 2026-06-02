@@ -11,7 +11,7 @@ Companion to [ARCANII_DESIGN.md](ARCANII_DESIGN.md). Items grouped by effort. No
 
 ## Open follow-ups
 
-- [ ] **Localize the Extra Usage currency symbol.** Display strings still hardcode `$` regardless of the user's billing currency. Upstream fixed this in v2.6.1 (commit `4dc411b`) by mapping `ExtraUsageData.currency` (USD/EUR/JPY/KRW/GBP/etc.) to the right symbol. Skipped during the v1.5.1 v2.6.1 backport because Bryan is billed in USD — flag for non-USD users if the fork ever picks them up. Touches `extra_usage.usage_amount` / `extra_usage.remaining_amount` in all 5 locales plus `formattedCompactAmount`. **(S)**
+- [x] **Localize the Extra Usage currency symbol** — *implemented 2026-06-02, pending release.* New `ExtraUsageData.currencySymbol` maps ISO 4217 codes → glyphs (USD/EUR/GBP/JPY/KRW/CAD/AUD/BRL/INR; raw-code fallback), threaded through `usageAmount` / `remainingAmount` / `formattedCompactAmount`; all 5 locales switched from hardcoded `$` to a `%@` placeholder. Backport of upstream `4dc411b` (v2.6.1) + KRW (₩) for the Korean locale. +3 `ExtraUsageResponseTests` cases. **(S)**
 
 - [ ] **Bump Chrome user-agent recurringly.** v1.4.1 sets it to Chrome 148; real Chrome keeps marching on. Either add a build step that fetches the current major from a known config endpoint, or set a calendar reminder to bump quarterly. **(S — recurring)**
 

@@ -218,7 +218,7 @@ extension ExtraUsageData {
         guard enabled, let used = used, let limit = limit else {
             return L.ExtraUsage.notEnabled
         }
-        return L.ExtraUsage.usageAmount(used, limit)
+        return L.ExtraUsage.usageAmount(used, limit, symbol: currencySymbol)
     }
 
     /// Formatted remaining amount string (remaining mode)
@@ -228,7 +228,7 @@ extension ExtraUsageData {
             return L.ExtraUsage.notEnabled
         }
         let remaining = max(0, limit - used)
-        return L.ExtraUsage.remainingAmount(remaining)
+        return L.ExtraUsage.remainingAmount(remaining, symbol: currencySymbol)
     }
 
     /// Compact formatted usage amount (for list display)
@@ -237,6 +237,6 @@ extension ExtraUsageData {
         guard enabled, let used = used, let limit = limit else {
             return "-"
         }
-        return String(format: "$%.2f/$%.0f", used, limit)
+        return String(format: "%@%.2f/%@%.0f", currencySymbol, used, currencySymbol, limit)
     }
 }
