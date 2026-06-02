@@ -6,6 +6,28 @@
         <description>Updates to U4Claude (Arcanii Mod) — Claude.ai usage menu bar app for macOS.</description>
         <language>en</language>
         <item>
+            <title>v1.7.1</title>
+            <pubDate>Tue, 02 Jun 2026 00:00:00 +0000</pubDate>
+            <sparkle:version>17</sparkle:version>
+            <sparkle:shortVersionString>1.7.1</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <link>https://github.com/arcanii/Usage4Claude-Arcanii/releases/tag/v1.7.1</link>
+            <description><![CDATA[
+                <h2>v1.7.1 — Currency symbols + Chrome 149</h2>
+                <p>A small maintenance release — no migration, no re-login.</p>
+                <ul>
+                    <li><strong>Extra Usage shows your billing currency's symbol.</strong> Amounts were hardcoded with <code>$</code> regardless of currency; they now render <code>$</code>, <code>€</code>, <code>£</code>, <code>¥</code>, <code>₩</code>, <code>CA$</code>, <code>A$</code>, <code>R$</code>, or <code>₹</code> for your account (raw ISO code for anything unmapped). No visible change if you bill in USD. Backport of upstream <code>4dc411b</code>, plus KRW (₩) for the Korean locale.</li>
+                    <li><strong>Spoofed Chrome user-agent bumped 148 → 149</strong>, tracking the current Chrome stable so Cloudflare keeps seeing a current browser.</li>
+                </ul>
+                <p>See <a href="https://github.com/arcanii/Usage4Claude-Arcanii/blob/main/docs/RELEASES/v1.7.1.md">the full release notes</a>.</p>
+            ]]></description>
+            <enclosure
+                url="https://github.com/arcanii/Usage4Claude-Arcanii/releases/download/v1.7.1/U4Claude-v1.7.1.dmg"
+                sparkle:edSignature="+vFEBsJhMpX9OKn7C4DBoKKZ2FRRT+WDM+/hrl+K8+rSTTcUdqSAFV5Q6FE0y3IFmHGfElLIq9y05m05K+X9Bg=="
+                length="7191502"
+                type="application/octet-stream"/>
+        </item>
+        <item>
             <title>v1.7.0</title>
             <pubDate>Fri, 29 May 2026 00:00:00 +0000</pubDate>
             <sparkle:version>16</sparkle:version>

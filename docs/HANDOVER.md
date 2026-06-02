@@ -11,7 +11,7 @@ A macOS menu bar app that polls the **private** `claude.ai/api/organizations/<id
 - **macOS deployment target:** **26.0** (Tahoe). Bumped from 13.0 in v1.4.0. We use the macOS 26 Liquid Glass APIs unconditionally.
 - **App Sandbox:** **on** for both main app and widget since v1.7.0. Sparkle's bundled XPC services handle update install under sandbox. See the sandbox gotchas section below.
 - **Universal binary** (x86_64 + arm64).
-- **Current version:** v1.7.0 (2026-05-29) — see [RELEASES/](RELEASES/).
+- **Current version:** v1.7.1 (2026-06-02) — see [RELEASES/](RELEASES/).
 
 ## Where we are right now (read if you're resuming a session)
 

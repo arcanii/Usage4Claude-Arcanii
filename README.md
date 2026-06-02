@@ -40,7 +40,7 @@ This fork tracks the upstream feature set faithfully (all the features listed be
 | **App Sandbox enabled** — `com.apple.security.app-sandbox = YES` with explicit `network.client`, App Group, and Sparkle XPC mach-lookup entitlements. Defense-in-depth + a verifiable "no telemetry" claim. Existing users need a one-click re-login after update (Keychain access-group change) | v1.7.0 |
 | **24h sparkline strip** under every limit row in the popover + **expanded the widget gallery to 5 kinds** (original rings, ring + 24h sparkline, dual 5h/7d sparkline, large dashboard, extra-large full dashboard). History storage moved to NDJSON in the App Group container — O(1) append per fetch | v1.6.0 |
 | **API response models extracted** with 50-test SwiftPM coverage; `fetchOrganizations` migrated to `async/await` | v1.5.0 |
-| **Spoofed Chrome user-agent** kept current (148 as of 2026-05) | v1.4.1 |
+| **Spoofed Chrome user-agent** kept current (149 as of 2026-06) | v1.4.1 |
 | **Auto-relogin throttle** that recovers from a dismissed WebLogin window | v1.4.1 |
 | **Glass-tube popover rings** with a configurable illumination slider in General Settings → "Popover Appearance" | v1.3.1 / v1.4.1 |
 | **Desktop widget** (small + medium) reading from an App Group snapshot — no extra API calls | v1.4.0 |
@@ -246,6 +246,7 @@ For the architecture map, error mapping table, and release runbook, see [`docs/H
 - [x] **v1.6.3** — two upstream backports: Japanese kanji fix for the 24h hour suffix, session-key hint wording generalized.
 - [x] **v1.6.4** — three upstream backports: Google OAuth login fix (`WKUIDelegate` for `window.open()` popups + base-domain `allowedDomains`), "View Claude Usage" menu item replaced with "Claude Status" (status.claude.com), and detail rings now visually invert in remaining mode (fill drains from the top, center label flips Used ↔ Available).
 - [x] **v1.7.0** — **App Sandbox enabled.** Main app now runs under `com.apple.security.app-sandbox = YES` with Sparkle's XPC services wired via `temporary-exception.mach-lookup.global-name`. Retires the v1.6.2 "Reset Widgets" feature (the hard-reset tier needed subprocess execution, blocked by sandbox; the medium tier wasn't worth the menu real estate alone). Existing users need a one-click re-login after update.
+- [x] **v1.7.1** — Extra Usage currency-symbol localization (renders your account's billing currency, + KRW for the Korean locale) and the spoofed Chrome UA bumped to 149. Small maintenance release; no migration, no re-login.
 
 See [`docs/RELEASES/`](docs/RELEASES/) for full per-version notes.
 
