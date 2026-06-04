@@ -37,14 +37,13 @@ maintainer actually uses OpenAI Codex CLI. Not planned.
 
 | # | Title | Type | State | Last update |
 |---|---|---|---|---|
-| [PR #56](https://github.com/f-is-h/Usage4Claude/pull/56) | feat: adopt Sparkle for in-app updates (closes #50) | PR | **Open — fix-ups pushed, awaiting re-review** | 2026-05-30: pushed two fix-up commits to `sparkle-in-app-updates` addressing all of f-is-h's 2026-05-29 review. `1a7ea48` = badge restore via `SPUUpdaterDelegate` + Markdown appcast + RELEASING→SPARKLE_SETUP rename + dead-code scrub (16 orphaned `L.Update.*` keys × 6 locales; kept `okButton`, reused by diagnostics) + README (items 2–6). `6afd2c8` = App Sandbox entitlements + `SUEnableInstallerLauncherService` (item 1; dropped the App Group since upstream has no widget — and network was already granted via `ENABLE_OUTGOING_NETWORK_CONNECTIONS`, so the Sparkle mach-lookup exception was the only real blocker). Debug build clean, 29 tests pass, no new warnings, no AI trailers. Slicing-recap comment posted on the PR. Awaiting f-is-h's re-review. |
-| [issue #50](https://github.com/f-is-h/Usage4Claude/issues/50) | Proposal: adopt Sparkle for in-app updates | Proposal | **Green-lit 2026-05-24** | f-is-h: *"Please go ahead and open the PR, I'd love to get this in."* Implementation lives at PR #56. |
 
 ## Merged
 
 | # | Title | Merged | Notes |
 |---|---|---|---|
 | [#45](https://github.com/f-is-h/Usage4Claude/pull/45) | refactor: extract response models + add SwiftPM test target | 2026-05-13 (`3a960d72`) | First upstream contribution. Two review rounds (rebase + file move to `Models/`). 29 new tests covering `toUsageData()` and `toExtraUsageData()`. |
+| [PR #56](https://github.com/f-is-h/Usage4Claude/pull/56) | feat: adopt Sparkle for in-app updates (closes #50) | 2026-06-04 (`242d86b`) | Second upstream contribution. Custom `UpdateChecker` → Sparkle; badge state machine re-wired to `SPUUpdaterDelegate`; App Sandbox XPC entitlements (`mach-lookup` for the Installer/Status services). One review round (f-is-h 2026-05-29) → two fix-up commits `1a7ea48` (polish + badge restore) + `6afd2c8` (sandbox entitlements). Closed proposal #50; the entitlements pattern was proven first in our v1.7.0. |
 
 ## Next PR candidates (queue, ordered by readiness)
 
@@ -64,9 +63,9 @@ maintainer actually uses OpenAI Codex CLI. Not planned.
 
 ## Proposals to file as issues first (no PR yet)
 
-### 3. Sparkle in-app updates  *(L, high decision-cost)* — **issue #50 filed**
+### 3. Sparkle in-app updates — ✅ **MERGED in PR #56 (2026-06-04)**
 - Replaces "manual download → drag to Applications → relaunch" with one-click EdDSA-signed updates.
-- Filed as proposal-not-PR at [f-is-h/Usage4Claude#50](https://github.com/f-is-h/Usage4Claude/issues/50). Awaiting decision.
+- Filed as proposal #50 (green-lit 2026-05-24) → implemented in PR #56 → merged 2026-06-04. Done; see the **Merged** table above.
 - Pros enumerated: better UX, security via signature verification, removes the ~290-line custom `UpdateChecker`.
 - Cons honest about: key management burden, unfix-on-loss of private key.
 - PR scope (if green-lit): ~500 lines, mostly deletions of `UpdateChecker` + additions of build-script glue. See issue body for the breakdown.
