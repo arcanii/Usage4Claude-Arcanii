@@ -335,13 +335,28 @@ class UserSettings: ObservableObject {
         }
     }
 
+    /// UserDefaults key for the current account id.
+    ///
+    /// Debug builds use a prefixed key: Debug and Release share a bundle id (and
+    /// therefore a UserDefaults domain), but store accounts in UserDefaults vs the
+    /// Keychain respectively. A single shared key lets a Debug run leave a stale id
+    /// that the Release build can't resolve, showing a spurious welcome window.
+    /// Backported from upstream commit `bd019d7`.
+    static let currentAccountIdKey: String = {
+        #if DEBUG
+        return "DEBUG_currentAccountId"
+        #else
+        return "currentAccountId"
+        #endif
+    }()
+
     /// Currently active account ID (stored in UserDefaults)
     @Published var currentAccountId: UUID? {
         didSet {
             if let id = currentAccountId {
-                defaults.set(id.uuidString, forKey: "currentAccountId")
+                defaults.set(id.uuidString, forKey: Self.currentAccountIdKey)
             } else {
-                defaults.removeObject(forKey: "currentAccountId")
+                defaults.removeObject(forKey: Self.currentAccountIdKey)
             }
         }
     }
@@ -349,7 +364,9 @@ class UserSettings: ObservableObject {
     /// Currently active account
     var currentAccount: Account? {
         guard let id = currentAccountId else { return accounts.first }
-        return accounts.first { $0.id == id }
+        // Fall back to the first account when the stored id no longer resolves
+        // (stale id from another build, or the account was removed).
+        return accounts.first { $0.id == id } ?? accounts.first
     }
 
     /// Claude Session Key (computed property, points to current account)
@@ -462,6 +479,23 @@ class UserSettings: ObservableObject {
             defaults.set(rawValues, forKey: "customDisplayTypes")
             NotificationCenter.default.post(name: .settingsChanged, object: nil)
         }
+    }
+
+    /// Whether the custom display selection applies to the menu bar only.
+    /// When on, the popover ignores the custom selection and falls back to
+    /// smart mode, showing every limit with data.
+    @Published var customDisplayMenuBarOnly: Bool {
+        didSet {
+            defaults.set(customDisplayMenuBarOnly, forKey: "customDisplayMenuBarOnly")
+            NotificationCenter.default.post(name: .settingsChanged, object: nil)
+        }
+    }
+
+    /// Whether the popover should render the custom-mode 0% placeholder shells.
+    /// True only when in custom mode and the selection is NOT scoped to the
+    /// menu bar — otherwise the popover shows real data via smart fallback.
+    var shouldShowCustomPlaceholderInPopover: Bool {
+        displayMode == .custom && !customDisplayMenuBarOnly
     }
 
     /// Popover ring illumination level (0.0 = no glow, 1.0 = full vivid glow).
@@ -718,7 +752,7 @@ class UserSettings: ObservableObject {
         var loadedCurrentAccountId: UUID? = nil
 
         // Load current account ID
-        if let idString = defaults.string(forKey: "currentAccountId"),
+        if let idString = defaults.string(forKey: Self.currentAccountIdKey),
            let id = UUID(uuidString: idString) {
             loadedCurrentAccountId = id
         } else if let firstAccount = loadedAccounts.first {
@@ -846,6 +880,9 @@ class UserSettings: ObservableObject {
             self.customDisplayTypes = [.fiveHour, .sevenDay]
         }
 
+        // Load "custom display applies to menu bar only", default off (backwards compatible)
+        self.customDisplayMenuBarOnly = defaults.bool(forKey: "customDisplayMenuBarOnly")
+
         // Default to full illumination so v1.4.0 visuals are unchanged for users
         // who never touch the slider.
         self.ringIlluminationLevel = defaults.object(forKey: "ringIlluminationLevel") as? Double ?? 1.0
@@ -907,10 +944,15 @@ class UserSettings: ObservableObject {
         return language.locale
     }
 
-    /// Check if authentication credentials are configured
-    /// - Returns: true if both Organization ID and Session Key are non-empty
+    /// Check if authentication credentials are configured.
+    /// OAuth accounts are considered valid on the refresh_token (`sk-ant-ort01-`
+    /// prefix) alone; session-cookie accounts still require both Organization ID
+    /// and Session Key. Accepting OAuth accounts by prefix lets them persist
+    /// across restarts even when the profile fetch returned no organization ID.
     var hasValidCredentials: Bool {
-        return !organizationId.isEmpty && !sessionKey.isEmpty
+        guard !sessionKey.isEmpty else { return false }
+        if sessionKey.hasPrefix("sk-ant-ort01-") { return true }
+        return !organizationId.isEmpty
     }
 
     /// Validate Organization ID format
@@ -975,6 +1017,7 @@ class UserSettings: ObservableObject {
         timeFormatPreference = .system
         displayMode = .smart
         customDisplayTypes = [.fiveHour, .sevenDay, .extraUsage]
+        customDisplayMenuBarOnly = false
         ringIlluminationLevel = 1.0
         notificationsEnabled = true
 
@@ -1020,10 +1063,22 @@ class UserSettings: ObservableObject {
     // MARK: - Display Logic Helper Methods (v2.0)
 
     /// Get the list of limit types that should currently be displayed
-    /// - Parameter usageData: Usage data
+    /// - Parameters:
+    ///   - usageData: Usage data
+    ///   - forMenuBar: Whether this is for menu-bar rendering. When
+    ///     `customDisplayMenuBarOnly` is on, only the menu bar uses the custom
+    ///     selection; the popover (forMenuBar == false) falls back to smart.
     /// - Returns: Array of limit types to display, in display order
-    func getActiveDisplayTypes(usageData: UsageData?) -> [LimitType] {
-        switch displayMode {
+    func getActiveDisplayTypes(usageData: UsageData?, forMenuBar: Bool = false) -> [LimitType] {
+        // When "apply to menu bar only" is on and we're rendering the popover,
+        // force the smart branch so the popover shows every limit with data.
+        let effectiveMode: DisplayMode = {
+            if displayMode == .custom && customDisplayMenuBarOnly && !forMenuBar {
+                return .smart
+            }
+            return displayMode
+        }()
+        switch effectiveMode {
         case .smart:
             // Smart mode: Show all types that have data
             guard let data = usageData else {

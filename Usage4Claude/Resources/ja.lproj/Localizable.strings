@@ -180,6 +180,7 @@
 "error.no_organizations_found" = "組織が見つかりませんでした";
 "error.unauthorized" = "認証に失敗しました。認証情報を確認してください";
 "error.rate_limited" = "リクエストが多すぎます。しばらくしてから再試行してください";
+"error.http_error" = "HTTP エラー: %d";
 
 // MARK: - Launch at Login
 "launch.status.enabled" = "有効";
@@ -262,6 +263,8 @@
 "select_limit_types" = "表示する制限タイプを選択";
 "circular_icon_constraint" = "少なくとも1つの円形アイコン（5時間または7日）を選択する必要があります";
 "colored_theme_unavailable" = "カラーテーマは、他のタイプなしで1〜2個の円形アイコンを表示する場合のみ利用可能です";
+"custom_display.menu_bar_only_toggle" = "メニューバーにのみ適用";
+"custom_display.menu_bar_only_description" = "オンにすると、詳細ウィンドウは上記の選択を無視し、スマートモードで利用可能なすべての制限タイプを表示します。";
 
 // MARK: - Theme Selection (v2.0.0)
 "theme_selection" = "テーマ";
@@ -403,3 +406,14 @@
 "weblogin.success" = "アカウントを追加しました：%@";
 "weblogin.cloudflare_blocked" = "ページが読み込めない場合は、手動入力をご利用ください。";
 "weblogin.privacy_notice" = "ログイン情報はローカルでのみ使用され、システムの Keychain に安全に保存されます。";
+
+// MARK: - Claude OAuth sign-in (system browser)
+"weblogin.claude_oauth_port_busy" = "ローカルのサインインコールバックサーバーを起動できませんでした。しばらくしてからもう一度お試しください。";
+"weblogin.claude_oauth_preparing" = "サインインを準備しています…";
+"weblogin.claude_oauth_waiting_browser" = "ブラウザでサインインを続けてください";
+"weblogin.claude_oauth_waiting_hint" = "ブラウザで Claude のサインインを完了してください（Google、Microsoft、企業 SSO、パスキーに対応）。完了すると自動的に戻ります。";
+"weblogin.claude_oauth_exchanging" = "サインインを完了しています…";
+"weblogin.claude_oauth_reopen_browser" = "ブラウザを再度開く";
+"weblogin.claude_oauth_retry" = "再試行";
+"weblogin.claude_oauth_failed" = "サインインに失敗しました。もう一度お試しください。";
+"weblogin.claude_oauth_timeout" = "サインインがタイムアウトしました。もう一度お試しください。";

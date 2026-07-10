@@ -89,6 +89,19 @@ extension UserSettings {
         NotificationCenter.default.post(name: .accountChanged, object: nil)
     }
 
+    /// Silently update the current Claude account's session token WITHOUT posting
+    /// `.accountChanged`. Used for OAuth refresh_token rotation: it only updates
+    /// the persisted credential, avoiding a refetch loop.
+    func silentlyUpdateCurrentClaudeSessionToken(_ token: String) {
+        guard let id = currentAccountId,
+              let index = accounts.firstIndex(where: { $0.id == id }) else { return }
+        guard accounts[index].sessionKey != token else { return }
+        // Account is a struct, so subscript assignment fires accounts.didSet →
+        // saveAccounts(), persisting automatically.
+        accounts[index].sessionKey = token
+        Logger.settings.notice("Claude session-token updated silently (auto-renewal)")
+    }
+
     /// Update account metadata (currently just the user-supplied alias).
     func updateAccount(_ account: Account, alias: String?) {
         guard let index = accounts.firstIndex(where: { $0.id == account.id }) else { return }

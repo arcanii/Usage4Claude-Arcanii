@@ -209,6 +209,23 @@ struct GeneralSettingsView: View {
                                     }
                                     .padding(.leading, 20)
                                 }
+
+                                Divider()
+
+                                // "Apply to menu bar only": when on, the popover uses smart display
+                                VStack(alignment: .leading, spacing: 6) {
+                                    Toggle(isOn: $settings.customDisplayMenuBarOnly) {
+                                        Text(L.DisplayOptions.menuBarOnlyToggle)
+                                            .font(.subheadline)
+                                    }
+                                    .toggleStyle(.checkbox)
+
+                                    Text(L.DisplayOptions.menuBarOnlyDescription)
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                        .padding(.leading, 20)
+                                }
                             }
                         }
                     }
@@ -417,8 +434,8 @@ struct GeneralSettingsView: View {
                 SettingCard(
                     icon: "ladybug.fill",
                     iconColor: .orange,
-                    title: "调试模式",
-                    hint: "切换场景后，点击刷新按钮查看效果"
+                    title: "Debug Mode",
+                    hint: "After switching scenarios, click the refresh button to see the effect"
                 ) {
                     VStack(alignment: .leading, spacing: 12) {
                         // Enable debug mode switch
@@ -429,11 +446,11 @@ struct GeneralSettingsView: View {
                                 .focusable(false)
                                 .labelsHidden()
 
-                            Text("启用调试模式")
+                            Text("Enable debug mode")
 
                             Spacer()
 
-                            Text("仅Debug编译可见")
+                            Text("Debug builds only")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }
@@ -447,7 +464,7 @@ struct GeneralSettingsView: View {
                                 // 5-hour limit
                                 VStack(alignment: .leading, spacing: 4) {
                                     HStack {
-                                        Text("5小时限制百分比：")
+                                        Text("5-hour limit percentage:")
                                             .font(.caption)
                                             .foregroundColor(.secondary)
                                         Spacer()
@@ -463,7 +480,7 @@ struct GeneralSettingsView: View {
                                 // 7-day limit
                                 VStack(alignment: .leading, spacing: 4) {
                                     HStack {
-                                        Text("7天限制百分比：")
+                                        Text("7-day limit percentage:")
                                             .font(.caption)
                                             .foregroundColor(.secondary)
                                         Spacer()
@@ -479,7 +496,7 @@ struct GeneralSettingsView: View {
                                 // Extra Usage limit
                                 VStack(alignment: .leading, spacing: 4) {
                                     HStack {
-                                        Text("Extra Usage 百分比：")
+                                        Text("Extra Usage percentage:")
                                             .font(.caption)
                                             .foregroundColor(.secondary)
                                         Spacer()
@@ -495,7 +512,7 @@ struct GeneralSettingsView: View {
                                 // Opus Weekly limit
                                 VStack(alignment: .leading, spacing: 4) {
                                     HStack {
-                                        Text("Opus Weekly 百分比：")
+                                        Text("Opus Weekly percentage:")
                                             .font(.caption)
                                             .foregroundColor(.secondary)
                                         Spacer()
@@ -511,7 +528,7 @@ struct GeneralSettingsView: View {
                                 // Sonnet Weekly limit
                                 VStack(alignment: .leading, spacing: 4) {
                                     HStack {
-                                        Text("Sonnet Weekly 百分比：")
+                                        Text("Sonnet Weekly percentage:")
                                             .font(.caption)
                                             .foregroundColor(.secondary)
                                         Spacer()
@@ -538,12 +555,12 @@ struct GeneralSettingsView: View {
                                 .focusable(false)
                                 .labelsHidden()
 
-                            Text("形状图标可单独显示")
+                            Text("Show shape icons individually")
                                 .font(.subheadline)
 
                             Spacer()
 
-                            Text("方便截图")
+                            Text("Convenient for screenshots")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }
@@ -559,12 +576,12 @@ struct GeneralSettingsView: View {
                                 .focusable(false)
                                 .labelsHidden()
 
-                            Text("保持详情窗口始终打开")
+                            Text("Keep detail window always open")
                                 .font(.subheadline)
 
                             Spacer()
 
-                            Text("背景变为不透明纯白色")
+                            Text("Background becomes opaque white")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }

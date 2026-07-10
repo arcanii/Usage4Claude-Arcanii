@@ -41,7 +41,7 @@ class MenuBarIconRenderer {
                 createCircleImage(percentage: 0, size: size, button: button, removeBackground: true)
         }
 
-        let activeTypes = settings.getActiveDisplayTypes(usageData: data)
+        let activeTypes = settings.getActiveDisplayTypes(usageData: data, forMenuBar: true)
 
         // Determine if the colored theme can be used
         let canUseColor = settings.canUseColoredTheme(usageData: data)

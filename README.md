@@ -37,9 +37,11 @@ This fork tracks the upstream feature set faithfully (all the features listed be
 
 | Change | Since |
 |---|---|
+| **System-browser OAuth sign-in** — "Sign in with Claude" runs the Claude OAuth (PKCE) flow in your default browser instead of an embedded `WKWebView`, so Google / Microsoft / enterprise SSO / passkey logins all work ([upstream #49](https://github.com/f-is-h/Usage4Claude/issues/49)). A short-lived local listener catches the `localhost` redirect — it accepts loopback peers only, and adds the `com.apple.security.network.server` entitlement. OAuth accounts read usage with a Bearer token and skip the Cloudflare header path entirely; legacy session-key accounts are unchanged | v1.8.0 |
+| **Custom display → menu-bar-only toggle** — scope your custom limit selection to just the menu-bar icon; the popover then falls back to smart display and shows every limit that has data | v1.8.0 |
 | **App Sandbox enabled** — `com.apple.security.app-sandbox = YES` with explicit `network.client`, App Group, and Sparkle XPC mach-lookup entitlements. Defense-in-depth + a verifiable "no telemetry" claim. Existing users need a one-click re-login after update (Keychain access-group change) | v1.7.0 |
 | **24h sparkline strip** under every limit row in the popover + **expanded the widget gallery to 5 kinds** (original rings, ring + 24h sparkline, dual 5h/7d sparkline, large dashboard, extra-large full dashboard). History storage moved to NDJSON in the App Group container — O(1) append per fetch | v1.6.0 |
-| **API response models extracted** with 50-test SwiftPM coverage; `fetchOrganizations` migrated to `async/await` | v1.5.0 |
+| **API response models extracted** with SwiftPM unit coverage (55 tests today); `fetchOrganizations` migrated to `async/await` | v1.5.0 |
 | **Spoofed Chrome user-agent** kept current (149 as of 2026-06) | v1.4.1 |
 | **Auto-relogin throttle** that recovers from a dismissed WebLogin window | v1.4.1 |
 | **Glass-tube popover rings** with a configurable illumination slider in General Settings → "Popover Appearance" | v1.3.1 / v1.4.1 |
@@ -80,9 +82,10 @@ The fork is maintained by [@arcanii](https://github.com/arcanii) as a personal m
 
 ### Auth
 - **Multi-account / multi-org** — `⌘1`–`⌘9` to switch
-- **Built-in WebLogin** — opens claude.ai in an embedded `WKWebView`, scrapes `sessionKey` automatically (no DevTools fishing)
+- **Sign in with Claude** *(fork)* — runs the Claude OAuth (PKCE) flow in your default browser and returns via a `localhost` callback; supports Google / Microsoft / enterprise SSO / passkey logins that an embedded WebView can't do
+- **Built-in WebLogin** — opens claude.ai in an embedded `WKWebView` and scrapes `sessionKey` automatically (no DevTools fishing); still available for session-key accounts
 - **Auto-relogin prompt** when the session expires — including recovery from a dismissed login window *(fork)*
-- **Keychain-stored credentials** — no plaintext on disk
+- **Keychain-stored credentials** — OAuth refresh tokens and legacy session keys alike; no plaintext on disk
 
 ### Convenience
 - Launch at Login (`SMAppService`)
@@ -93,7 +96,7 @@ The fork is maintained by [@arcanii](https://github.com/arcanii) as a personal m
 
 ### Privacy
 - All data stored locally; no telemetry, no analytics, no third-party services
-- Network calls go only to `claude.ai` and (for updates) `raw.githubusercontent.com` (Sparkle appcast)
+- Network calls go to `claude.ai` (session-key accounts), Anthropic's OAuth hosts `console.anthropic.com` / `api.anthropic.com` (OAuth accounts), and (for updates) `raw.githubusercontent.com` (Sparkle appcast). Signing in also runs a short-lived listener on `localhost` to catch the browser redirect; it accepts loopback connections only
 - Source 100% open under MIT
 
 ---
@@ -120,7 +123,7 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
   xcodebuild -project Usage4Claude.xcodeproj -scheme Usage4Claude \
   -configuration Debug -allowProvisioningUpdates build
 
-# Run tests (50 tests, SwiftPM target)
+# Run tests (55 tests, SwiftPM target)
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test
 ```
 
@@ -135,8 +138,9 @@ For the full release pipeline (signed → notarized → stapled → Sparkle-sign
 ### Initial setup
 
 1. **Launch** — the welcome screen appears on first run.
-2. **Authenticate** — two paths:
-   - **Browser Login** (recommended): click the button, log into claude.ai in the embedded browser, the session key is extracted automatically.
+2. **Authenticate** — three paths:
+   - **Sign in with Claude** (recommended): click the button; your default browser opens the Claude OAuth flow and the app picks the result up automatically via a `localhost` callback. Works with Google / Microsoft / enterprise SSO / passkey logins.
+   - **Browser Login**: logs into claude.ai in the embedded browser and extracts the session key automatically.
    - **Manual paste**: open claude.ai → DevTools → Network → find a `usage` request → copy `sessionKey=sk-ant-…` from the Cookie header.
 
 ### Daily use
@@ -194,7 +198,7 @@ Yes — all Claude products share the same usage quota, so a single `sessionKey`
 <details>
 <summary><b>Is my data safe?</b></summary>
 
-Yes. Session keys live in macOS Keychain (AES-256, hardware-protected on T2/Apple Silicon). The Organization ID lives in `UserDefaults` (it's not a credential, it's a UUID). Nothing leaves your Mac except the calls to `claude.ai/api/...` and (for updates) the raw GitHub host serving the Sparkle appcast. **Both the main app and the widget extension run under App Sandbox** *(fork, v1.7.0)*; you can verify with `codesign -d --entitlements - /Applications/U4Claude.app` that the only outbound network capability is `network.client` and the only file access outside the container is the App Group + Sparkle's XPC services.
+Yes. Session keys and OAuth refresh tokens live in macOS Keychain (AES-256, hardware-protected on T2/Apple Silicon). The Organization ID lives in `UserDefaults` (it's not a credential, it's a UUID). Nothing leaves your Mac except the calls to `claude.ai/api/...`, Anthropic's OAuth hosts (`console.anthropic.com`, `api.anthropic.com`) for OAuth accounts, and (for updates) the raw GitHub host serving the Sparkle appcast. **Both the main app and the widget extension run under App Sandbox** *(fork, v1.7.0)*; you can verify with `codesign -d --entitlements - /Applications/U4Claude.app` that the outbound network capabilities are `network.client` plus `network.server` — the latter used only for the short-lived `localhost` listener that catches the OAuth redirect during sign-in, which accepts loopback connections only — and the only file access outside the container is the App Group + Sparkle's XPC services.
 
 </details>
 
@@ -222,6 +226,7 @@ Run U4Claude at least once (so it writes the App Group snapshot), then right-cli
 - **App Group** (`group.com.arcanii.Usage4Claude`) shared by main app + widget
 - **Sparkle** 2.9.1 (EdDSA-signed in-app updates)
 - **WidgetKit** for the desktop widget
+- **OAuth 2.0 + PKCE** system-browser sign-in; the `localhost` authorization-code redirect is caught by an `NWListener` (`Network` framework) that accepts loopback peers only — requires `com.apple.security.network.server` *(fork)*
 - **macOS 26.0+**, Universal binary (x86_64 + arm64)
 
 For the architecture map, error mapping table, and release runbook, see [`docs/HANDOVER.md`](docs/HANDOVER.md) and [`docs/ARCANII_DESIGN.md`](docs/ARCANII_DESIGN.md).
@@ -246,14 +251,14 @@ For the architecture map, error mapping table, and release runbook, see [`docs/H
 - [x] **v1.6.3** — two upstream backports: Japanese kanji fix for the 24h hour suffix, session-key hint wording generalized.
 - [x] **v1.6.4** — three upstream backports: Google OAuth login fix (`WKUIDelegate` for `window.open()` popups + base-domain `allowedDomains`), "View Claude Usage" menu item replaced with "Claude Status" (status.claude.com), and detail rings now visually invert in remaining mode (fill drains from the top, center label flips Used ↔ Available).
 - [x] **v1.7.0** — **App Sandbox enabled.** Main app now runs under `com.apple.security.app-sandbox = YES` with Sparkle's XPC services wired via `temporary-exception.mach-lookup.global-name`. Retires the v1.6.2 "Reset Widgets" feature (the hard-reset tier needed subprocess execution, blocked by sandbox; the medium tier wasn't worth the menu real estate alone). Existing users need a one-click re-login after update.
+- [x] **v1.8.0** — **System-browser OAuth sign-in.** "Sign in with Claude" runs the Claude OAuth (PKCE) flow in your default browser, replacing the embedded `WKWebView` as the default and unblocking Google / Microsoft / enterprise SSO / passkey logins (closes upstream [#49](https://github.com/f-is-h/Usage4Claude/issues/49)). The `localhost` redirect is caught by a short-lived listener that accepts loopback peers only (adds `com.apple.security.network.server`), and OAuth accounts fetch usage with a Bearer token, skipping the Cloudflare header path — legacy session-key accounts are unchanged and keep the embedded WebLogin. Also adds an "apply custom display to menu bar only" toggle, plus three fixes: fractional Extra Usage credits no longer make the row vanish, an expired session key now reports "session expired" instead of "Cloudflare blocked", and both the HTTP-error text and the auth-error "Go to Settings" button are now correct in all five languages.
 - [x] **v1.7.1** — Extra Usage currency-symbol localization (renders your account's billing currency, + KRW for the Korean locale) and the spoofed Chrome UA bumped to 149. Small maintenance release; no migration, no re-login.
 
 See [`docs/RELEASES/`](docs/RELEASES/) for full per-version notes.
 
 ### Open
 - [ ] Richer history surface (e.g. a "History" tab). *(A sparkline overlay on the popover ring was explored and shelved — redundant with the per-row strips; see `docs/ARCANII_BACKLOG.md`.)*
-- [ ] Localize the Extra Usage currency symbol (deferred — USD-only billing today)
-- [ ] Recurring Chrome UA bump (cron / scheduled agent)
+- [ ] Recurring Chrome UA bump (cron / scheduled agent) — now only affects legacy session-key accounts; OAuth accounts don't send a spoofed UA
 - [ ] Widget bundle ID rename (deferred — breaks the existing App Group profile)
 - [ ] iOS-continuity accessory widgets for Control Center (optional)
 

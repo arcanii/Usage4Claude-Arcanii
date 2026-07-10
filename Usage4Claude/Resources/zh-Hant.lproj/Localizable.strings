@@ -180,6 +180,7 @@
 "error.no_organizations_found" = "未找到組織";
 "error.unauthorized" = "認證失敗，請檢查您的憑據";
 "error.rate_limited" = "請求過於頻繁，請稍後再試";
+"error.http_error" = "HTTP 錯誤: %d";
 
 // MARK: - Launch at Login
 "launch.status.enabled" = "已啟用";
@@ -262,6 +263,8 @@
 "select_limit_types" = "選擇要顯示的限制類型";
 "circular_icon_constraint" = "至少必須選擇一個圓形圖示（5小時或7天）";
 "colored_theme_unavailable" = "彩色主題僅在顯示1-2個圓形圖示且無其他類型時可用";
+"custom_display.menu_bar_only_toggle" = "僅套用於選單列";
+"custom_display.menu_bar_only_description" = "開啟後，詳情視窗將忽略上方的選擇，依智慧模式顯示所有可用的限制類型。";
 
 // MARK: - Theme Selection (v2.0.0)
 "theme_selection" = "主題";
@@ -403,3 +406,14 @@
 "weblogin.success" = "已成功新增帳戶：%@";
 "weblogin.cloudflare_blocked" = "如果頁面無法載入，請使用手動輸入方式。";
 "weblogin.privacy_notice" = "您的登入資訊僅在本機使用，並安全儲存於系統 Keychain 中。";
+
+// MARK: - Claude OAuth sign-in (system browser)
+"weblogin.claude_oauth_port_busy" = "無法啟動本機登入回呼服務，請稍後重試。";
+"weblogin.claude_oauth_preparing" = "正在準備登入…";
+"weblogin.claude_oauth_waiting_browser" = "請在瀏覽器中繼續登入";
+"weblogin.claude_oauth_waiting_hint" = "請在瀏覽器中完成 Claude 登入（支援 Google、Microsoft、企業 SSO 和 passkey），完成後會自動返回。";
+"weblogin.claude_oauth_exchanging" = "正在完成登入…";
+"weblogin.claude_oauth_reopen_browser" = "重新開啟瀏覽器";
+"weblogin.claude_oauth_retry" = "重試";
+"weblogin.claude_oauth_failed" = "登入失敗，請重試。";
+"weblogin.claude_oauth_timeout" = "登入逾時，請重試。";

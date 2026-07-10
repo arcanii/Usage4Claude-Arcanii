@@ -215,7 +215,7 @@ struct UsageDetailView: View {
                     // Action button group
                     HStack(spacing: 12) {
                         // If it's an authentication error, show settings button
-                        if error.contains("认证") || error.contains("配置") || error.contains("Authentication") || error.contains("configured") {
+                        if isAuthenticationError(error) {
                             Button(action: {
                                 onMenuAction?(.authSettings)
                             }) {
@@ -314,7 +314,7 @@ struct UsageDetailView: View {
                             if activeDisplayTypes.contains(.fiveHour) &&
                                activeDisplayTypes.contains(.sevenDay) {
                                 // In custom mode, show placeholder ring even when data is nil
-                                let sevenDayPercentage = data.sevenDay?.percentage ?? (UserSettings.shared.displayMode == .custom ? 0 : nil)
+                                let sevenDayPercentage = data.sevenDay?.percentage ?? (UserSettings.shared.shouldShowCustomPlaceholderInPopover ? 0 : nil)
 
                                 if let percentage = sevenDayPercentage {
                                     // 7-day background ring (gray)

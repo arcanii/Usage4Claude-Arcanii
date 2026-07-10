@@ -160,6 +160,22 @@ extension UsageDetailView {
         }
     }
 
+    // MARK: - Error Classification
+
+    /// Whether an error message describes an authentication problem (and so the
+    /// popover should offer a "Go to Settings" button).
+    ///
+    /// `errorMessage` is always a `UsageError.localizedDescription`, so compare it
+    /// against the localized strings themselves. The previous implementation
+    /// substring-matched hardcoded words ("认证"/"配置"/"Authentication"/"configured"),
+    /// which only ever matched English and Simplified Chinese — Japanese, Korean,
+    /// and Traditional Chinese users never saw the button.
+    func isAuthenticationError(_ message: String) -> Bool {
+        message == L.Error.noCredentials
+            || message == L.Error.sessionExpired
+            || message == L.Error.unauthorized
+    }
+
     // MARK: - Primary Limit Selection
 
     /// Determine primary limit data based on user-selected display types
@@ -169,7 +185,7 @@ extension UsageDetailView {
     /// - Returns: Primary limit data
     func getPrimaryLimitData(data: UsageData, activeTypes: [LimitType]) -> UsageData.LimitData? {
         // In custom mode, show placeholder data (0%) even when data is nil
-        let showPlaceholder = UserSettings.shared.displayMode == .custom
+        let showPlaceholder = UserSettings.shared.shouldShowCustomPlaceholderInPopover
         let placeholderData = UsageData.LimitData(percentage: 0, resetsAt: nil)
 
         // Find the first circular type from active types

@@ -301,6 +301,9 @@ enum L {
         static var noOrganizationsFound: String { localized("error.no_organizations_found") }
         static var unauthorized: String { localized("error.unauthorized") }
         static var rateLimited: String { localized("error.rate_limited") }
+        static func httpError(_ statusCode: Int) -> String {
+            String(format: localized("error.http_error"), statusCode)
+        }
     }
 
     // MARK: - Diagnostics
@@ -382,6 +385,8 @@ enum L {
         static var selectLimitTypes: String { localized("select_limit_types") }
         static var circularIconConstraint: String { localized("circular_icon_constraint") }
         static var coloredThemeUnavailable: String { localized("colored_theme_unavailable") }
+        static var menuBarOnlyToggle: String { localized("custom_display.menu_bar_only_toggle") }
+        static var menuBarOnlyDescription: String { localized("custom_display.menu_bar_only_description") }
     }
 
     // MARK: - Launch at Login
@@ -451,6 +456,17 @@ enum L {
         }
         static var cloudflareBlocked: String { localized("weblogin.cloudflare_blocked") }
         static var privacyNotice: String { localized("weblogin.privacy_notice") }
+
+        // MARK: Claude OAuth sign-in (system browser)
+        static var claudeOAuthPortBusy: String { localized("weblogin.claude_oauth_port_busy") }
+        static var claudeOAuthPreparing: String { localized("weblogin.claude_oauth_preparing") }
+        static var claudeOAuthWaitingBrowser: String { localized("weblogin.claude_oauth_waiting_browser") }
+        static var claudeOAuthWaitingHint: String { localized("weblogin.claude_oauth_waiting_hint") }
+        static var claudeOAuthExchanging: String { localized("weblogin.claude_oauth_exchanging") }
+        static var claudeOAuthReopenBrowser: String { localized("weblogin.claude_oauth_reopen_browser") }
+        static var claudeOAuthRetry: String { localized("weblogin.claude_oauth_retry") }
+        static var claudeOAuthFailed: String { localized("weblogin.claude_oauth_failed") }
+        static var claudeOAuthTimeout: String { localized("weblogin.claude_oauth_timeout") }
     }
 
     // MARK: - Settings Notification

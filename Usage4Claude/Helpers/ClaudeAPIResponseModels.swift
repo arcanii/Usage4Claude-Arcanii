@@ -151,12 +151,16 @@ nonisolated struct ExtraUsageResponse: Codable, Sendable {
     let limit_type: String?
     /// Whether enabled
     let is_enabled: Bool?
-    /// Monthly credit limit (in cents)
+    /// Monthly credit limit (in cents) — new API field name
+    let monthly_limit: Int?
+    /// Monthly credit limit (in cents) — legacy API field name
     let monthly_credit_limit: Int?
     /// Currency unit (e.g., "EUR", "USD")
     let currency: String?
-    /// Amount used (in cents)
-    let used_credits: Int?
+    /// Amount used (in cents). The API may return a float such as `21.0`, so this
+    /// is decoded as `Double` — decoding it as `Int` throws `typeMismatch` and
+    /// drops the entire Extra Usage response, silently hiding the feature.
+    let used_credits: Double?
     /// Credits exhausted
     let out_of_credits: Bool?
 
@@ -171,8 +175,10 @@ nonisolated struct ExtraUsageResponse: Codable, Sendable {
     func toExtraUsageData() -> ExtraUsageData? {
         // Prefer new API fields, fall back to legacy fields
         let resolvedCurrency = (currency ?? spend_limit_currency ?? "USD").uppercased()
-        let limitCents = monthly_credit_limit ?? spend_limit_amount_cents
-        let usedCents = used_credits ?? balance_cents
+        // Prefer the new `monthly_limit` name, then the legacy names — all in cents.
+        let limitCents = monthly_limit ?? monthly_credit_limit ?? spend_limit_amount_cents
+        // `used_credits` is already cents (Double); legacy `balance_cents` is Int.
+        let usedCents = used_credits ?? balance_cents.map { Double($0) }
 
         // Use is_enabled field, fall back to limit check
         let enabled = is_enabled ?? (limitCents.map { $0 > 0 } ?? false)
@@ -187,7 +193,7 @@ nonisolated struct ExtraUsageResponse: Codable, Sendable {
         }
 
         let limit = Double(limitCents) / 100.0
-        let used = usedCents.map { Double($0) / 100.0 } ?? 0.0
+        let used = (usedCents ?? 0.0) / 100.0
 
         return ExtraUsageData(
             enabled: true,

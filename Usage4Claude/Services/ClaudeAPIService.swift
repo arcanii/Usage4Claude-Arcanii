@@ -27,6 +27,24 @@ class ClaudeAPIService {
     /// Currently executing network request task
     private var currentTask: URLSessionDataTask?
 
+    // MARK: - Claude OAuth single-flight & cache
+    //
+    // A Claude OAuth refresh_token rotates on every renewal (the old value is
+    // immediately invalidated). Concurrent refresh calls could reuse the same
+    // refresh_token, making later callers hit 401. Single-flight coalescing
+    // ensures one refresh_token triggers only one network request; the rest wait
+    // and reuse the result.
+
+    private let oauthLock = NSLock()
+    private var oauthRefreshInFlight = false
+    private var oauthRefreshInFlightToken: String?
+    private var oauthRefreshWaiters: [(Result<String, Error>) -> Void] = []
+
+    /// Cached access_token and its expiry (avoids refreshing on every fetch).
+    private var cachedOAuthAccessToken: String?
+    private var cachedOAuthTokenExpiry: Date?
+    private var cachedOAuthForRefreshToken: String?
+
     // MARK: - Initialization
     
     init() {
@@ -40,7 +58,23 @@ class ClaudeAPIService {
         
         self.session = URLSession(configuration: configuration)
     }
-    
+
+    // MARK: - Claude OAuth Support
+
+    /// Whether a credential is a Claude OAuth refresh_token (starts with "sk-ant-ort01-").
+    static func isOAuthRefreshToken(_ credential: String) -> Bool {
+        credential.hasPrefix("sk-ant-ort01-")
+    }
+
+    /// Clear the cached OAuth access_token (call on account switch or on 401).
+    func clearOAuthTokenCache() {
+        oauthLock.lock()
+        cachedOAuthAccessToken = nil
+        cachedOAuthTokenExpiry = nil
+        cachedOAuthForRefreshToken = nil
+        oauthLock.unlock()
+    }
+
     // MARK: - Public Methods
     
     /// Fetch user's Claude usage (fetches main usage and Extra Usage in parallel)
@@ -66,6 +100,13 @@ class ClaudeAPIService {
 
         guard settings.hasValidCredentials else {
             completion(.failure(UsageError.noCredentials))
+            return
+        }
+
+        // OAuth accounts: the credential is a refresh_token, so use the
+        // /api/oauth/usage path and skip the Cloudflare cookie flow entirely.
+        if Self.isOAuthRefreshToken(settings.sessionKey) {
+            fetchOAuthUsage(completion: completion)
             return
         }
 
@@ -266,13 +307,32 @@ class ClaudeAPIService {
         if let httpResponse = response as? HTTPURLResponse {
             Logger.api.debug("HTTP Status Code: \(httpResponse.statusCode)")
 
+            // Cloudflare challenges return HTML with a text/html Content-Type regardless
+            // of status. Treat any HTML body as a Cloudflare block — the JSON error
+            // mapping below assumes application/json. Mirrors `fetchMainUsage`.
+            let contentType = (httpResponse.value(forHTTPHeaderField: "Content-Type") ?? "").lowercased()
+            if contentType.contains("text/html") {
+                Logger.api.debug("⚠️ Received HTML response, possibly intercepted by Cloudflare.")
+                throw UsageError.cloudflareBlocked
+            }
+
             switch httpResponse.statusCode {
             case 200...299:
                 break
             case 401:
                 throw UsageError.unauthorized
             case 403:
-                throw UsageError.cloudflareBlocked
+                // 403 covers two distinct cases:
+                // - Cloudflare/bot block (HTML body, handled above)
+                // - Expired/invalid session (JSON body with permission_error)
+                if let errorResponse = try? JSONDecoder().decode(ErrorResponse.self, from: data),
+                   errorResponse.error.type == "permission_error" {
+                    throw UsageError.sessionExpired
+                } else {
+                    throw UsageError.cloudflareBlocked
+                }
+            case 429:
+                throw UsageError.rateLimited
             default:
                 Logger.api.error("HTTP error: \(httpResponse.statusCode)")
                 throw UsageError.httpError(statusCode: httpResponse.statusCode)
@@ -402,6 +462,163 @@ class ClaudeAPIService {
         task.resume()
     }
 
+    // MARK: - OAuth Usage Path
+
+    /// OAuth accounts: exchange the refresh_token for an access_token, then call
+    /// /api/oauth/usage.
+    private func fetchOAuthUsage(completion: @escaping (Result<UsageData, Error>) -> Void) {
+        let refreshToken = settings.sessionKey
+        fetchOAuthAccessToken(refreshToken: refreshToken) { [weak self] result in
+            guard let self else { return }
+            switch result {
+            case .failure(let error):
+                DispatchQueue.main.async { completion(.failure(error)) }
+            case .success(let accessToken):
+                self.fetchClaudeOAuthUsageData(accessToken: accessToken, completion: completion)
+            }
+        }
+    }
+
+    /// Get an access_token from the refresh_token, with caching + single-flight coalescing.
+    private func fetchOAuthAccessToken(refreshToken: String, completion: @escaping (Result<String, Error>) -> Void) {
+        // Cache hit: token not yet expired (with a 5-minute margin).
+        oauthLock.lock()
+        if let cached = cachedOAuthAccessToken, !cached.isEmpty,
+           let expiry = cachedOAuthTokenExpiry,
+           cachedOAuthForRefreshToken == refreshToken,
+           expiry > Date().addingTimeInterval(5 * 60) {
+            let remaining = Int(expiry.timeIntervalSinceNow / 60)
+            oauthLock.unlock()
+            Logger.api.debug("Claude OAuth: using cached access_token (~\(remaining) min remaining)")
+            completion(.success(cached))
+            return
+        }
+        // A refresh for the same refresh_token is already in flight: queue up and reuse its result.
+        if oauthRefreshInFlight, oauthRefreshInFlightToken == refreshToken {
+            oauthRefreshWaiters.append(completion)
+            oauthLock.unlock()
+            return
+        }
+        oauthRefreshInFlight = true
+        oauthRefreshInFlightToken = refreshToken
+        oauthLock.unlock()
+
+        ClaudeOAuthService.refresh(refreshToken: refreshToken) { [weak self] result in
+            guard let self else { return }
+
+            let finalResult: Result<String, Error>
+            switch result {
+            case .failure(let error):
+                Logger.api.error("Claude OAuth refresh failed: \(error.localizedDescription)")
+                finalResult = .failure(error)
+
+            case .success(let tokens):
+                // refresh_token rotation: if the response carries a new value, write it back silently.
+                let newRefresh = tokens.refreshToken.isEmpty ? refreshToken : tokens.refreshToken
+                if newRefresh != refreshToken {
+                    Logger.api.notice("Claude OAuth: refresh_token rotated, writing back silently")
+                    DispatchQueue.main.async {
+                        UserSettings.shared.silentlyUpdateCurrentClaudeSessionToken(newRefresh)
+                    }
+                }
+
+                let accessToken = tokens.accessToken
+                // expires_in is usually 3600s; conservatively use 30 minutes when absent.
+                let expiry = tokens.expiresAt ?? Date().addingTimeInterval(30 * 60)
+                self.oauthLock.lock()
+                self.cachedOAuthAccessToken = accessToken
+                self.cachedOAuthTokenExpiry = expiry
+                self.cachedOAuthForRefreshToken = newRefresh
+                self.oauthLock.unlock()
+                finalResult = .success(accessToken)
+            }
+
+            // Clear the single-flight state and wake any waiters.
+            self.oauthLock.lock()
+            let waiters = self.oauthRefreshWaiters
+            self.oauthRefreshWaiters.removeAll()
+            self.oauthRefreshInFlight = false
+            self.oauthRefreshInFlightToken = nil
+            self.oauthLock.unlock()
+
+            completion(finalResult)
+            for waiter in waiters { waiter(finalResult) }
+        }
+    }
+
+    /// Call /api/oauth/usage with the access_token and parse into UsageData.
+    private func fetchClaudeOAuthUsageData(accessToken: String, completion: @escaping (Result<UsageData, Error>) -> Void) {
+        guard let url = URL(string: ClaudeOAuthConfig.usageURL) else {
+            completion(.failure(UsageError.invalidURL))
+            return
+        }
+        var request = URLRequest(url: url)
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        request.setValue(ClaudeOAuthConfig.betaHeader, forHTTPHeaderField: "anthropic-beta")
+        request.cachePolicy = .reloadIgnoringLocalCacheData
+
+        session.dataTask(with: request) { [weak self] data, response, error in
+            if let error = error {
+                Logger.api.error("Claude OAuth usage network error: \(error.localizedDescription)")
+                completion(.failure(UsageError.networkError))
+                return
+            }
+            guard let data = data else {
+                completion(.failure(UsageError.noData))
+                return
+            }
+            if let http = response as? HTTPURLResponse {
+                Logger.api.debug("Claude OAuth usage HTTP \(http.statusCode)")
+                switch http.statusCode {
+                case 200...299: break
+                case 401:
+                    // access_token is invalid; clear the cache so the next fetch
+                    // re-exchanges via the refresh_token, instead of hammering a
+                    // bad token for the 5-minute cache window.
+                    self?.clearOAuthTokenCache()
+                    completion(.failure(UsageError.unauthorized))
+                    return
+                case 429:
+                    completion(.failure(UsageError.rateLimited))
+                    return
+                default:
+                    completion(.failure(UsageError.httpError(statusCode: http.statusCode)))
+                    return
+                }
+            }
+            if let raw = String(data: data, encoding: .utf8) {
+                Logger.api.debug("Claude OAuth usage response: \(raw.prefix(500))")
+            }
+
+            let decoder = JSONDecoder()
+            do {
+                // Reuse the existing UsageResponse decoder (five_hour/seven_day/opus/sonnet
+                // field names match).
+                let baseResponse = try decoder.decode(UsageResponse.self, from: data)
+                var usageData = baseResponse.toUsageData()
+
+                // Additionally try to decode the extra_usage field.
+                if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                   let extraJson = json["extra_usage"] as? [String: Any],
+                   let extraData = try? JSONSerialization.data(withJSONObject: extraJson),
+                   let extraResponse = try? decoder.decode(ExtraUsageResponse.self, from: extraData) {
+                    usageData = UsageData(
+                        fiveHour: usageData.fiveHour,
+                        sevenDay: usageData.sevenDay,
+                        opus: usageData.opus,
+                        sonnet: usageData.sonnet,
+                        extraUsage: extraResponse.toExtraUsageData()
+                    )
+                }
+
+                DispatchQueue.main.async { completion(.success(usageData)) }
+            } catch {
+                Logger.api.error("Claude OAuth usage decode failed: \(error.localizedDescription)")
+                completion(.failure(UsageError.decodingError))
+            }
+        }.resume()
+    }
+
     /// Cancel all in-progress network requests
     /// Called when the app exits or requests need to be interrupted
     func cancelAllRequests() {
@@ -504,7 +721,7 @@ enum UsageError: LocalizedError {
         case .rateLimited:
             return L.Error.rateLimited
         case .httpError(let statusCode):
-            return "HTTP 错误: \(statusCode)"
+            return L.Error.httpError(statusCode)
         }
     }
 }

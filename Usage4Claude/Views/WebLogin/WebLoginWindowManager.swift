@@ -28,19 +28,21 @@ final class WebLoginWindowManager {
             return
         }
 
-        let loginView = WebLoginView(onAccountCreated: onAccountCreated)
+        // Use OAuth (system-browser) sign-in instead of the embedded WKWebView,
+        // so Google / Microsoft / enterprise SSO / passkey logins work (Issue #49).
+        // The WKWebView-based WebLoginView is kept in the tree as a fallback.
+        let loginView = ClaudeOAuthLoginView(onAccountCreated: onAccountCreated)
         let hostingView = NSHostingView(rootView: loginView)
 
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 800, height: 700),
-            styleMask: [.titled, .closable, .resizable],
+            contentRect: NSRect(x: 0, y: 0, width: 440, height: 300),
+            styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false
         )
 
         window.contentView = hostingView
         window.title = L.WebLogin.windowTitle
-        window.minSize = NSSize(width: 600, height: 500)
         window.center()
         window.isReleasedWhenClosed = false
         window.level = .floating

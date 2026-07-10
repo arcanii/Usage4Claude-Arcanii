@@ -60,6 +60,41 @@ final class ExtraUsageResponseTests: XCTestCase {
         XCTAssertEqual(extra?.currency, "EUR")
     }
 
+    func testFractionalCentsInUsedCredits() throws {
+        // The API returns `used_credits` as a Double — it can carry fractional
+        // cents (e.g. 1234.5). An Int decoder would throw typeMismatch and drop
+        // the whole Extra Usage response; a Double must decode and keep precision.
+        let json = """
+        {
+            "is_enabled": true,
+            "monthly_limit": 5000,
+            "currency": "USD",
+            "used_credits": 1234.5
+        }
+        """
+        let extra = try decode(json).toExtraUsageData()
+        XCTAssertEqual(extra?.used, 12.345)
+    }
+
+    func testMonthlyLimitFieldPreferredOverCreditLimit() throws {
+        // The new `monthly_limit` field wins over the legacy `monthly_credit_limit`
+        // when both are present (fallback chain: monthly_limit →
+        // monthly_credit_limit → spend_limit_amount_cents).
+        let json = """
+        {
+            "is_enabled": true,
+            "monthly_limit": 5000,
+            "monthly_credit_limit": 9999,
+            "currency": "USD",
+            "used_credits": 750.0
+        }
+        """
+        let extra = try decode(json).toExtraUsageData()
+        XCTAssertEqual(extra?.limit, 50.00,
+                       "monthly_limit (5000c) should win over monthly_credit_limit (9999c)")
+        XCTAssertEqual(extra?.used, 7.50)
+    }
+
     // MARK: - is_enabled=false short-circuit
 
     func testIsEnabledFalseReturnsDisabledRegardlessOfLimit() throws {

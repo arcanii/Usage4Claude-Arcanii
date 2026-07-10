@@ -180,6 +180,7 @@
 "error.no_organizations_found" = "未找到组织";
 "error.unauthorized" = "认证失败，请检查您的凭据";
 "error.rate_limited" = "请求过于频繁，请稍后再试";
+"error.http_error" = "HTTP 错误: %d";
 
 // MARK: - Launch at Login
 "launch.status.enabled" = "已启用";
@@ -262,6 +263,8 @@
 "select_limit_types" = "选择要显示的限制类型";
 "circular_icon_constraint" = "至少必须选择一个圆形图标（5小时或7天）";
 "colored_theme_unavailable" = "彩色主题仅在显示1-2个圆形图标且无其他类型时可用";
+"custom_display.menu_bar_only_toggle" = "仅应用于菜单栏";
+"custom_display.menu_bar_only_description" = "开启后，详情窗口将忽略上面的选择，按智能模式显示所有可用的限制类型。";
 
 // MARK: - Theme Selection (v2.0.0)
 "theme_selection" = "主题";
@@ -402,3 +405,14 @@
 "weblogin.success" = "已成功添加账户：%@";
 "weblogin.cloudflare_blocked" = "如果页面无法加载，请使用手动输入方式。";
 "weblogin.privacy_notice" = "您的登录信息仅在本地使用，并安全存储于系统 Keychain 中。";
+
+// MARK: - Claude OAuth sign-in (system browser)
+"weblogin.claude_oauth_port_busy" = "无法启动本地登录回调服务，请稍后重试。";
+"weblogin.claude_oauth_preparing" = "正在准备登录…";
+"weblogin.claude_oauth_waiting_browser" = "请在浏览器中继续登录";
+"weblogin.claude_oauth_waiting_hint" = "请在浏览器中完成 Claude 登录（支持 Google、微软、企业 SSO 和 passkey），完成后会自动返回。";
+"weblogin.claude_oauth_exchanging" = "正在完成登录…";
+"weblogin.claude_oauth_reopen_browser" = "重新打开浏览器";
+"weblogin.claude_oauth_retry" = "重试";
+"weblogin.claude_oauth_failed" = "登录失败，请重试。";
+"weblogin.claude_oauth_timeout" = "登录超时，请重试。";
