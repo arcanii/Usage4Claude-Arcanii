@@ -6,6 +6,30 @@
         <description>Updates to U4Claude (Arcanii Mod) — Claude.ai usage menu bar app for macOS.</description>
         <language>en</language>
         <item>
+            <title>v1.8.0</title>
+            <pubDate>Fri, 10 Jul 2026 00:00:00 +0000</pubDate>
+            <sparkle:version>18</sparkle:version>
+            <sparkle:shortVersionString>1.8.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <link>https://github.com/arcanii/Usage4Claude-Arcanii/releases/tag/v1.8.0</link>
+            <description><![CDATA[
+                <h2>v1.8.0 — Sign in with Claude (browser OAuth)</h2>
+                <p>The sign-in flow moves to your browser, plus a new display option and correctness/localization fixes. No re-login required to update.</p>
+                <ul>
+                    <li><strong>Sign in with Claude — system-browser OAuth.</strong> "Add account" now opens your default browser for the Claude OAuth (PKCE) flow instead of an embedded WebView, so Google, Microsoft, enterprise SSO, and passkey logins all work. OAuth accounts read usage with a Bearer token and skip the Cloudflare header path. Existing session-key accounts are unchanged and keep the embedded WebLogin.</li>
+                    <li><strong>Custom display can be scoped to the menu bar only.</strong> New toggle: the popover then falls back to smart display and shows every limit with data.</li>
+                    <li><strong>Extra Usage no longer silently disappears</strong> when the API returns fractional credits.</li>
+                    <li><strong>Localization fixes.</strong> The HTTP-error message and the auth-error "Go to Settings" button are now correct in all five languages; an expired session key reports the right error.</li>
+                </ul>
+                <p>See <a href="https://github.com/arcanii/Usage4Claude-Arcanii/blob/main/docs/RELEASES/v1.8.0.md">the full release notes</a>.</p>
+            ]]></description>
+            <enclosure
+                url="https://github.com/arcanii/Usage4Claude-Arcanii/releases/download/v1.8.0/U4Claude-v1.8.0.dmg"
+                sparkle:edSignature="UIMap2PZa8pE0HWjP7/AI9rHseRWxPkPMZbkLk1o/lbseKYKTdCEhnRUWlSYfxvyjhul8LRLssnLtu9mBKKBCA=="
+                length="7274235"
+                type="application/octet-stream"/>
+        </item>
+        <item>
             <title>v1.7.1</title>
             <pubDate>Tue, 02 Jun 2026 00:00:00 +0000</pubDate>
             <sparkle:version>17</sparkle:version>
