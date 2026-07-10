@@ -89,6 +89,12 @@ maintainer actually uses OpenAI Codex CLI. Not planned.
 
 - [ ] **Cleanup of unused `extra_usage_format` / `extra_usage_remaining` legacy keys** in `Localizable.strings` (5 locales). Dead since the new `extra_usage.usage_amount` / `extra_usage.remaining_amount` keys replaced them. Pure cleanup PR.
 
+- [ ] **OAuth callback server accepts non-loopback peers** — *found 2026-07-10 during the v1.8.0 OAuth port; fixed in our fork, deliberately NOT sent upstream yet.* Upstream `Usage4Claude/Services/CodexOAuth/OAuthCallbackServer.swift` creates its `NWListener` with no `requiredLocalEndpoint`, so it binds the **wildcard** address — during the ~5-minute sign-in window the callback port (1455/1457 for Codex, 1456/1458 for Claude) is reachable from the LAN, not just localhost. The in-code comment claiming it "listens on loopback" is inaccurate. **Severity: low.** Not an auth-code theft vector — the code is delivered to the user's own browser at localhost, and PKCE + a 32-byte `state` nonce gate acceptance, so a LAN peer can neither forge a usable callback nor read the real code. The realistic impact is a narrow-window **denial-of-service**: `didDeliver` latches on the first request carrying `code` or `error` and `handleCallback` fails closed on a `state` mismatch, so any LAN host hitting `/callback?error=x` mid-sign-in aborts that one login (user retries).
+
+  Our fix (in `Services/OAuth/OAuthCallbackServer.swift`, shipped v1.8.0): keep the wildcard bind (needed so a browser resolving `localhost` to either `127.0.0.1` or `::1` connects) and instead drop any non-loopback peer in `handle(_:)` before reading a byte, via `isLoopbackPeer(_:)`. Two traps worth carrying over: on a dual-stack socket an IPv4 peer arrives as an **IPv4-mapped IPv6** address (`::ffff:127.0.0.1`), and Apple's `IPv4Address.isLoopback` matches only `127.0.0.1` — not the whole `127.0.0.0/8` block RFC 1122 reserves (a `127.0.0.53` peer would be wrongly rejected). Verified with a decision-table test over 11 endpoints plus an e2e harness compiling the real source.
+
+  **Decision (2026-07-10, Bryan): hold.** Too small to justify a solo PR round-trip at this severity. Bundle it into the next materially-sized upstream contribution instead. See [UPSTREAM_PORT_AUDIT.md](UPSTREAM_PORT_AUDIT.md) for the full write-up.
+
 ## Considered and deprioritized
 
 ### `fetchOrganizations` → async/await migration (deferred)
