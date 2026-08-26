@@ -2,8 +2,9 @@
 
 Companion to [ARCANII_DESIGN.md](ARCANII_DESIGN.md). Items grouped by effort. None are scheduled — pick one when there's time.
 
-## Status as of v1.8.0
+## Status as of v1.9.0
 
+✅ **v1.9.0** — weekly per-model limits read from `limits[]` and labeled with the real model name (v1.8.0 showed no weekly model row at all on Claude 5-era accounts); foreground notifications fixed; OAuth manual-paste fallback + 401 self-heal; PKCE RNG check; main-thread timers/sinks. From the upstream v3.3.0 delta audit.
 ✅ **v1.8.0** — system-browser OAuth (PKCE) sign-in (upstream #49), custom-display "menu bar only" toggle, Extra Usage fractional-credits decode fix, 403 error-classification fix, and localization fixes (HTTP-error text + auth-error "Go to Settings" button). OAuth callback listener hardened to loopback-only. Ports 1–5 from [UPSTREAM_PORT_AUDIT.md](UPSTREAM_PORT_AUDIT.md); verified on a real Sparkle upgrade.
 ✅ All P0 (3 items) and P1 (5 items) — shipped in v1.2.0.
 ✅ All P2 (5 items) — shipped in v1.2.0.

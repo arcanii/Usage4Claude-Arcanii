@@ -37,11 +37,12 @@ This fork tracks the upstream feature set faithfully (all the features listed be
 
 | Change | Since |
 |---|---|
+| **Weekly per-model limits, named by the API** — Claude moved weekly per-model limits into a `limits[]` array keyed by model display name, so the old fixed Opus/Sonnet fields can come back empty. Rows are read from the array and labeled with the real model (e.g. "Fable"), a third or later model gets its own row, and the two legacy slots stay position-fixed — upstream's equivalent refactor collapses them and mislabels a Sonnet-only week | v1.9.0 |
 | **System-browser OAuth sign-in** — "Sign in with Claude" runs the Claude OAuth (PKCE) flow in your default browser instead of an embedded `WKWebView`, so Google / Microsoft / enterprise SSO / passkey logins all work ([upstream #49](https://github.com/f-is-h/Usage4Claude/issues/49)). A short-lived local listener catches the `localhost` redirect — it accepts loopback peers only, and adds the `com.apple.security.network.server` entitlement. OAuth accounts read usage with a Bearer token and skip the Cloudflare header path entirely; legacy session-key accounts are unchanged | v1.8.0 |
 | **Custom display → menu-bar-only toggle** — scope your custom limit selection to just the menu-bar icon; the popover then falls back to smart display and shows every limit that has data | v1.8.0 |
 | **App Sandbox enabled** — `com.apple.security.app-sandbox = YES` with explicit `network.client`, App Group, and Sparkle XPC mach-lookup entitlements. Defense-in-depth + a verifiable "no telemetry" claim. Existing users need a one-click re-login after update (Keychain access-group change) | v1.7.0 |
 | **24h sparkline strip** under every limit row in the popover + **expanded the widget gallery to 5 kinds** (original rings, ring + 24h sparkline, dual 5h/7d sparkline, large dashboard, extra-large full dashboard). History storage moved to NDJSON in the App Group container — O(1) append per fetch | v1.6.0 |
-| **API response models extracted** with SwiftPM unit coverage (55 tests today); `fetchOrganizations` migrated to `async/await` | v1.5.0 |
+| **API response models extracted** with SwiftPM unit coverage (63 tests today); `fetchOrganizations` migrated to `async/await` | v1.5.0 |
 | **Spoofed Chrome user-agent** kept current (149 as of 2026-06) | v1.4.1 |
 | **Auto-relogin throttle** that recovers from a dismissed WebLogin window | v1.4.1 |
 | **Glass-tube popover rings** with a configurable illumination slider in General Settings → "Popover Appearance" | v1.3.1 / v1.4.1 |
@@ -60,7 +61,7 @@ The fork is maintained by [@arcanii](https://github.com/arcanii) as a personal m
 
 ### Core monitoring
 - **Real-time** Claude subscription (Free/Pro/Team/Max) usage in the menu bar
-- **5 limit types** simultaneously: 5-hour, 7-day, Extra Usage, 7-day Opus, 7-day Sonnet
+- **All your limits** simultaneously: 5-hour, 7-day, Extra Usage, and the weekly per-model limits the API reports (Opus / Sonnet / Fable — named dynamically)
 - **Smart display** auto-detects available limit types; **custom display** lets you pick any combination
 - **Smart colors** — green → orange → red on the 5-hour ring; cyan → purple on 7-day; per-color schemes for Opus / Sonnet / Extra
 - **Cross-platform** — same quota whether you're using claude.ai web, Claude Code, the desktop app, mobile, or Cowork
@@ -123,7 +124,7 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
   xcodebuild -project Usage4Claude.xcodeproj -scheme Usage4Claude \
   -configuration Debug -allowProvisioningUpdates build
 
-# Run tests (55 tests, SwiftPM target)
+# Run tests (63 tests, SwiftPM target)
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test
 ```
 
@@ -251,6 +252,7 @@ For the architecture map, error mapping table, and release runbook, see [`docs/H
 - [x] **v1.6.3** — two upstream backports: Japanese kanji fix for the 24h hour suffix, session-key hint wording generalized.
 - [x] **v1.6.4** — three upstream backports: Google OAuth login fix (`WKUIDelegate` for `window.open()` popups + base-domain `allowedDomains`), "View Claude Usage" menu item replaced with "Claude Status" (status.claude.com), and detail rings now visually invert in remaining mode (fill drains from the top, center label flips Used ↔ Available).
 - [x] **v1.7.0** — **App Sandbox enabled.** Main app now runs under `com.apple.security.app-sandbox = YES` with Sparkle's XPC services wired via `temporary-exception.mach-lookup.global-name`. Retires the v1.6.2 "Reset Widgets" feature (the hard-reset tier needed subprocess execution, blocked by sandbox; the medium tier wasn't worth the menu real estate alone). Existing users need a one-click re-login after update.
+- [x] **v1.9.0** — **Weekly per-model limits, read and named correctly.** Claude's API moved weekly per-model limits out of the dedicated Opus/Sonnet fields into a `limits[]` array keyed by model display name, so v1.8.0 showed **no weekly model row at all** on affected accounts. The row is back, labeled with the actual model (e.g. "Fable"), and a third or later model gets its own popover row. Also: notifications no longer vanish when the app is foregrounded, browser sign-in gains a paste-the-link fallback plus 401 self-heal, `accept-language` follows your system locale instead of a hardcoded `zh-CN`, refresh timers scheduled off-main no longer silently fail to start, and PKCE now checks its RNG status. No re-login.
 - [x] **v1.8.0** — **System-browser OAuth sign-in.** "Sign in with Claude" runs the Claude OAuth (PKCE) flow in your default browser, replacing the embedded `WKWebView` as the default and unblocking Google / Microsoft / enterprise SSO / passkey logins (closes upstream [#49](https://github.com/f-is-h/Usage4Claude/issues/49)). The `localhost` redirect is caught by a short-lived listener that accepts loopback peers only (adds `com.apple.security.network.server`), and OAuth accounts fetch usage with a Bearer token, skipping the Cloudflare header path — legacy session-key accounts are unchanged and keep the embedded WebLogin. Also adds an "apply custom display to menu bar only" toggle, plus three fixes: fractional Extra Usage credits no longer make the row vanish, an expired session key now reports "session expired" instead of "Cloudflare blocked", and both the HTTP-error text and the auth-error "Go to Settings" button are now correct in all five languages.
 - [x] **v1.7.1** — Extra Usage currency-symbol localization (renders your account's billing currency, + KRW for the Korean locale) and the spoofed Chrome UA bumped to 149. Small maintenance release; no migration, no re-login.
 
