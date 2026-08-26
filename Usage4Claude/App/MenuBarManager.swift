@@ -191,6 +191,10 @@ class MenuBarManager: ObservableObject {
                 Logger.menuBar.notice("Account switched; refreshing data")
                 // Clear icon cache to ensure re-rendering when new data arrives
                 self.ui.clearIconCache()
+                // Suppress the cross-account comparison on the next fetch (must run
+                // before fetchUsage, which is why this lives here rather than in a
+                // second .accountChanged observer — observer order is undefined).
+                self.dataManager.prepareForAccountSwitch()
                 // Refresh data immediately
                 self.dataManager.fetchUsage()
                 // Update menu bar icon

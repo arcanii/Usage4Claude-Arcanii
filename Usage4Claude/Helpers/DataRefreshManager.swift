@@ -101,6 +101,15 @@ class DataRefreshManager: ObservableObject {
 
     /// Fetch usage data
     /// Calls the API service to get the latest usage information
+    /// Set when the active account changes, so the next successful fetch skips the
+    /// previous-vs-current comparison that drives reset detection. Cleared by that fetch.
+    private var pendingAccountSwitch = false
+
+    /// Called before refetching for a newly selected account.
+    func prepareForAccountSwitch() {
+        pendingAccountSwitch = true
+    }
+
     func fetchUsage() {
         isLoading = true
         errorMessage = nil
@@ -119,7 +128,12 @@ class DataRefreshManager: ObservableObject {
 
                 switch result {
                 case .success(let data):
-                    let previousData = self.usageData
+                    // Never compare across accounts: `usageData` still holds the
+                    // previous account's numbers right after a switch, and the
+                    // reset heuristic (different resetsAt + any lower percentage)
+                    // would read that as a limit reset that never happened.
+                    let previousData = self.pendingAccountSwitch ? nil : self.usageData
+                    self.pendingAccountSwitch = false
                     self.usageData = data
                     self.errorMessage = nil
                     self.sessionExpiredPrompted = false

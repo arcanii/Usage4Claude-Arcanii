@@ -31,9 +31,18 @@ final class NotificationManager: NSObject {
 
     // MARK: - State
 
-    /// Notification records (prevent duplicate notifications within the same cycle)
-    /// key = LimitType.rawValue, value = true means a warning has been sent
+    /// Notification records (prevent duplicate notifications within the same cycle).
+    /// Key is scoped per account — `"<accountId>:<LimitType.rawValue>"` — so a warning
+    /// already sent for one account doesn't silently suppress the same warning for
+    /// another. Value `true` means a warning has been sent.
     private var notifiedWarnings: [String: Bool] = [:]
+
+    /// Build the per-account dedup key for a limit type.
+    /// - Parameter suffix: optional variant marker (e.g. the 7-day 75% early warning).
+    private func stateKey(for type: LimitType, suffix: String = "") -> String {
+        let account = UserSettings.shared.currentAccountId?.uuidString ?? "none"
+        return "\(account):\(type.rawValue)\(suffix)"
+    }
 
     /// Whether UNUserNotificationCenter is usable (requires App Sandbox or proper signing)
     private lazy var notificationsAvailable: Bool = {
@@ -140,8 +149,8 @@ final class NotificationManager: NSObject {
             previousResetsAt: previousResetsAt
         ) {
             sendResetNotification(limitType: type)
-            notifiedWarnings.removeValue(forKey: type.rawValue)
-            notifiedWarnings.removeValue(forKey: "\(type.rawValue)_75")
+            notifiedWarnings.removeValue(forKey: stateKey(for: type))
+            notifiedWarnings.removeValue(forKey: stateKey(for: type, suffix: "_75"))
             return
         }
 
@@ -149,7 +158,7 @@ final class NotificationManager: NSObject {
 
         // Additional 75% threshold check for 7-day limit
         if type == .sevenDay {
-            let earlyKey = "\(type.rawValue)_75"
+            let earlyKey = stateKey(for: type, suffix: "_75")
             let alreadyNotifiedEarly = notifiedWarnings[earlyKey] ?? false
             if !alreadyNotifiedEarly && previousPct < sevenDayEarlyWarningThreshold && currentPct >= sevenDayEarlyWarningThreshold {
                 sendUsageWarning(limitType: type, percentage: currentPct)
@@ -158,10 +167,10 @@ final class NotificationManager: NSObject {
         }
 
         // Detect if the 90% threshold was crossed
-        let alreadyNotified = notifiedWarnings[type.rawValue] ?? false
+        let alreadyNotified = notifiedWarnings[stateKey(for: type)] ?? false
         if !alreadyNotified && previousPct < warningThreshold && currentPct >= warningThreshold {
             sendUsageWarning(limitType: type, percentage: currentPct)
-            notifiedWarnings[type.rawValue] = true
+            notifiedWarnings[stateKey(for: type)] = true
         }
     }
 
@@ -236,9 +245,15 @@ final class NotificationManager: NSObject {
         Logger.menuBar.info("Reset notification delivered: \(limitType.displayName)")
     }
 
-    /// Reset all notification records
-    func resetAllNotificationStates() {
-        notifiedWarnings.removeAll()
+    /// Drop the notification records belonging to one account.
+    /// Called when an account is removed so its dedup entries don't linger under a
+    /// UUID that can never recur. Other accounts' state is left untouched — clearing
+    /// everything would let already-warned limits fire a second time elsewhere.
+    func resetNotificationStates(forAccountId accountId: UUID) {
+        let prefix = "\(accountId.uuidString):"
+        for key in notifiedWarnings.keys where key.hasPrefix(prefix) {
+            notifiedWarnings.removeValue(forKey: key)
+        }
     }
 }
 

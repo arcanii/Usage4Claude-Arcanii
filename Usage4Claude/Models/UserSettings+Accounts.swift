@@ -70,6 +70,7 @@ extension UserSettings {
 
         let wasCurrentAccount = (currentAccountId == account.id)
         accounts.remove(at: index)
+        NotificationManager.shared.resetNotificationStates(forAccountId: account.id)
 
         if wasCurrentAccount {
             currentAccountId = accounts.first?.id
