@@ -6,6 +6,29 @@
         <description>Updates to U4Claude (Arcanii Mod) — Claude.ai usage menu bar app for macOS.</description>
         <language>en</language>
         <item>
+            <title>v1.9.1</title>
+            <pubDate>Wed, 26 Aug 2026 00:00:00 +0000</pubDate>
+            <sparkle:version>20</sparkle:version>
+            <sparkle:shortVersionString>1.9.1</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <link>https://github.com/arcanii/Usage4Claude-Arcanii/releases/tag/v1.9.1</link>
+            <description><![CDATA[
+                <h2>v1.9.1 &mdash; Widget labels and per-account notifications</h2>
+                <p>A bug-fix release. No re-login required.</p>
+                <ul>
+                    <li><strong>Widget tiles show the real weekly model name.</strong> v1.9.0 fixed the popover label but the widget still had fixed "Opus"/"Sonnet" tiles, so the same number appeared under two different names.</li>
+                    <li><strong>Switching accounts no longer fires a false "limit reset" notification.</strong> Usage was compared against the previous fetch even when it belonged to a different account.</li>
+                    <li><strong>Switching accounts no longer swallows a warning.</strong> Notification records are now tracked per account, not just per limit type.</li>
+                </ul>
+                <p>See <a href="https://github.com/arcanii/Usage4Claude-Arcanii/blob/main/docs/RELEASES/v1.9.1.md">the full release notes</a>.</p>
+            ]]></description>
+            <enclosure
+                url="https://github.com/arcanii/Usage4Claude-Arcanii/releases/download/v1.9.1/U4Claude-v1.9.1.dmg"
+                sparkle:edSignature="zT1tUweaL0qrucb8Z/1geMi97D8NTACl1sZ7XeVX5hchwGmm3Jx3fgR6MOm9wAqAYgVVx0A17euSU7UesofABg=="
+                length="7328380"
+                type="application/octet-stream"/>
+        </item>
+        <item>
             <title>v1.9.0</title>
             <pubDate>Wed, 26 Aug 2026 00:00:00 +0000</pubDate>
             <sparkle:version>19</sparkle:version>

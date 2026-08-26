@@ -42,7 +42,7 @@ This fork tracks the upstream feature set faithfully (all the features listed be
 | **Custom display → menu-bar-only toggle** — scope your custom limit selection to just the menu-bar icon; the popover then falls back to smart display and shows every limit that has data | v1.8.0 |
 | **App Sandbox enabled** — `com.apple.security.app-sandbox = YES` with explicit `network.client`, App Group, and Sparkle XPC mach-lookup entitlements. Defense-in-depth + a verifiable "no telemetry" claim. Existing users need a one-click re-login after update (Keychain access-group change) | v1.7.0 |
 | **24h sparkline strip** under every limit row in the popover + **expanded the widget gallery to 5 kinds** (original rings, ring + 24h sparkline, dual 5h/7d sparkline, large dashboard, extra-large full dashboard). History storage moved to NDJSON in the App Group container — O(1) append per fetch | v1.6.0 |
-| **API response models extracted** with SwiftPM unit coverage (63 tests today); `fetchOrganizations` migrated to `async/await` | v1.5.0 |
+| **API response models extracted** with SwiftPM unit coverage (65 tests today); `fetchOrganizations` migrated to `async/await` | v1.5.0 |
 | **Spoofed Chrome user-agent** kept current (149 as of 2026-06) | v1.4.1 |
 | **Auto-relogin throttle** that recovers from a dismissed WebLogin window | v1.4.1 |
 | **Glass-tube popover rings** with a configurable illumination slider in General Settings → "Popover Appearance" | v1.3.1 / v1.4.1 |
@@ -124,7 +124,7 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
   xcodebuild -project Usage4Claude.xcodeproj -scheme Usage4Claude \
   -configuration Debug -allowProvisioningUpdates build
 
-# Run tests (63 tests, SwiftPM target)
+# Run tests (65 tests, SwiftPM target)
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test
 ```
 

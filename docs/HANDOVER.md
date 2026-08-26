@@ -11,7 +11,7 @@ A macOS menu bar app that polls the **private** `claude.ai/api/organizations/<id
 - **macOS deployment target:** **26.0** (Tahoe). Bumped from 13.0 in v1.4.0. We use the macOS 26 Liquid Glass APIs unconditionally.
 - **App Sandbox:** **on** for both main app and widget since v1.7.0. Sparkle's bundled XPC services handle update install under sandbox. See the sandbox gotchas section below.
 - **Universal binary** (x86_64 + arm64).
-- **Current version:** v1.9.0 (2026-08-26) — see [RELEASES/](RELEASES/).
+- **Current version:** v1.9.1 (2026-08-26) — see [RELEASES/](RELEASES/).
 
 ## Where we are right now (read if you're resuming a session)
 
@@ -74,7 +74,7 @@ Usage4Claude-Arcanii/
 │   └── Usage4Claude.entitlements  Main-app entitlements (sandbox on + network.client +
 │                                   network.server (OAuth loopback callback; v1.8.0) +
 │                                   App Group + Sparkle XPC mach-lookup; v1.7.0+)
-├── Tests/Usage4ClaudeCoreTests/   SwiftPM XCTest suite (63 tests: SemverCompare,
+├── Tests/Usage4ClaudeCoreTests/   SwiftPM XCTest suite (65 tests: SemverCompare,
 │                                   UsageResponse, ExtraUsageResponse, UsageHistoryFileStore)
 ├── Package.swift                  Standalone SwiftPM package for `swift test`
 ├── docs/                          Design, backlog, release notes (per above)
@@ -109,7 +109,7 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test
 ```
 
-Currently 63 tests across `SemverCompareTests.swift`, `UsageResponseTests.swift`, `ExtraUsageResponseTests.swift`, and `UsageHistoryFileStoreTests.swift`. The test target is a SwiftPM package that lives alongside the `.xcodeproj`; it cherry-picks pure-function source files (`SemverCompare.swift`, `ClaudeAPIResponseModels.swift`) from `Usage4Claude/Helpers/`. To extend coverage, extract additional dependency-free helpers into `Usage4Claude/Helpers/` and add them to `Package.swift`'s `Usage4ClaudeCore` target's `sources` array. Anything that touches `L.*`, `UserSettings`, or `Logger` should stay in a sibling `+Formatting`-style file (see `UsageData+Formatting.swift`) so the test target doesn't have to drag in those dependencies.
+Currently 65 tests across `SemverCompareTests.swift`, `UsageResponseTests.swift`, `ExtraUsageResponseTests.swift`, and `UsageHistoryFileStoreTests.swift`. The test target is a SwiftPM package that lives alongside the `.xcodeproj`; it cherry-picks pure-function source files (`SemverCompare.swift`, `ClaudeAPIResponseModels.swift`) from `Usage4Claude/Helpers/`. To extend coverage, extract additional dependency-free helpers into `Usage4Claude/Helpers/` and add them to `Package.swift`'s `Usage4ClaudeCore` target's `sources` array. Anything that touches `L.*`, `UserSettings`, or `Logger` should stay in a sibling `+Formatting`-style file (see `UsageData+Formatting.swift`) so the test target doesn't have to drag in those dependencies.
 
 ## Releasing
 
