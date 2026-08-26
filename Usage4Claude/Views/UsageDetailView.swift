@@ -70,6 +70,17 @@ struct UsageDetailView: View {
         return UserSettings.shared.getActiveDisplayTypes(usageData: data)
     }
 
+    /// Weekly per-model limits beyond the two menu-bar slots (a 3rd+ model, e.g. Fable
+    /// arriving alongside Opus and Sonnet), rendered as extra popover rows.
+    ///
+    /// Empty whenever the popover is honoring an explicit custom selection — the fixed
+    /// limit-type checkboxes cannot express a dynamic model, so only the effectively-smart
+    /// popover expands the full list.
+    private func overflowWeeklyModels(for data: UsageData) -> [UsageData.WeeklyModelLimit] {
+        guard !UserSettings.shared.shouldShowCustomPlaceholderInPopover else { return [] }
+        return data.overflowWeeklyModels
+    }
+
     /// Calculate dynamic height based on the number of active types
     private var dynamicHeight: CGFloat {
         let activeCount = activeDisplayTypes.count
@@ -85,7 +96,14 @@ struct UsageDetailView: View {
         let rowCount = activeCount == 1 ? 2 : activeCount
         let textHeight = CGFloat(rowCount) * rowHeight + CGFloat(max(0, rowCount - 1)) * spacing
 
-        return baseHeight + textHeight
+        // Overflow model rows render only inside the >= 2 branch and aren't part of
+        // activeDisplayTypes, so budget for them explicitly or the fixed frame clips
+        // them off the bottom. They carry no sparkline, hence the shorter row height.
+        let overflowCount = activeCount >= 2 ? (usageData.map { overflowWeeklyModels(for: $0).count } ?? 0) : 0
+        let overflowRowHeight: CGFloat = 34
+        let overflowHeight = CGFloat(overflowCount) * (overflowRowHeight + spacing)
+
+        return baseHeight + textHeight + overflowHeight
     }
 
     var body: some View {
@@ -441,8 +459,9 @@ struct UsageDetailView: View {
                     VStack(spacing: 8) {
                         let activeTypes = activeDisplayTypes
 
-                        if activeTypes.count >= 3 {
-                            // Scenario 3: 3 or more limits, use unified row display
+                        if activeTypes.count >= 2 {
+                            // Scenario 2/3: two or more limits, use unified row display
+                            let overflow = overflowWeeklyModels(for: data)
                             VStack(spacing: 5) {
                                 ForEach(activeTypes, id: \.self) { type in
                                     UnifiedLimitRow(
@@ -451,25 +470,16 @@ struct UsageDetailView: View {
                                         showRemainingMode: showRemainingMode
                                     )
                                 }
-                            }
-                            .contentShape(Rectangle())
-                            .onTapGesture {
-                                // Match the spring curve used by the ring trim
-                                // animation so the ring fill, center label, and
-                                // row text all move together.
-                                withAnimation(.spring(response: 0.42, dampingFraction: 0.78, blendDuration: 0.05)) {
-                                    showRemainingMode.toggle()
-                                }
-                                savedRemainingMode = showRemainingMode
-                            }
-                        } else if activeTypes.count == 2 {
-                            // Scenario 2: user selected 2 limits, use unified row display
-                            VStack(spacing: 5) {
-                                ForEach(activeTypes, id: \.self) { type in
+
+                                // Weekly models past the two fixed slots. `type` only
+                                // picks the icon shape/color here — the label, percentage
+                                // and reset value come from the model entry itself.
+                                ForEach(overflow.indices, id: \.self) { index in
                                     UnifiedLimitRow(
-                                        type: type,
+                                        type: index.isMultiple(of: 2) ? .opusWeekly : .sonnetWeekly,
                                         data: data,
-                                        showRemainingMode: showRemainingMode
+                                        showRemainingMode: showRemainingMode,
+                                        weeklyModelOverride: overflow[index]
                                     )
                                 }
                             }

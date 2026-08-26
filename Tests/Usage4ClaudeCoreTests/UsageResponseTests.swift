@@ -246,7 +246,146 @@ final class UsageResponseTests: XCTestCase {
         XCTAssertNil(usage.extraUsage)
     }
 
+    // MARK: - Weekly slot positions must never shift
+
+    /// REGRESSION GUARD. An account can have a Sonnet weekly limit with no Opus one.
+    /// The two legacy fields are position-fixed: slot 1 may be filled while slot 0 is
+    /// empty. Folding them into a plain array (as upstream `59f4efd` does) collapses
+    /// Sonnet into the Opus slot — silent corruption, since `UsageHistorySampleBridge`
+    /// writes `opusPct: data.opus?.percentage` into the append-only NDJSON history.
+    func testLegacySonnetWithoutOpusKeepsItsOwnSlot() throws {
+        let json = """
+        {
+            "five_hour": { "utilization": 10, "resets_at": null },
+            "seven_day": null,
+            "seven_day_oauth_apps": null,
+            "seven_day_opus": null,
+            "seven_day_sonnet": { "utilization": 67, "resets_at": "2026-05-01T15:00:00.000Z" }
+        }
+        """
+        let usage = try decode(json).toUsageData()
+        XCTAssertNil(usage.opus, "a Sonnet-only week must NOT promote Sonnet into the Opus slot")
+        XCTAssertEqual(usage.sonnet?.percentage, 67)
+    }
+
+    /// Same guard for the API's "no data" sentinel (utilization 0 + resets_at null),
+    /// which `toUsageData` already treats as an absent Opus.
+    func testZeroSentinelOpusWithRealSonnetKeepsSlots() throws {
+        let json = """
+        {
+            "five_hour": { "utilization": 10, "resets_at": null },
+            "seven_day": null,
+            "seven_day_oauth_apps": null,
+            "seven_day_opus": { "utilization": 0, "resets_at": null },
+            "seven_day_sonnet": { "utilization": 92, "resets_at": "2026-05-01T15:00:00.000Z" }
+        }
+        """
+        let usage = try decode(json).toUsageData()
+        XCTAssertNil(usage.opus)
+        XCTAssertEqual(usage.sonnet?.percentage, 92)
+    }
+
     // MARK: - limits[] forward-compat backfill (Claude 5 era)
+
+    /// Captured from the live `/api/organizations/<id>/usage` response on 2026-08-26.
+    /// The API has already moved: `seven_day_opus` / `seven_day_sonnet` are null and the
+    /// per-model weekly limit arrives as a `weekly_scoped` entry in `limits[]` carrying
+    /// only `scope.model.display_name` (note `model.id` is null). Session and weekly_all
+    /// duplicate the legacy `five_hour` / `seven_day` values. Unknown sibling keys
+    /// (codenamed future models) must be ignored without breaking the decode.
+    func testLiveResponseShapeBackfillsScopedWeeklyModel() throws {
+        let json = """
+        {
+            "five_hour": { "utilization": 71.0, "resets_at": "2026-08-26T14:20:00.027310+00:00" },
+            "seven_day": { "utilization": 76.0, "resets_at": "2026-08-27T23:00:00.027333+00:00" },
+            "seven_day_oauth_apps": null,
+            "seven_day_opus": null,
+            "seven_day_sonnet": null,
+            "seven_day_cowork": null,
+            "nimbus_quill": { "utilization": 0.0, "resets_at": null },
+            "limits": [
+                { "kind": "session", "group": "session", "percent": 71, "severity": "normal",
+                  "resets_at": "2026-08-26T14:20:00.027310+00:00", "scope": null, "is_active": false },
+                { "kind": "weekly_all", "group": "weekly", "percent": 76, "severity": "warning",
+                  "resets_at": "2026-08-27T23:00:00.027333+00:00", "scope": null, "is_active": true },
+                { "kind": "weekly_scoped", "group": "weekly", "percent": 13, "severity": "normal",
+                  "resets_at": "2026-08-27T23:00:00.027631+00:00",
+                  "scope": { "model": { "id": null, "display_name": "Fable" }, "surface": null },
+                  "is_active": false }
+            ]
+        }
+        """
+        let usage = try decode(json).toUsageData()
+
+        // Legacy rows still come from the dedicated fields.
+        XCTAssertEqual(usage.fiveHour?.percentage, 71)
+        XCTAssertEqual(usage.sevenDay?.percentage, 76)
+
+        // The scoped per-model weekly limit backfills the first free slot — without this
+        // the weekly model row would silently disappear on a live account.
+        XCTAssertEqual(usage.opus?.percentage, 13)
+        // ...and carries the real model name so the row reads "Fable", not "Opus Weekly".
+        XCTAssertEqual(usage.opusModelName, "Fable")
+        // session / weekly_all carry scope == nil and must never be treated as per-model.
+        XCTAssertNil(usage.sonnet)
+        XCTAssertNil(usage.sonnetModelName)
+        // Only one scoped model, and it filled slot 0 — nothing overflows.
+        XCTAssertTrue(usage.overflowWeeklyModels.isEmpty)
+    }
+
+    func testThirdScopedModelOverflowsPastBothSlots() throws {
+        // Legacy Opus + legacy Sonnet occupy both slots, so a scoped model arriving
+        // alongside them has nowhere to go and must surface as an overflow row.
+        let json = """
+        {
+            "five_hour": { "utilization": 10, "resets_at": null },
+            "seven_day": null,
+            "seven_day_oauth_apps": null,
+            "seven_day_opus": { "utilization": 40, "resets_at": "2026-05-01T15:00:00.000Z" },
+            "seven_day_sonnet": { "utilization": 50, "resets_at": "2026-05-01T15:00:00.000Z" },
+            "limits": [
+                { "kind": "weekly_scoped", "percent": 13, "resets_at": null,
+                  "scope": { "model": { "id": null, "display_name": "Fable" } } }
+            ]
+        }
+        """
+        let usage = try decode(json).toUsageData()
+        XCTAssertEqual(usage.opus?.percentage, 40)
+        XCTAssertEqual(usage.sonnet?.percentage, 50)
+        // Legacy slots carry no model name — the UI falls back to the localized label.
+        XCTAssertNil(usage.opusModelName)
+        XCTAssertNil(usage.sonnetModelName)
+        XCTAssertEqual(usage.overflowWeeklyModels.count, 1)
+        XCTAssertEqual(usage.overflowWeeklyModels.first?.modelName, "Fable")
+        XCTAssertEqual(usage.overflowWeeklyModels.first?.limit.percentage, 13)
+    }
+
+    func testTwoScopedModelsFillBothSlotsInWireOrder() throws {
+        let json = """
+        {
+            "five_hour": { "utilization": 10, "resets_at": null },
+            "seven_day": null,
+            "seven_day_oauth_apps": null,
+            "seven_day_opus": null,
+            "seven_day_sonnet": null,
+            "limits": [
+                { "kind": "weekly_scoped", "percent": 11, "resets_at": null,
+                  "scope": { "model": { "id": null, "display_name": "Fable" } } },
+                { "kind": "weekly_scoped", "percent": 22, "resets_at": null,
+                  "scope": { "model": { "id": null, "display_name": "Opus" } } },
+                { "kind": "weekly_scoped", "percent": 33, "resets_at": null,
+                  "scope": { "model": { "id": null, "display_name": "Sonnet" } } }
+            ]
+        }
+        """
+        let usage = try decode(json).toUsageData()
+        XCTAssertEqual(usage.opusModelName, "Fable")
+        XCTAssertEqual(usage.opus?.percentage, 11)
+        XCTAssertEqual(usage.sonnetModelName, "Opus")
+        XCTAssertEqual(usage.sonnet?.percentage, 22)
+        // The third model overflows into its own row rather than being dropped.
+        XCTAssertEqual(usage.overflowWeeklyModels.map(\.modelName), ["Sonnet"])
+    }
 
     func testLimitsArrayBackfillsOpusSonnetWhenLegacyFieldsAbsent() throws {
         // If the API stops populating seven_day_opus/seven_day_sonnet and instead

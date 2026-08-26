@@ -136,28 +136,26 @@ nonisolated struct UsageResponse: Codable, Sendable {
             return UsageData.LimitData(percentage: parsed.percentage, resetsAt: parsed.resetsAt)
         }()
 
-        // Forward-compat safety net: if the legacy per-model weekly fields are absent,
-        // backfill the opus/sonnet display slots from model-scoped entries in the new
-        // `limits` array (Claude 5 era). Legacy fields always win, so this is inert
-        // while the API still populates seven_day_opus/seven_day_sonnet. The real model
-        // name (scope.model.display_name) is intentionally not surfaced yet — that
-        // display change awaits a confirmed live-API shape.
-        var scopedWeekly: [UsageData.LimitData] = (limits ?? []).compactMap { entry in
-            guard entry.scope?.model?.display_name?.isEmpty == false,
+        // Weekly per-model limits from the new `limits` array (Claude 5 era, e.g. Fable).
+        // These no longer arrive in the dedicated seven_day_opus / seven_day_sonnet
+        // fields. Preserve wire order and the real display_name; drop entries with no
+        // model name (the session / weekly_all scopes, whose `scope` is null) or no
+        // percent. Slot resolution and overflow live on UsageData itself.
+        let scopedModels: [UsageData.WeeklyModelLimit] = (limits ?? []).compactMap { entry in
+            guard let name = entry.scope?.model?.display_name, !name.isEmpty,
                   let percent = entry.percent else { return nil }
-            return UsageData.LimitData(percentage: percent, resetsAt: parseResetDate(entry.resets_at))
+            return UsageData.WeeklyModelLimit(
+                modelName: name,
+                limit: UsageData.LimitData(percentage: percent, resetsAt: parseResetDate(entry.resets_at))
+            )
         }
-
-        var opusData = legacyOpus
-        var sonnetData = legacySonnet
-        if opusData == nil, !scopedWeekly.isEmpty { opusData = scopedWeekly.removeFirst() }
-        if sonnetData == nil, !scopedWeekly.isEmpty { sonnetData = scopedWeekly.removeFirst() }
 
         return UsageData(
             fiveHour: UsageData.LimitData(percentage: fiveHourData.percentage, resetsAt: fiveHourData.resetsAt),
             sevenDay: sevenDayData,
-            opus: opusData,
-            sonnet: sonnetData,
+            legacyOpus: legacyOpus,
+            legacySonnet: legacySonnet,
+            scopedWeeklyModels: scopedModels,
             extraUsage: nil  // Extra Usage will be fetched via a separate API
         )
     }
@@ -291,12 +289,107 @@ struct UsageData: Sendable {
     let fiveHour: LimitData?
     /// 7-day limit data (optional)
     let sevenDay: LimitData?
-    /// Opus weekly limit data (optional)
-    let opus: LimitData?
-    /// Sonnet weekly limit data (optional)
-    let sonnet: LimitData?
+    /// Legacy weekly slot 0 — the API's dedicated `seven_day_opus` field (optional).
+    let legacyOpus: LimitData?
+    /// Legacy weekly slot 1 — the API's dedicated `seven_day_sonnet` field (optional).
+    let legacySonnet: LimitData?
+    /// Weekly per-model limits from the API's `limits[]`, in wire order and never
+    /// truncated (Claude 5 era, e.g. "Fable").
+    ///
+    /// Kept SEPARATE from the two legacy slots on purpose. Upstream's equivalent
+    /// refactor (f-is-h `59f4efd`) folds both into a single array via `append`, but an
+    /// array cannot express "slot 0 empty, slot 1 filled": an account with
+    /// `seven_day_opus: null` and a real `seven_day_sonnet` then collapses Sonnet into
+    /// the Opus slot. That is silent data corruption here — `UsageHistorySampleBridge`
+    /// writes `opusPct: data.opus?.percentage` into the append-only NDJSON history on
+    /// every fetch, so Sonnet's series would be permanently recorded under Opus.
+    let scopedWeeklyModels: [WeeklyModelLimit]
     /// Extra Usage allowance data (optional)
     let extraUsage: ExtraUsageData?
+
+    /// One weekly per-model limit: the API's model display name plus its usage.
+    /// `modelName` is nil for the legacy dedicated fields, which carry no name — the UI
+    /// then falls back to the localized per-slot label.
+    struct WeeklyModelLimit: Sendable {
+        let modelName: String?
+        let limit: LimitData
+    }
+
+    // MARK: - Weekly slot resolution
+    //
+    // The menu bar has exactly two weekly shapes, so slots 0/1 stay addressable as
+    // `opus` / `sonnet`. Each resolves legacy-first, then falls through to the scoped
+    // models in wire order — matching the behavior shipped in v1.8.1.
+
+    /// Weekly slot 0: the legacy Opus field, else the first scoped model.
+    var opus: LimitData? { legacyOpus ?? scopedWeeklyModels.first?.limit }
+
+    /// Display name for slot 0, or nil to use the localized "Opus Weekly" label.
+    var opusModelName: String? { legacyOpus != nil ? nil : scopedWeeklyModels.first?.modelName }
+
+    /// Index into `scopedWeeklyModels` that slot 1 draws from — slot 0 only consumes a
+    /// scoped entry when the legacy Opus field is absent.
+    private var sonnetScopedIndex: Int { legacyOpus == nil ? 1 : 0 }
+
+    /// Weekly slot 1: the legacy Sonnet field, else the next unconsumed scoped model.
+    var sonnet: LimitData? {
+        if let legacySonnet = legacySonnet { return legacySonnet }
+        guard scopedWeeklyModels.indices.contains(sonnetScopedIndex) else { return nil }
+        return scopedWeeklyModels[sonnetScopedIndex].limit
+    }
+
+    /// Display name for slot 1, or nil to use the localized "Sonnet Weekly" label.
+    var sonnetModelName: String? {
+        if legacySonnet != nil { return nil }
+        guard scopedWeeklyModels.indices.contains(sonnetScopedIndex) else { return nil }
+        return scopedWeeklyModels[sonnetScopedIndex].modelName
+    }
+
+    /// Scoped models beyond the two menu-bar slots (a 3rd+ model, e.g. Fable arriving
+    /// alongside Opus and Sonnet). Rendered as extra popover rows.
+    var overflowWeeklyModels: [WeeklyModelLimit] {
+        let consumed = (legacyOpus == nil ? 1 : 0) + (legacySonnet == nil ? 1 : 0)
+        return Array(scopedWeeklyModels.dropFirst(min(consumed, scopedWeeklyModels.count)))
+    }
+
+    // MARK: - Initializers
+
+    /// Primary initializer — used by the real decode path.
+    init(
+        fiveHour: LimitData?,
+        sevenDay: LimitData?,
+        legacyOpus: LimitData?,
+        legacySonnet: LimitData?,
+        scopedWeeklyModels: [WeeklyModelLimit],
+        extraUsage: ExtraUsageData?
+    ) {
+        self.fiveHour = fiveHour
+        self.sevenDay = sevenDay
+        self.legacyOpus = legacyOpus
+        self.legacySonnet = legacySonnet
+        self.scopedWeeklyModels = scopedWeeklyModels
+        self.extraUsage = extraUsage
+    }
+
+    /// Compatibility initializer for fixtures, mocks and SwiftUI previews that pass the
+    /// two weekly slots directly. Values map to the legacy slots verbatim, so slot
+    /// semantics are preserved exactly (no compaction).
+    init(
+        fiveHour: LimitData?,
+        sevenDay: LimitData?,
+        opus: LimitData?,
+        sonnet: LimitData?,
+        extraUsage: ExtraUsageData?
+    ) {
+        self.init(
+            fiveHour: fiveHour,
+            sevenDay: sevenDay,
+            legacyOpus: opus,
+            legacySonnet: sonnet,
+            scopedWeeklyModels: [],
+            extraUsage: extraUsage
+        )
+    }
 
     /// Data for a single limit (5-hour, 7-day, Opus, Sonnet)
     struct LimitData: Sendable {

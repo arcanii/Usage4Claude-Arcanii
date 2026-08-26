@@ -117,11 +117,16 @@ class ClaudeAPIService {
 
                 let mainData = try await main
                 let extraData = await extra
+                // Re-wrap with the primary initializer so the weekly slots and the
+                // scoped model list survive verbatim — the compat init would flatten
+                // the resolved slots into `legacyOpus`/`legacySonnet` and drop
+                // `scopedWeeklyModels`, losing model names and any 3rd+ model.
                 let merged = UsageData(
                     fiveHour: mainData.fiveHour,
                     sevenDay: mainData.sevenDay,
-                    opus: mainData.opus,
-                    sonnet: mainData.sonnet,
+                    legacyOpus: mainData.legacyOpus,
+                    legacySonnet: mainData.legacySonnet,
+                    scopedWeeklyModels: mainData.scopedWeeklyModels,
                     extraUsage: extraData
                 )
                 completion(.success(merged))
@@ -623,11 +628,14 @@ class ClaudeAPIService {
                                 let extraResponse = try decoder.decode(ExtraUsageResponse.self, from: extraData)
                                 let extraUsageData = extraResponse.toExtraUsageData()
                                 Logger.api.debug("Claude OAuth usage extra_usage parsed: enabled=\(extraUsageData?.enabled ?? false)")
+                                // Primary init: preserve the weekly slots and scoped
+                                // model list (see the session-key merge site above).
                                 usageData = UsageData(
                                     fiveHour: usageData.fiveHour,
                                     sevenDay: usageData.sevenDay,
-                                    opus: usageData.opus,
-                                    sonnet: usageData.sonnet,
+                                    legacyOpus: usageData.legacyOpus,
+                                    legacySonnet: usageData.legacySonnet,
+                                    scopedWeeklyModels: usageData.scopedWeeklyModels,
                                     extraUsage: extraUsageData
                                 )
                             } catch {

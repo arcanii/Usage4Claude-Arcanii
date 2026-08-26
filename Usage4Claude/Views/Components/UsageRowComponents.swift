@@ -105,6 +105,12 @@ struct UnifiedLimitRow: View {
     let data: UsageData
     let showRemainingMode: Bool
 
+    /// Overflow weekly-model row. When set, the row's label / percentage / reset value
+    /// come straight from this entry and `type` only selects the appearance (icon shape
+    /// and color). Used for a 3rd+ model in `data.scopedWeeklyModels` — e.g. Fable
+    /// arriving alongside Opus and Sonnet.
+    var weeklyModelOverride: UsageData.WeeklyModelLimit? = nil
+
     /// History window for the sparkline. 24 h gives enough resolution to see
     /// burn rate without zooming in to noise.
     private let historyWindow: TimeInterval = 24 * 3600
@@ -133,14 +139,20 @@ struct UnifiedLimitRow: View {
                     ))
             }
 
-            SparklineView(
-                values: history.recentValues(for: type.historyType, maxAge: historyWindow),
-                color: iconColor,
-                lineWidth: 1.2,
-                showFill: true,
-                showCurrentDot: false
-            )
-            .frame(height: 14)
+            // Overflow model rows have no history series of their own — the NDJSON store
+            // only records the fixed 5h / 7d / opus / sonnet / extra slots. Drawing
+            // `type.historyType` here would plot a *different* model's trend under this
+            // row's label, so the sparkline is omitted for overrides.
+            if weeklyModelOverride == nil {
+                SparklineView(
+                    values: history.recentValues(for: type.historyType, maxAge: historyWindow),
+                    color: iconColor,
+                    lineWidth: 1.2,
+                    showFill: true,
+                    showCurrentDot: false
+                )
+                .frame(height: 14)
+            }
         }
         .padding(.vertical, 4)
         .padding(.horizontal, 12)
@@ -151,15 +163,20 @@ struct UnifiedLimitRow: View {
     // MARK: - Computed Properties
 
     private var limitName: String {
+        if let override = weeklyModelOverride {
+            return override.modelName ?? L.Limit.opusWeekly
+        }
         switch type {
         case .fiveHour:
             return L.Limit.fiveHour
         case .sevenDay:
             return L.Limit.sevenDay
         case .opusWeekly:
-            return L.Limit.opusWeekly
+            // The API now names weekly limits per model (e.g. "Fable"); fall back to the
+            // localized slot label when the legacy field supplied no name.
+            return data.opusModelName ?? L.Limit.opusWeekly
         case .sonnetWeekly:
-            return L.Limit.sonnetWeekly
+            return data.sonnetModelName ?? L.Limit.sonnetWeekly
         case .extraUsage:
             return L.Limit.extraUsage
         }
@@ -181,6 +198,7 @@ struct UnifiedLimitRow: View {
     }
 
     private var percentageValue: Double? {
+        if let override = weeklyModelOverride { return override.limit.percentage }
         switch type {
         case .fiveHour:   return data.fiveHour?.percentage
         case .sevenDay:   return data.sevenDay?.percentage
@@ -191,6 +209,11 @@ struct UnifiedLimitRow: View {
     }
 
     private var displayValue: String {
+        if let override = weeklyModelOverride {
+            return showRemainingMode
+                ? override.limit.formattedCompactRemaining
+                : override.limit.formattedCompactResetDate
+        }
         switch type {
         case .fiveHour:
             guard let fiveHour = data.fiveHour else { return "-" }
