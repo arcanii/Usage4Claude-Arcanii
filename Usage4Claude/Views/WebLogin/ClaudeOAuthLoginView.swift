@@ -18,12 +18,16 @@ struct ClaudeOAuthLoginView: View {
 
     private let purple = Color(red: 122 / 255.0, green: 90 / 255.0, blue: 195 / 255.0)
 
+    @State private var showManualInput = false
+    @State private var manualPastedLink = ""
+    @State private var manualError: String?
+
     var body: some View {
         VStack(spacing: 18) {
             content
         }
         .padding(32)
-        .frame(width: 440, height: 300)
+        .frame(width: 440, height: 380)
         .onAppear { coordinator.start(onAccountCreated: onAccountCreated) }
         .onDisappear { coordinator.cancel() }
         .onChange(of: coordinator.loginState) { state in
@@ -55,6 +59,8 @@ struct ClaudeOAuthLoginView: View {
                     .multilineTextAlignment(.center)
                 Button(L.WebLogin.claudeOAuthReopenBrowser) { coordinator.reopenBrowser() }
                     .buttonStyle(.link)
+
+                manualFallback
             }
 
         case .exchanging:
@@ -84,6 +90,43 @@ struct ClaudeOAuthLoginView: View {
                 }
                 .keyboardShortcut(.defaultAction)
             }
+        }
+    }
+
+    /// Manual fallback (Issue #68): on some browsers the system browser reaches the
+    /// localhost callback page but the local server never receives the request,
+    /// leaving the user stuck. Let them paste that http://localhost link back to
+    /// finish sign-in.
+    @ViewBuilder
+    private var manualFallback: some View {
+        if showManualInput {
+            VStack(spacing: 8) {
+                TextField(L.WebLogin.claudeOAuthManualPrompt, text: $manualPastedLink)
+                    .textFieldStyle(.roundedBorder)
+                    .frame(maxWidth: 340)
+                    .onSubmit(submitManualLink)
+                if let manualError {
+                    Text(manualError)
+                        .font(.footnote)
+                        .foregroundColor(.orange)
+                        .multilineTextAlignment(.center)
+                }
+                Button(L.WebLogin.claudeOAuthManualSubmit, action: submitManualLink)
+                    .keyboardShortcut(.defaultAction)
+                    .disabled(manualPastedLink.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            }
+            .padding(.top, 4)
+        } else {
+            Button(L.WebLogin.claudeOAuthManualHint) { showManualInput = true }
+                .buttonStyle(.link)
+                .font(.footnote)
+        }
+    }
+
+    private func submitManualLink() {
+        manualError = nil
+        if !coordinator.submitManualCallback(manualPastedLink) {
+            manualError = L.WebLogin.claudeOAuthManualInvalid
         }
     }
 

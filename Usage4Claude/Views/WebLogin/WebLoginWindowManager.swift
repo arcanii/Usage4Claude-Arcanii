@@ -35,7 +35,7 @@ final class WebLoginWindowManager {
         let hostingView = NSHostingView(rootView: loginView)
 
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 440, height: 300),
+            contentRect: NSRect(x: 0, y: 0, width: 440, height: 380),
             styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false

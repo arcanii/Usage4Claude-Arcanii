@@ -83,6 +83,30 @@ final class ClaudeOAuthCoordinator: ObservableObject {
         NSWorkspace.shared.open(url)
     }
 
+    /// Manual fallback (Issue #68): accept a callback link the user pastes back from
+    /// the system browser's address bar, parse out code / state, and run the exact
+    /// same path as the automatic loopback callback — including the state check, and
+    /// exchanging the token with the same loopback redirect_uri (no browser reopen).
+    /// For environments where the browser reached the localhost callback page but the
+    /// local server never received the request (e.g. some Chromium variants).
+    /// - Returns: whether a usable code was parsed and the flow continued; false means
+    ///   the pasted content had no usable code.
+    @discardableResult
+    func submitManualCallback(_ pasted: String) -> Bool {
+        guard !finished else { return false }
+        let query = Self.parseManualCallback(pasted)
+        // Require at least code or error before handing off: the error case lets
+        // handleCallback report an accurate failure; neither present (invalid paste)
+        // returns false so the UI can inline-prompt for the full link.
+        guard query["code"] != nil || query["error"] != nil else {
+            Logger.settings.error("ClaudeOAuth: manual paste contained no parseable code")
+            return false
+        }
+        Logger.settings.notice("ClaudeOAuth: completing login via manually-pasted callback link")
+        handleCallback(query)
+        return true
+    }
+
     func cancel() {
         cleanup()
     }
@@ -101,6 +125,39 @@ final class ClaudeOAuthCoordinator: ObservableObject {
             URLQueryItem(name: "state", value: pkce.state)
         ]
         return comps?.url
+    }
+
+    /// Parse OAuth callback parameters (code / state) from content the user pasted.
+    /// Handles three shapes: a full callback URL (with ?code=...&state=...),
+    /// `code#state`, and a bare code.
+    static func parseManualCallback(_ raw: String) -> [String: String] {
+        let text = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty else { return [:] }
+
+        // 1) URL with a query: parse via the query (code / state / error; queryItems
+        //    are already percent-decoded), so a whole URL isn't mistaken for the code
+        //    (e.g. a denied authorization returns only `error`, no code).
+        if let items = URLComponents(string: text)?.queryItems, !items.isEmpty {
+            var result: [String: String] = [:]
+            for key in ["code", "state", "error"] {
+                if let value = items.first(where: { $0.name == key })?.value, !value.isEmpty {
+                    result[key] = value
+                }
+            }
+            return result
+        }
+
+        // 2) `code#state` shape
+        if text.contains("#"), !text.contains("?"), !text.contains("/") {
+            let parts = text.split(separator: "#", maxSplits: 1).map(String.init)
+            var result = ["code": parts[0]]
+            if parts.count > 1, !parts[1].isEmpty { result["state"] = parts[1] }
+            return result
+        }
+
+        // 3) bare code (no state; handleCallback's state check catches it and prompts
+        //    the user to paste the full link).
+        return ["code": text]
     }
 
     private func handleCallback(_ query: [String: String]) {

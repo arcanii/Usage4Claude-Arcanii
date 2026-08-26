@@ -409,6 +409,10 @@
 
 // MARK: - Claude OAuth sign-in (system browser)
 "weblogin.claude_oauth_port_busy" = "ローカルのサインインコールバックサーバーを起動できませんでした。しばらくしてからもう一度お試しください。";
+"weblogin.claude_oauth_manual_hint" = "自動的に戻らない場合";
+"weblogin.claude_oauth_manual_prompt" = "ブラウザのアドレスバーのリンクを貼り付けてください（http://localhost で始まります）";
+"weblogin.claude_oauth_manual_submit" = "このリンクでサインイン";
+"weblogin.claude_oauth_manual_invalid" = "認証コードが見つかりませんでした。ブラウザのアドレスバーの完全なリンクをコピーして、もう一度お試しください。";
 "weblogin.claude_oauth_preparing" = "サインインを準備しています…";
 "weblogin.claude_oauth_waiting_browser" = "ブラウザでサインインを続けてください";
 "weblogin.claude_oauth_waiting_hint" = "ブラウザで Claude のサインインを完了してください（Google、Microsoft、企業 SSO、パスキーに対応）。完了すると自動的に戻ります。";

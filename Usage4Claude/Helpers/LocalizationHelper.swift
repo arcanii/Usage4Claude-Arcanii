@@ -459,6 +459,10 @@ enum L {
 
         // MARK: Claude OAuth sign-in (system browser)
         static var claudeOAuthPortBusy: String { localized("weblogin.claude_oauth_port_busy") }
+        static var claudeOAuthManualHint: String { localized("weblogin.claude_oauth_manual_hint") }
+        static var claudeOAuthManualPrompt: String { localized("weblogin.claude_oauth_manual_prompt") }
+        static var claudeOAuthManualSubmit: String { localized("weblogin.claude_oauth_manual_submit") }
+        static var claudeOAuthManualInvalid: String { localized("weblogin.claude_oauth_manual_invalid") }
         static var claudeOAuthPreparing: String { localized("weblogin.claude_oauth_preparing") }
         static var claudeOAuthWaitingBrowser: String { localized("weblogin.claude_oauth_waiting_browser") }
         static var claudeOAuthWaitingHint: String { localized("weblogin.claude_oauth_waiting_hint") }

@@ -410,6 +410,10 @@
 
 // MARK: - Claude OAuth sign-in (system browser)
 "weblogin.claude_oauth_port_busy" = "Unable to start the local sign-in callback server. Please try again in a moment.";
+"weblogin.claude_oauth_manual_hint" = "Didn't come back automatically?";
+"weblogin.claude_oauth_manual_prompt" = "Paste the link from your browser's address bar (starts with http://localhost)";
+"weblogin.claude_oauth_manual_submit" = "Sign in with this link";
+"weblogin.claude_oauth_manual_invalid" = "No authorization code found. Copy the full link from your browser's address bar and try again.";
 "weblogin.claude_oauth_preparing" = "Preparing sign-in…";
 "weblogin.claude_oauth_waiting_browser" = "Continue in your browser";
 "weblogin.claude_oauth_waiting_hint" = "Complete the Claude sign-in in your browser (Google, Microsoft, enterprise SSO and passkeys all work). You'll return here automatically.";

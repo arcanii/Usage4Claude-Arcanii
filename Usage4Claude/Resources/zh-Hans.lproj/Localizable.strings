@@ -408,6 +408,10 @@
 
 // MARK: - Claude OAuth sign-in (system browser)
 "weblogin.claude_oauth_port_busy" = "无法启动本地登录回调服务，请稍后重试。";
+"weblogin.claude_oauth_manual_hint" = "没有自动返回？";
+"weblogin.claude_oauth_manual_prompt" = "把浏览器地址栏里的链接粘贴到这里（以 http://localhost 开头）";
+"weblogin.claude_oauth_manual_submit" = "用此链接登录";
+"weblogin.claude_oauth_manual_invalid" = "没有从粘贴的内容中找到授权码。请复制浏览器地址栏里的完整链接后重试。";
 "weblogin.claude_oauth_preparing" = "正在准备登录…";
 "weblogin.claude_oauth_waiting_browser" = "请在浏览器中继续登录";
 "weblogin.claude_oauth_waiting_hint" = "请在浏览器中完成 Claude 登录（支持 Google、微软、企业 SSO 和 passkey），完成后会自动返回。";
