@@ -2,8 +2,9 @@
 
 Companion to [ARCANII_DESIGN.md](ARCANII_DESIGN.md). Items grouped by effort. None are scheduled — pick one when there's time.
 
-## Status as of v1.7.0
+## Status as of v1.8.0
 
+✅ **v1.8.0** — system-browser OAuth (PKCE) sign-in (upstream #49), custom-display "menu bar only" toggle, Extra Usage fractional-credits decode fix, 403 error-classification fix, and localization fixes (HTTP-error text + auth-error "Go to Settings" button). OAuth callback listener hardened to loopback-only. Ports 1–5 from [UPSTREAM_PORT_AUDIT.md](UPSTREAM_PORT_AUDIT.md); verified on a real Sparkle upgrade.
 ✅ All P0 (3 items) and P1 (5 items) — shipped in v1.2.0.
 ✅ All P2 (5 items) — shipped in v1.2.0.
 ✅ All P3 (4 items) — shipped: account-switching shortcut + CSV export in v1.2.0; **Sparkle in-app updates** in v1.3.0/v1.3.2; **desktop widget** in v1.4.0.
@@ -13,7 +14,7 @@ Companion to [ARCANII_DESIGN.md](ARCANII_DESIGN.md). Items grouped by effort. No
 
 - [x] **Localize the Extra Usage currency symbol** — *implemented 2026-06-02, pending release.* New `ExtraUsageData.currencySymbol` maps ISO 4217 codes → glyphs (USD/EUR/GBP/JPY/KRW/CAD/AUD/BRL/INR; raw-code fallback), threaded through `usageAmount` / `remainingAmount` / `formattedCompactAmount`; all 5 locales switched from hardcoded `$` to a `%@` placeholder. Backport of upstream `4dc411b` (v2.6.1) + KRW (₩) for the Korean locale. +3 `ExtraUsageResponseTests` cases. **(S)**
 
-- [ ] **Bump Chrome user-agent recurringly.** v1.4.1 sets it to Chrome 148; real Chrome keeps marching on. Either add a build step that fetches the current major from a known config endpoint, or set a calendar reminder to bump quarterly. **(S — recurring)**
+- [ ] **Bump Chrome user-agent recurringly.** Currently Chrome 149 (`ClaudeAPIHeaderBuilder.swift`, last bumped v1.7.1); real Chrome keeps marching on. Either add a build step that fetches the current major from a known config endpoint, or set a calendar reminder to bump quarterly. **(S — recurring)** — *Lower priority since v1.8.0:* only **legacy session-key accounts** send the spoofed UA now; OAuth accounts use a Bearer token with no UA spoofing, so this decays in importance as users migrate to OAuth sign-in.
 
 - [ ] **Bundle ID cleanup for the widget.** Xcode auto-named the widget bundle `com.arcanii.Usage4Claude.Usage4ClaudeWidget` (awkward double "Widget"). Renaming to `com.arcanii.Usage4Claude.Widget` would invalidate the App Group profile that's already provisioned for the current id, so it's not free — but cleaner long-term. **(S)**
 
