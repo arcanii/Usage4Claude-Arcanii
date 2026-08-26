@@ -95,6 +95,18 @@ maintainer actually uses OpenAI Codex CLI. Not planned.
 
   **Decision (2026-07-10, Bryan): hold.** Too small to justify a solo PR round-trip at this severity. Bundle it into the next materially-sized upstream contribution instead. See [UPSTREAM_PORT_AUDIT.md](UPSTREAM_PORT_AUDIT.md) for the full write-up.
 
+- [ ] **`59f4efd` weekly-slot collapse — silent data corruption (MATERIAL; bundle the loopback fix with this).** *Found 2026-08-26 while porting the weeklyModels generalization; the fork deliberately diverges.* Upstream's `59f4efd` folds the two legacy weekly slots into a single `weeklyModels` array by plain `append`, then exposes `opus = weeklyModels.first` / `sonnet = weeklyModels[1]`. An array cannot represent "slot 0 empty, slot 1 filled", so an account with `seven_day_opus: null` (or the `{utilization: 0, resets_at: null}` sentinel) plus a real `seven_day_sonnet` collapses Sonnet into the Opus slot:
+
+  | shape | before `59f4efd` | after |
+  |---|---|---|
+  | `opus: null`, `sonnet: 67` | `opus=nil, sonnet=67` | **`opus=67, sonnet=nil`** |
+
+  Verified empirically by compiling the pristine and patched files side by side against the same JSON. It is reachable: `toUsageData` has an independent zero-sentinel guard on each slot, upstream has dedicated tests for both, and `getActiveDisplayTypes` checks each slot independently — but no test covers legacy-sonnet-without-legacy-opus, which is why it passes CI. Consequences are silent (no crash, no error): the row reads "Opus Weekly" over Sonnet's number, the menu-bar icon changes shape/colour, the notification is mislabelled, and — worst — anything persisting `data.opus` writes Sonnet's series under Opus. In *this* fork that would permanently corrupt the append-only NDJSON history via `UsageHistorySampleBridge`; upstream has no history store, so their exposure is display-only.
+
+  **Fork's fix (shipped, diverges from upstream):** keep `legacyOpus` / `legacySonnet` as position-fixed stored slots, put only the API-ordered `limits[]` entries in `scopedWeeklyModels`, and make `opus` / `sonnet` computed resolvers (legacy-first, then the next unconsumed scoped model). Regression tests: `testLegacySonnetWithoutOpusKeepsItsOwnSlot`, `testZeroSentinelOpusWithRealSonnetKeepsSlots`.
+
+  **This is the material item that was being waited for** — pair it with the loopback-peer hardening above in one upstream PR.
+
 ## Considered and deprioritized
 
 ### `fetchOrganizations` → async/await migration (deferred)
