@@ -97,3 +97,7 @@ ClaudeUsageMonitor
 *~
 *.bak
 *.backup
+
+# Claude Code runtime state (session lock, not project config —
+# .claude/settings.json etc. stay trackable)
+.claude/scheduled_tasks.lock
