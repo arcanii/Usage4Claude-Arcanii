@@ -19,9 +19,11 @@ extension UserSettings {
     /// writes are synchronous and would otherwise block the main thread).
     /// Called from didSet observers on `accounts` in the main type.
     func saveAccounts() {
+        // Snapshot the main-owned accounts array before hopping to a background queue —
+        // reading self.accounts off the main thread is a data race.
+        let snapshot = accounts
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-            guard let self = self else { return }
-            self.keychain.saveAccounts(self.accounts)
+            self?.keychain.saveAccounts(snapshot)
         }
     }
 

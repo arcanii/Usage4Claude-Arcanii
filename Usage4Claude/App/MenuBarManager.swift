@@ -146,6 +146,7 @@ class MenuBarManager: ObservableObject {
     /// Listen for settings changes, refresh interval changes, and other notifications
     private func setupSettingsObservers() {
         NotificationCenter.default.publisher(for: .settingsChanged)
+            .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 guard let self = self else { return }
                 // Clear icon cache when settings change (display mode may have changed)
@@ -155,13 +156,18 @@ class MenuBarManager: ObservableObject {
                 self.updateMenuBarIcon()
 
                 #if DEBUG
-                // In debug mode, refresh data immediately (no debounce)
-                self.dataManager.fetchUsage()
+                // In debug mode only, refresh data immediately so slider changes show
+                // instantly. Gated on debugModeEnabled so toggling cosmetic settings
+                // (theme/display) against a real account doesn't fire a live refetch.
+                if self.settings.debugModeEnabled {
+                    self.dataManager.fetchUsage()
+                }
                 #endif
             }
             .store(in: &cancellables)
 
         NotificationCenter.default.publisher(for: .refreshIntervalChanged)
+            .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 // Restart data refresh timer
                 self?.dataManager.stopRefreshing()
@@ -170,6 +176,7 @@ class MenuBarManager: ObservableObject {
             .store(in: &cancellables)
         
         NotificationCenter.default.publisher(for: .openSettings)
+            .receive(on: DispatchQueue.main)
             .sink { [weak self] notification in
                 let tab = notification.userInfo?["tab"] as? Int ?? 0
                 self?.openSettingsWindow(tab: tab)
@@ -178,6 +185,7 @@ class MenuBarManager: ObservableObject {
 
         // Listen for account change notifications
         NotificationCenter.default.publisher(for: .accountChanged)
+            .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 guard let self = self else { return }
                 Logger.menuBar.notice("Account switched; refreshing data")

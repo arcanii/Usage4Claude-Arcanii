@@ -36,29 +36,35 @@ class TimerManager {
         repeats: Bool = true,
         block: @escaping () -> Void
     ) {
-        // Synchronously cancel old timer and create new timer to avoid race conditions
-        queue.sync(flags: .barrier) {
-            // Cancel old timer with the same identifier
-            if let oldTimer = self.timers[identifier] {
-                oldTimer.invalidate()
-                self.timers.removeValue(forKey: identifier)
+        // Timer.scheduledTimer registers on the calling thread's RunLoop; if schedule()
+        // is called from a background thread with no running RunLoop (e.g. a Combine
+        // subscription without receive(on:)), the timer never fires. Dispatch to main so
+        // there is always a running main RunLoop at creation time.
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+
+            // Synchronously cancel the old timer before creating the new one (race-free)
+            self.queue.sync(flags: .barrier) {
+                if let oldTimer = self.timers[identifier] {
+                    oldTimer.invalidate()
+                    self.timers.removeValue(forKey: identifier)
+                }
             }
-        }
 
-        // Create timer on main thread (Timer.scheduledTimer requires RunLoop)
-        let timer = Timer.scheduledTimer(
-            withTimeInterval: interval,
-            repeats: repeats
-        ) { _ in
-            block()
-        }
+            let timer = Timer.scheduledTimer(
+                withTimeInterval: interval,
+                repeats: repeats
+            ) { _ in
+                block()
+            }
 
-        // Save new timer
-        queue.async(flags: .barrier) {
-            self.timers[identifier] = timer
-        }
+            // Save the new timer
+            self.queue.async(flags: .barrier) {
+                self.timers[identifier] = timer
+            }
 
-        Logger.menuBar.info("⏰ Timer scheduled: \(identifier) (interval: \(interval)s, repeats: \(repeats))")
+            Logger.menuBar.info("⏰ Timer scheduled: \(identifier) (interval: \(interval)s, repeats: \(repeats))")
+        }
     }
 
     /// Cancel a specific timer
