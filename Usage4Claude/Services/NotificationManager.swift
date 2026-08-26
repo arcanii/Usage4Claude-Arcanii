@@ -12,7 +12,8 @@ import OSLog
 
 /// Usage notification manager
 /// Responsible for sending macOS system notifications when usage reaches thresholds or resets
-class NotificationManager {
+/// Inherits `NSObject` to satisfy the `UNUserNotificationCenterDelegate` requirement.
+final class NotificationManager: NSObject {
     // MARK: - Singleton
 
     static let shared = NotificationManager()
@@ -51,13 +52,19 @@ class NotificationManager {
         return false
     }()
 
-    private init() {}
+    private override init() { super.init() }
 
     // MARK: - Permission
 
     /// Request notification permission
     func requestPermission() {
         guard notificationsAvailable else { return }
+        // Register the delegate here (past the `notificationsAvailable` guard, so
+        // `.current()` is safe) so foreground notifications aren't silently dropped —
+        // a menu-bar app is "foreground" whenever its settings window or popover is
+        // open, which is exactly when usage warnings most often fire. Called once at
+        // startup, before any notification is scheduled.
+        UNUserNotificationCenter.current().delegate = self
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { granted, error in
             if let error = error {
                 Logger.menuBar.error("Notification permission request failed: \(error.localizedDescription)")
@@ -232,5 +239,20 @@ class NotificationManager {
     /// Reset all notification records
     func resetAllNotificationStates() {
         notifiedWarnings.removeAll()
+    }
+}
+
+// MARK: - UNUserNotificationCenterDelegate
+
+extension NotificationManager: UNUserNotificationCenterDelegate {
+    /// Present the banner + sound even when the app is in the foreground. The
+    /// system default is to silently suppress foreground notifications, which for a
+    /// menu-bar app means alerts vanish whenever a settings window or popover is open.
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        completionHandler([.banner, .sound])
     }
 }
