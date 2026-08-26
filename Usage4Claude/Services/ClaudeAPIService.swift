@@ -466,7 +466,10 @@ class ClaudeAPIService {
 
     /// OAuth accounts: exchange the refresh_token for an access_token, then call
     /// /api/oauth/usage.
-    private func fetchOAuthUsage(completion: @escaping (Result<UsageData, Error>) -> Void) {
+    /// - Parameter retryOnUnauthorized: whether a 401 clears the cache and retries
+    ///   once (forcing a fresh access_token), so the user isn't stuck on an error
+    ///   state until the next scheduled refresh.
+    private func fetchOAuthUsage(retryOnUnauthorized: Bool = true, completion: @escaping (Result<UsageData, Error>) -> Void) {
         let refreshToken = settings.sessionKey
         fetchOAuthAccessToken(refreshToken: refreshToken) { [weak self] result in
             guard let self else { return }
@@ -474,7 +477,7 @@ class ClaudeAPIService {
             case .failure(let error):
                 DispatchQueue.main.async { completion(.failure(error)) }
             case .success(let accessToken):
-                self.fetchClaudeOAuthUsageData(accessToken: accessToken, completion: completion)
+                self.fetchClaudeOAuthUsageData(accessToken: accessToken, retryOnUnauthorized: retryOnUnauthorized, completion: completion)
             }
         }
     }
@@ -547,7 +550,7 @@ class ClaudeAPIService {
     }
 
     /// Call /api/oauth/usage with the access_token and parse into UsageData.
-    private func fetchClaudeOAuthUsageData(accessToken: String, completion: @escaping (Result<UsageData, Error>) -> Void) {
+    private func fetchClaudeOAuthUsageData(accessToken: String, retryOnUnauthorized: Bool, completion: @escaping (Result<UsageData, Error>) -> Void) {
         guard let url = URL(string: ClaudeOAuthConfig.usageURL) else {
             completion(.failure(UsageError.invalidURL))
             return
@@ -572,11 +575,19 @@ class ClaudeAPIService {
                 switch http.statusCode {
                 case 200...299: break
                 case 401:
-                    // access_token is invalid; clear the cache so the next fetch
+                    // access_token is invalid; clear the cache so a fresh fetch
                     // re-exchanges via the refresh_token, instead of hammering a
                     // bad token for the 5-minute cache window.
                     self?.clearOAuthTokenCache()
-                    completion(.failure(UsageError.unauthorized))
+                    if retryOnUnauthorized {
+                        // Self-heal: immediately re-exchange the refresh_token for a
+                        // fresh access_token and retry once, so the user isn't stuck
+                        // on an error until the next scheduled refresh.
+                        Logger.api.info("Claude OAuth usage 401 — cleared cache, retrying once with a fresh access_token")
+                        self?.fetchOAuthUsage(retryOnUnauthorized: false, completion: completion)
+                    } else {
+                        completion(.failure(UsageError.unauthorized))
+                    }
                     return
                 case 429:
                     completion(.failure(UsageError.rateLimited))
@@ -597,18 +608,37 @@ class ClaudeAPIService {
                 let baseResponse = try decoder.decode(UsageResponse.self, from: data)
                 var usageData = baseResponse.toUsageData()
 
-                // Additionally try to decode the extra_usage field.
-                if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                   let extraJson = json["extra_usage"] as? [String: Any],
-                   let extraData = try? JSONSerialization.data(withJSONObject: extraJson),
-                   let extraResponse = try? decoder.decode(ExtraUsageResponse.self, from: extraData) {
-                    usageData = UsageData(
-                        fiveHour: usageData.fiveHour,
-                        sevenDay: usageData.sevenDay,
-                        opus: usageData.opus,
-                        sonnet: usageData.sonnet,
-                        extraUsage: extraResponse.toExtraUsageData()
-                    )
+                // Additionally decode the extra_usage field. Issue #64: the previous
+                // four-layer `try?` silently swallowed the failure reason, so it was
+                // impossible to tell "field absent" from "field renamed" from "shape
+                // mismatch". Use an explicit branch that logs each outcome.
+                if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                    if let extraJson = json["extra_usage"] as? [String: Any] {
+                        // Log the keys even on success: ExtraUsageResponse's fields are all
+                        // optional, so a renamed field won't throw — it silently produces a
+                        // "disabled" (all-nil) result.
+                        Logger.api.debug("Claude OAuth usage extra_usage keys=\(Array(extraJson.keys).sorted())")
+                        if let extraData = try? JSONSerialization.data(withJSONObject: extraJson) {
+                            do {
+                                let extraResponse = try decoder.decode(ExtraUsageResponse.self, from: extraData)
+                                let extraUsageData = extraResponse.toExtraUsageData()
+                                Logger.api.debug("Claude OAuth usage extra_usage parsed: enabled=\(extraUsageData?.enabled ?? false)")
+                                usageData = UsageData(
+                                    fiveHour: usageData.fiveHour,
+                                    sevenDay: usageData.sevenDay,
+                                    opus: usageData.opus,
+                                    sonnet: usageData.sonnet,
+                                    extraUsage: extraUsageData
+                                )
+                            } catch {
+                                Logger.api.error("Claude OAuth usage extra_usage decode failed: \(error.localizedDescription), keys=\(Array(extraJson.keys))")
+                            }
+                        } else {
+                            Logger.api.error("Claude OAuth usage extra_usage field could not be re-serialized to JSON, keys=\(Array(extraJson.keys))")
+                        }
+                    } else {
+                        Logger.api.info("Claude OAuth usage has no extra_usage field, top-level keys=\(Array(json.keys))")
+                    }
                 }
 
                 DispatchQueue.main.async { completion(.success(usageData)) }

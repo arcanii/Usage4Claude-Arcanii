@@ -25,7 +25,11 @@ struct PKCECodes {
     /// Generate a URL-safe random string (base64url, no padding).
     private static func randomURLSafe(byteCount: Int) -> String {
         var bytes = [UInt8](repeating: 0, count: byteCount)
-        _ = SecRandomCopyBytes(kSecRandomDefault, byteCount, &bytes)
+        let status = SecRandomCopyBytes(kSecRandomDefault, byteCount, &bytes)
+        // On the (very rare) failure of SecRandomCopyBytes, `bytes` stays all-zero,
+        // making code_verifier/state predictable and defeating PKCE/CSRF protection —
+        // crash rather than silently proceed with insecure values.
+        precondition(status == errSecSuccess, "SecRandomCopyBytes failed: \(status)")
         return base64URL(Data(bytes))
     }
 

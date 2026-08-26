@@ -27,6 +27,10 @@ final class OAuthCallbackServer {
     /// - Returns: The bound port, or nil if all fail.
     func start(ports: [UInt16], onCallback: @escaping ([String: String]) -> Void) -> UInt16? {
         self.onCallback = onCallback
+        // Reset the one-shot delivery latch: the coordinator reuses one server
+        // instance across retry logins. Without this, a retry after a first failure
+        // would silently drop the callback even when the browser really got a code.
+        self.didDeliver = false
         for p in ports where startListener(on: p) {
             self.port = p
             return p
