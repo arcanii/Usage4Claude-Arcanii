@@ -20,7 +20,9 @@ extension UsageSnapshot {
                 extra.enabled
                     ? Extra(used: extra.used, limit: extra.limit, currency: extra.currency)
                     : nil
-            }
+            },
+            opusModelName: data.opusModelName,
+            sonnetModelName: data.sonnetModelName
         )
     }
 }

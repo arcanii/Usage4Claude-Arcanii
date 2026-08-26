@@ -19,6 +19,15 @@ public struct UsageSnapshot: Codable, Sendable {
     public let opus: Limit?
     public let sonnet: Limit?
     public let extraUsage: Extra?
+    /// Display name for the weekly slot 0 limit (e.g. "Fable"), or nil when it came
+    /// from the legacy `seven_day_opus` field and the widget should use its own label.
+    ///
+    /// Optional and added after the fact on purpose: snapshots written by older builds
+    /// simply decode these as nil, so no migration is needed for a file the widget may
+    /// read before the main app rewrites it.
+    public let opusModelName: String?
+    /// Display name for the weekly slot 1 limit. Same semantics as `opusModelName`.
+    public let sonnetModelName: String?
 
     public struct Limit: Codable, Sendable {
         public let percentage: Double
@@ -48,7 +57,9 @@ public struct UsageSnapshot: Codable, Sendable {
         sevenDay: Limit?,
         opus: Limit?,
         sonnet: Limit?,
-        extraUsage: Extra?
+        extraUsage: Extra?,
+        opusModelName: String? = nil,
+        sonnetModelName: String? = nil
     ) {
         self.capturedAt = capturedAt
         self.fiveHour = fiveHour
@@ -56,6 +67,8 @@ public struct UsageSnapshot: Codable, Sendable {
         self.opus = opus
         self.sonnet = sonnet
         self.extraUsage = extraUsage
+        self.opusModelName = opusModelName
+        self.sonnetModelName = sonnetModelName
     }
 }
 

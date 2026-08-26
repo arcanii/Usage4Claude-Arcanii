@@ -53,8 +53,8 @@ private struct ExtraLargeView: View {
                     limit: entry.snapshot?.sevenDay,
                     historyType: .sevenDay
                 )
-                ringTile(label: "Opus", limit: entry.snapshot?.opus, historyType: .opus)
-                ringTile(label: "Sonnet", limit: entry.snapshot?.sonnet, historyType: .sonnet)
+                ringTile(label: entry.snapshot?.opusModelName ?? "Opus", limit: entry.snapshot?.opus, historyType: .opus)
+                ringTile(label: entry.snapshot?.sonnetModelName ?? "Sonnet", limit: entry.snapshot?.sonnet, historyType: .sonnet)
                 extraTile(entry.snapshot?.extraUsage)
             }
             .frame(maxHeight: .infinity)

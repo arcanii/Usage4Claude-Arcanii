@@ -22,7 +22,7 @@ struct LargeDashboardWidget: Widget {
             LargeDashboardView(entry: entry)
         }
         .configurationDisplayName("Claude Usage — Dashboard")
-        .description("All five usage limits (5-hour, 7-day, Opus, Sonnet, Extra) at a glance.")
+        .description("All your usage limits (5-hour, 7-day, weekly per-model, Extra) at a glance.")
         .supportedFamilies([.systemLarge])
     }
 }
@@ -61,8 +61,8 @@ private struct LargeDashboardView: View {
 
             // Middle row: Opus + Sonnet
             HStack(spacing: 10) {
-                ringTile(label: "Opus", limit: entry.snapshot?.opus, color: .orange)
-                ringTile(label: "Sonnet", limit: entry.snapshot?.sonnet, color: .blue)
+                ringTile(label: entry.snapshot?.opusModelName ?? "Opus", limit: entry.snapshot?.opus, color: .orange)
+                ringTile(label: entry.snapshot?.sonnetModelName ?? "Sonnet", limit: entry.snapshot?.sonnet, color: .blue)
             }
 
             // Bottom: Extra Usage (full width)

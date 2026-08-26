@@ -26,7 +26,8 @@ let package = Package(
             sources: [
                 "SemverCompare.swift",
                 "ClaudeAPIResponseModels.swift",
-                "UsageHistorySample.swift"
+                "UsageHistorySample.swift",
+                "UsageSnapshot.swift"
             ]
         ),
         .testTarget(
