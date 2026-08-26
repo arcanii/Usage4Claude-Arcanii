@@ -28,7 +28,7 @@ class ClaudeAPIHeaderBuilder {
         return [
             // Basic headers
             "accept": "*/*",
-            "accept-language": "zh-CN,zh;q=0.9,en;q=0.8",
+            "accept-language": acceptLanguageHeader(),
             "content-type": "application/json",
 
             // Anthropic platform identifier
@@ -69,5 +69,18 @@ class ClaudeAPIHeaderBuilder {
         for (key, value) in headers {
             request.setValue(value, forHTTPHeaderField: key)
         }
+    }
+
+    /// Build `accept-language` dynamically from the system's preferred languages
+    /// rather than a hardcoded `zh-CN` — a fixed value makes non-Chinese users' requests
+    /// look less like a real browser to Cloudflare (upstream Issue #58).
+    private static func acceptLanguageHeader() -> String {
+        let languages = Locale.preferredLanguages.prefix(5)
+        guard !languages.isEmpty else { return "en-US,en;q=0.9" }
+        return languages.enumerated().map { index, language -> String in
+            guard index > 0 else { return language }
+            let q = max(0.1, 1.0 - Double(index) * 0.1)
+            return "\(language);q=\(String(format: "%.1f", q))"
+        }.joined(separator: ",")
     }
 }

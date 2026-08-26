@@ -472,6 +472,11 @@ class UserSettings: ObservableObject {
         }
     }
 
+    /// Default custom-display selection, shared by first-launch init and
+    /// reset-to-defaults so the two can't drift (they previously disagreed on
+    /// whether `.extraUsage` was included). Matches upstream's choice.
+    static let defaultCustomDisplayTypes: Set<LimitType> = [.fiveHour, .sevenDay]
+
     /// Custom display limit type set (only used in custom mode)
     @Published var customDisplayTypes: Set<LimitType> {
         didSet {
@@ -877,7 +882,7 @@ class UserSettings: ObservableObject {
         if let rawValues = defaults.array(forKey: "customDisplayTypes") as? [String] {
             self.customDisplayTypes = Set(rawValues.compactMap { LimitType(rawValue: $0) })
         } else {
-            self.customDisplayTypes = [.fiveHour, .sevenDay]
+            self.customDisplayTypes = Self.defaultCustomDisplayTypes
         }
 
         // Load "custom display applies to menu bar only", default off (backwards compatible)
@@ -1016,7 +1021,7 @@ class UserSettings: ObservableObject {
         language = Self.detectSystemLanguage()
         timeFormatPreference = .system
         displayMode = .smart
-        customDisplayTypes = [.fiveHour, .sevenDay, .extraUsage]
+        customDisplayTypes = Self.defaultCustomDisplayTypes
         customDisplayMenuBarOnly = false
         ringIlluminationLevel = 1.0
         notificationsEnabled = true
