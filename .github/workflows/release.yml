@@ -50,12 +50,12 @@ jobs:
       
       - name: Check commit message for release trigger
         id: check
+        env:
+          # Pass the commit message through the environment rather than interpolating
+          # it into the script: a message containing a lone `EOF` or shell metacharacters
+          # could otherwise truncate the heredoc or inject commands.
+          COMMIT_MSG: ${{ github.event.head_commit.message }}
         run: |
-          # Use heredoc to handle multi-line commit messages
-          read -r -d '' COMMIT_MSG << 'EOF' || true
-          ${{ github.event.head_commit.message }}
-          EOF
-          
           BRANCH="${{ github.ref_name }}"
           IS_DRY_RUN="${{ github.event.inputs.dry_run || 'false' }}"
           
