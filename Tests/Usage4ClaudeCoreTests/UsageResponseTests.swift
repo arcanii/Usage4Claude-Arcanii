@@ -245,4 +245,72 @@ final class UsageResponseTests: XCTestCase {
         let usage = try decode(json).toUsageData()
         XCTAssertNil(usage.extraUsage)
     }
+
+    // MARK: - limits[] forward-compat backfill (Claude 5 era)
+
+    func testLimitsArrayBackfillsOpusSonnetWhenLegacyFieldsAbsent() throws {
+        // If the API stops populating seven_day_opus/seven_day_sonnet and instead
+        // reports per-model weekly limits in `limits[]`, the opus/sonnet display
+        // slots are backfilled (in order) so the weekly rows don't silently vanish.
+        let json = """
+        {
+            "five_hour": { "utilization": 10, "resets_at": null },
+            "seven_day": null,
+            "seven_day_oauth_apps": null,
+            "seven_day_opus": null,
+            "seven_day_sonnet": null,
+            "limits": [
+                { "kind": "weekly_scoped", "percent": 33, "resets_at": null,
+                  "scope": { "model": { "id": "fable", "display_name": "Fable" } } },
+                { "kind": "weekly_scoped", "percent": 66, "resets_at": null,
+                  "scope": { "model": { "id": "sonnet", "display_name": "Sonnet" } } }
+            ]
+        }
+        """
+        let usage = try decode(json).toUsageData()
+        XCTAssertEqual(usage.opus?.percentage, 33)
+        XCTAssertEqual(usage.sonnet?.percentage, 66)
+    }
+
+    func testLegacyWeeklyFieldsTakePrecedenceOverLimitsArray() throws {
+        // When both the legacy fields and limits[] are present, the legacy fields win
+        // (backfill is inert for filled slots), keeping current behavior unchanged.
+        let json = """
+        {
+            "five_hour": { "utilization": 10, "resets_at": null },
+            "seven_day": null,
+            "seven_day_oauth_apps": null,
+            "seven_day_opus": { "utilization": 80, "resets_at": "2026-05-01T15:00:00.000Z" },
+            "seven_day_sonnet": null,
+            "limits": [
+                { "kind": "weekly_scoped", "percent": 12, "resets_at": null,
+                  "scope": { "model": { "id": "fable", "display_name": "Fable" } } }
+            ]
+        }
+        """
+        let usage = try decode(json).toUsageData()
+        XCTAssertEqual(usage.opus?.percentage, 80, "legacy seven_day_opus must win over limits[]")
+        // The still-empty sonnet slot is backfilled from the unused scoped entry.
+        XCTAssertEqual(usage.sonnet?.percentage, 12)
+    }
+
+    func testLimitsArrayEntriesWithoutModelNameAreIgnored() throws {
+        // Entries lacking a model display_name (e.g. session / weekly_all scopes) are
+        // not per-model weekly limits and must not be backfilled into opus/sonnet.
+        let json = """
+        {
+            "five_hour": { "utilization": 10, "resets_at": null },
+            "seven_day": null,
+            "seven_day_oauth_apps": null,
+            "seven_day_opus": null,
+            "seven_day_sonnet": null,
+            "limits": [
+                { "kind": "weekly_all", "percent": 50, "resets_at": null, "scope": { "surface": "web" } }
+            ]
+        }
+        """
+        let usage = try decode(json).toUsageData()
+        XCTAssertNil(usage.opus)
+        XCTAssertNil(usage.sonnet)
+    }
 }

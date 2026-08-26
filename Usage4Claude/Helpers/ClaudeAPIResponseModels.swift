@@ -54,12 +54,42 @@ nonisolated struct UsageResponse: Codable, Sendable {
     /// 7-day Sonnet usage limit data (new field)
     let seven_day_sonnet: LimitUsage?
 
+    /// New-API unified limits array (Claude 5 era). Per-model weekly limits (e.g.
+    /// Fable) may stop arriving in the dedicated `seven_day_opus`/`seven_day_sonnet`
+    /// fields and instead appear here as entries carrying `scope.model.display_name`.
+    /// Decoded as a forward-compat safety net so the weekly rows don't silently vanish
+    /// if the API moves; the legacy fields still take precedence (see `toUsageData`).
+    let limits: [LimitEntry]?
+
     /// Generic limit usage details (applicable to 5-hour, 7-day, and other limits)
     struct LimitUsage: Codable, Sendable {
         /// Current utilization rate (0-100, can be floating point)
         let utilization: Double
         /// Reset time (ISO 8601 format), nil means usage has not started yet
         let resets_at: String?
+    }
+
+    /// A single entry in the new-API `limits` array.
+    /// - `percent`: usage percentage (0-100)
+    /// - `scope.model.display_name`: the model name when the limit is model-scoped (e.g. "Fable")
+    struct LimitEntry: Codable, Sendable {
+        let kind: String?
+        let group: String?
+        let percent: Double?
+        let severity: String?
+        let resets_at: String?
+        let is_active: Bool?
+        let scope: Scope?
+
+        struct Scope: Codable, Sendable {
+            let model: Model?
+            let surface: String?
+
+            struct Model: Codable, Sendable {
+                let id: String?
+                let display_name: String?
+            }
+        }
     }
 
     /// Convert API response to the internal UsageData model
@@ -82,8 +112,8 @@ nonisolated struct UsageResponse: Codable, Sendable {
             return UsageData.LimitData(percentage: parsed.percentage, resetsAt: parsed.resetsAt)
         }()
 
-        // Parse Opus limit data (only when present and valid)
-        let opusData: UsageData.LimitData? = {
+        // Parse Opus limit data — legacy dedicated field (only when present and valid)
+        let legacyOpus: UsageData.LimitData? = {
             guard let opus = seven_day_opus else {
                 return nil
             }
@@ -94,8 +124,8 @@ nonisolated struct UsageResponse: Codable, Sendable {
             return UsageData.LimitData(percentage: parsed.percentage, resetsAt: parsed.resetsAt)
         }()
 
-        // Parse Sonnet limit data (only when present and valid)
-        let sonnetData: UsageData.LimitData? = {
+        // Parse Sonnet limit data — legacy dedicated field (only when present and valid)
+        let legacySonnet: UsageData.LimitData? = {
             guard let sonnet = seven_day_sonnet else {
                 return nil
             }
@@ -106,6 +136,23 @@ nonisolated struct UsageResponse: Codable, Sendable {
             return UsageData.LimitData(percentage: parsed.percentage, resetsAt: parsed.resetsAt)
         }()
 
+        // Forward-compat safety net: if the legacy per-model weekly fields are absent,
+        // backfill the opus/sonnet display slots from model-scoped entries in the new
+        // `limits` array (Claude 5 era). Legacy fields always win, so this is inert
+        // while the API still populates seven_day_opus/seven_day_sonnet. The real model
+        // name (scope.model.display_name) is intentionally not surfaced yet — that
+        // display change awaits a confirmed live-API shape.
+        var scopedWeekly: [UsageData.LimitData] = (limits ?? []).compactMap { entry in
+            guard entry.scope?.model?.display_name?.isEmpty == false,
+                  let percent = entry.percent else { return nil }
+            return UsageData.LimitData(percentage: percent, resetsAt: parseResetDate(entry.resets_at))
+        }
+
+        var opusData = legacyOpus
+        var sonnetData = legacySonnet
+        if opusData == nil, !scopedWeekly.isEmpty { opusData = scopedWeekly.removeFirst() }
+        if sonnetData == nil, !scopedWeekly.isEmpty { sonnetData = scopedWeekly.removeFirst() }
+
         return UsageData(
             fiveHour: UsageData.LimitData(percentage: fiveHourData.percentage, resetsAt: fiveHourData.resetsAt),
             sevenDay: sevenDayData,
@@ -113,6 +160,17 @@ nonisolated struct UsageResponse: Codable, Sendable {
             sonnet: sonnetData,
             extraUsage: nil  // Extra Usage will be fetched via a separate API
         )
+    }
+
+    /// Parse an ISO 8601 reset-time string into a Date (rounded to the second),
+    /// matching `parseLimitData`'s handling. Used for `limits` array entries.
+    private func parseResetDate(_ resetString: String?) -> Date? {
+        guard let resetString = resetString else { return nil }
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        guard let date = formatter.date(from: resetString) else { return nil }
+        let rounded = round(date.timeIntervalSinceReferenceDate)
+        return Date(timeIntervalSinceReferenceDate: rounded)
     }
 
     /// Parse data for a single limit (5-hour or 7-day)
