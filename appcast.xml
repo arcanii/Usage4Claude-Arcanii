@@ -6,6 +6,30 @@
         <description>Updates to U4Claude (Arcanii Mod) — Claude.ai usage menu bar app for macOS.</description>
         <language>en</language>
         <item>
+            <title>v1.9.0</title>
+            <pubDate>Wed, 26 Aug 2026 00:00:00 +0000</pubDate>
+            <sparkle:version>19</sparkle:version>
+            <sparkle:shortVersionString>1.9.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <link>https://github.com/arcanii/Usage4Claude-Arcanii/releases/tag/v1.9.0</link>
+            <description><![CDATA[
+                <h2>v1.9.0 &mdash; Weekly model limits, fixed notifications</h2>
+                <p>Weekly per-model limits are read and labeled correctly again, notifications actually appear, and browser sign-in gains a fallback. No re-login required.</p>
+                <ul>
+                    <li><strong>Weekly per-model limits are back, with their real names.</strong> Claude's API moved these out of the dedicated Opus/Sonnet fields, so v1.8.0 showed no weekly model row at all on affected accounts. The row returns, labeled with the actual model (e.g. "Fable"), and a third or later model now gets its own row.</li>
+                    <li><strong>Notifications no longer vanish when the app is in front.</strong> Usage and reset alerts were silently suppressed whenever the popover or settings window was open.</li>
+                    <li><strong>Sign-in recovers instead of dead-ending.</strong> Paste the callback link back if the browser redirect never arrives; retries no longer hang, and expired tokens refresh themselves.</li>
+                    <li><strong>Requests report your real language</strong> instead of a hardcoded <code>zh-CN</code>, and refresh timers no longer silently fail to start.</li>
+                </ul>
+                <p>See <a href="https://github.com/arcanii/Usage4Claude-Arcanii/blob/main/docs/RELEASES/v1.9.0.md">the full release notes</a>.</p>
+            ]]></description>
+            <enclosure
+                url="https://github.com/arcanii/Usage4Claude-Arcanii/releases/download/v1.9.0/U4Claude-v1.9.0.dmg"
+                sparkle:edSignature="ya/K5zfUslflgQdTHDEfbSvCd+0ryK68lf5CpwJIkIqElBkRC98n8mvqlkLPcDAe0k2jW6Gibblga44OrPM+CA=="
+                length="7321115"
+                type="application/octet-stream"/>
+        </item>
+        <item>
             <title>v1.8.0</title>
             <pubDate>Fri, 10 Jul 2026 00:00:00 +0000</pubDate>
             <sparkle:version>18</sparkle:version>
