@@ -271,6 +271,18 @@ class DiagnosticManager: ObservableObject {
 
             // Try to parse JSON
             if let json = try? JSONDecoder().decode(UsageResponse.self, from: data) {
+                // Decoded cleanly but carries no limit windows at all: the plan has no
+                // usage dashboard. Without this branch the report would call a dead
+                // account healthy ("utilization: n/a"), just as it previously called it
+                // a credentials problem — both verdicts send the user the wrong way.
+                if json.isUsageDashboardUnavailable {
+                    return createReportForNoUsageDashboard(
+                        statusCode: statusCode,
+                        headers: headers,
+                        bodyPreview: String(bodyString.prefix(500)),
+                        responseTime: responseTime
+                    )
+                }
                 return createReportForSuccess(
                     statusCode: statusCode,
                     headers: headers,
@@ -305,7 +317,12 @@ class DiagnosticManager: ObservableObject {
         usageData: UsageResponse,
         responseTime: Double
     ) -> DiagnosticReport {
-        DiagnosticReport(
+        // `five_hour` is optional: an account can report real 7-day / limits[] data with
+        // no 5-hour window. Keep the `%` inside the map so the nil case reads "n/a",
+        // not "n/a%". Introducing this `let` makes the body multi-statement, so the
+        // `return` below is required.
+        let fiveHourSummary = usageData.five_hour.map { "\($0.utilization)%" } ?? "n/a"
+        return DiagnosticReport(
             timestamp: Date(),
             appVersion: getAppVersion(),
             osVersion: getOSVersion(),
@@ -323,7 +340,7 @@ class DiagnosticManager: ObservableObject {
             errorType: nil,
             errorDescription: nil,
             responseHeaders: headers,
-            responseBodyPreview: "Valid usage data received (utilization: \(usageData.five_hour.utilization)%)",
+            responseBodyPreview: "Valid usage data received (utilization: \(fiveHourSummary))",
             cloudflareChallenge: false,
             cfMitigated: headers["cf-mitigated"] != nil,
             diagnosis: DiagnosticMessage.diagnosisSuccess,
@@ -404,6 +421,46 @@ class DiagnosticManager: ObservableObject {
                 DiagnosticMessage.suggestionCheckBrowser
             ],
             confidence: .medium
+        )
+    }
+
+    /// HTTP 200 with every limit window null: the plan exposes no usage dashboard.
+    /// Reported at high confidence — the response is unambiguous — and deliberately
+    /// states the credentials are fine, so the user isn't sent to re-authenticate.
+    private func createReportForNoUsageDashboard(
+        statusCode: Int,
+        headers: [String: String],
+        bodyPreview: String,
+        responseTime: Double
+    ) -> DiagnosticReport {
+        DiagnosticReport(
+            timestamp: Date(),
+            appVersion: getAppVersion(),
+            osVersion: getOSVersion(),
+            architecture: getArchitecture(),
+            locale: settings.language.rawValue,
+            refreshMode: settings.refreshMode == .smart ? "Smart" : "Fixed",
+            refreshInterval: settings.refreshMode == .fixed ? "\(settings.refreshInterval) min" : nil,
+            displayMode: settings.iconDisplayMode.rawValue,
+            organizationIdRedacted: redactOrganizationId(settings.organizationId),
+            sessionKeyRedacted: redactSessionKey(settings.sessionKey),
+            success: false,
+            httpStatusCode: statusCode,
+            responseTime: responseTime,
+            responseType: .json,
+            errorType: .usageDashboardUnavailable,
+            errorDescription: L.Error.usageDashboardUnavailable,
+            responseHeaders: headers,
+            responseBodyPreview: bodyPreview,
+            cloudflareChallenge: false,
+            cfMitigated: headers["cf-mitigated"] != nil,
+            diagnosis: DiagnosticMessage.diagnosisDashboardUnavailable,
+            suggestions: [
+                DiagnosticMessage.suggestionCheckPlanDashboard,
+                DiagnosticMessage.suggestionAskOrgAdmin,
+                DiagnosticMessage.suggestionUpgradePlan
+            ],
+            confidence: .high
         )
     }
 

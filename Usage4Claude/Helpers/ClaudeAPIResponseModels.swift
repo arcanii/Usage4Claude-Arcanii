@@ -43,8 +43,13 @@ nonisolated struct Organization: Codable, Sendable, Identifiable, Equatable {
 /// API response data model
 /// Corresponds to the JSON structure returned by Claude API
 nonisolated struct UsageResponse: Codable, Sendable {
-    /// 5-hour usage limit data
-    let five_hour: LimitUsage
+    /// 5-hour usage limit data.
+    /// Free Tier accounts, and Team/Enterprise organizations that have not enabled the
+    /// member usage dashboard, return null here (upstream issues #83 / #74). This was
+    /// the only non-optional window, so a single null threw `valueNotFound` and aborted
+    /// the entire decode — which surfaced as "check if your credentials are correct"
+    /// and sent people re-authenticating credentials that were never the problem.
+    let five_hour: LimitUsage?
     /// 7-day usage limit data
     let seven_day: LimitUsage?
     /// 7-day OAuth apps usage (not yet used)
@@ -60,6 +65,39 @@ nonisolated struct UsageResponse: Codable, Sendable {
     /// Decoded as a forward-compat safety net so the weekly rows don't silently vanish
     /// if the API moves; the legacy fields still take precedence (see `toUsageData`).
     let limits: [LimitEntry]?
+
+    /// Whether the organization exposes the usage dashboard to its members.
+    /// Free Tier, and Team/Enterprise organizations that haven't enabled it, return
+    /// false — and in that case every limit window is null.
+    let member_dashboard_available: Bool?
+
+    /// Whether the response carries no limit data at all: every window field is null
+    /// and the new-API `limits` array is empty or absent.
+    var hasNoLimitData: Bool {
+        five_hour == nil
+            && seven_day == nil
+            && seven_day_oauth_apps == nil
+            && seven_day_opus == nil
+            && seven_day_sonnet == nil
+            && (limits?.isEmpty ?? true)
+    }
+
+    /// Whether this account can't get usage data at all. This is not a credentials
+    /// problem — the request returned HTTP 200, and `extra_usage` often still carries
+    /// real values — so callers should say "this plan doesn't provide usage data"
+    /// rather than asking the user to sign in again.
+    ///
+    /// The verdict deliberately looks only at the actual data and does not trust
+    /// `member_dashboard_available`: that field's exact semantics are unverified, and
+    /// if personal Pro/Max accounts also report false (meaning "not part of an org
+    /// dashboard" rather than "no usage data"), trusting it would misjudge every
+    /// healthy account as unavailable. The field is kept for logging and diagnostics.
+    ///
+    /// Note this does not collide with the day-one 7-day placeholder below: a brand-new
+    /// account still returns a real `five_hour` window, so `hasNoLimitData` stays false.
+    var isUsageDashboardUnavailable: Bool {
+        hasNoLimitData
+    }
 
     /// Generic limit usage details (applicable to 5-hour, 7-day, and other limits)
     struct LimitUsage: Codable, Sendable {
@@ -96,8 +134,14 @@ nonisolated struct UsageResponse: Codable, Sendable {
     /// - Returns: Converted UsageData instance
     /// - Note: Automatically handles time rounding to ensure accurate display
     func toUsageData() -> UsageData {
-        // Parse 5-hour limit data
-        let fiveHourData = parseLimitData(five_hour)
+        // Parse 5-hour limit data. When the field is null (an account with no usage
+        // dashboard) keep it nil and let the UI take its existing "no 5-hour data"
+        // branch — deliberately unlike `seven_day` below, which fakes a 0% placeholder,
+        // because we don't know whether the account really has this limit.
+        let fiveHourData: UsageData.LimitData? = five_hour.map { limit in
+            let parsed = parseLimitData(limit)
+            return UsageData.LimitData(percentage: parsed.percentage, resetsAt: parsed.resetsAt)
+        }
 
         // Parse 7-day limit data. Every Claude account has a 7-day limit;
         // for brand-new accounts the API may return a missing field or
@@ -151,7 +195,7 @@ nonisolated struct UsageResponse: Codable, Sendable {
         }
 
         return UsageData(
-            fiveHour: UsageData.LimitData(percentage: fiveHourData.percentage, resetsAt: fiveHourData.resetsAt),
+            fiveHour: fiveHourData,
             sevenDay: sevenDayData,
             legacyOpus: legacyOpus,
             legacySonnet: legacySonnet,

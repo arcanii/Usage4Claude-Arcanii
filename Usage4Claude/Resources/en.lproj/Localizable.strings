@@ -181,6 +181,7 @@
 "error.unauthorized" = "Authentication failed, please check your credentials";
 "error.rate_limited" = "Too many requests, please try again later";
 "error.http_error" = "HTTP error: %d";
+"error.usage_dashboard_unavailable" = "Your plan does not provide usage data. Free accounts have no usage dashboard; on Team/Enterprise, ask an admin to enable the member usage dashboard.";
 
 // MARK: - Launch at Login
 "launch.status.enabled" = "Enabled";

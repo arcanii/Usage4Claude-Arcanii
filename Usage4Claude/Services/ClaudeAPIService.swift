@@ -275,6 +275,16 @@ class ClaudeAPIService {
             // Parse successful response
             do {
                 let response = try decoder.decode(UsageResponse.self, from: data)
+                // Free Tier / orgs without the member usage dashboard: HTTP 200 but
+                // every limit window null. The credentials are valid, so this must stay
+                // distinct from a parse failure — otherwise the user is sent off to
+                // re-authenticate for nothing. Checked before `toUsageData()`, which
+                // manufactures a 0% 7-day placeholder that would mask the condition.
+                if response.isUsageDashboardUnavailable {
+                    Logger.api.info("Claude usage returned no limit data (member_dashboard_available=\(response.member_dashboard_available.map(String.init) ?? "nil")); treating as no usage dashboard for this plan")
+                    completion(.failure(UsageError.usageDashboardUnavailable))
+                    return
+                }
                 let usageData = response.toUsageData()
                 completion(.success(usageData))
             } catch {
@@ -627,6 +637,15 @@ class ClaudeAPIService {
                 // Reuse the existing UsageResponse decoder (five_hour/seven_day/opus/sonnet
                 // field names match).
                 let baseResponse = try decoder.decode(UsageResponse.self, from: data)
+                // Same as the session-key path: all-null windows mean the plan has no
+                // usage dashboard, not a decode failure and not expired credentials.
+                // Hops to main like the success callback below, since the caller
+                // assigns the result straight to UI state.
+                if baseResponse.isUsageDashboardUnavailable {
+                    Logger.api.info("Claude OAuth usage returned no limit data (member_dashboard_available=\(baseResponse.member_dashboard_available.map(String.init) ?? "nil")); treating as no usage dashboard for this plan")
+                    DispatchQueue.main.async { completion(.failure(UsageError.usageDashboardUnavailable)) }
+                    return
+                }
                 var usageData = baseResponse.toUsageData()
 
                 // Additionally decode the extra_usage field. Issue #64: the previous
@@ -750,6 +769,11 @@ enum UsageError: LocalizedError {
     case noCredentials
     case networkError
     case decodingError
+    /// The response parsed fine but carried no usage windows at all — the account's
+    /// plan doesn't expose a usage dashboard (Free Tier, or a Team/Enterprise org that
+    /// hasn't enabled the member dashboard). Kept distinct from `decodingError`, whose
+    /// message wrongly blames the user's credentials.
+    case usageDashboardUnavailable
     case unauthorized              // 401 Unauthorized
     /// 429. `retryAfter` carries the server's `Retry-After` hint in seconds when it
     /// supplied one; nil means the caller should fall back to its own backoff.
@@ -772,6 +796,8 @@ enum UsageError: LocalizedError {
             return L.Error.networkFailed
         case .decodingError:
             return L.Error.decodingFailed
+        case .usageDashboardUnavailable:
+            return L.Error.usageDashboardUnavailable
         case .unauthorized:
             return L.Error.unauthorized
         case .rateLimited:

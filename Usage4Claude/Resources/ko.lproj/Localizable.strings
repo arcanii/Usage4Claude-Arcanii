@@ -181,6 +181,7 @@
 "error.unauthorized" = "인증 실패, 자격 증명을 확인하세요";
 "error.rate_limited" = "요청이 너무 빈번합니다. 잠시 후 다시 시도하세요";
 "error.http_error" = "HTTP 오류: %d";
+"error.usage_dashboard_unavailable" = "현재 요금제에서는 사용량 데이터를 제공하지 않습니다. 무료 플랜에는 사용량 대시보드가 없으며, Team/Enterprise는 관리자에게 멤버 사용량 대시보드 활성화를 요청하세요.";
 
 // MARK: - Launch at Login
 "launch.status.enabled" = "활성화됨";
