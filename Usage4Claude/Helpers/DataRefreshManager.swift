@@ -101,6 +101,25 @@ class DataRefreshManager: ObservableObject {
 
     /// Fetch usage data
     /// Calls the API service to get the latest usage information
+    // MARK: - Rate-limit backoff
+    //
+    // A 429 used to change nothing: the timer kept firing at the same cadence (60s in
+    // smart/active mode), so the app re-triggered the limit instead of letting it lapse.
+    // Fetches are now suppressed until `rateLimitedUntil`, honoring the server's
+    // Retry-After when it sends one and otherwise doubling from 2 min up to 30 min.
+
+    private var rateLimitedUntil: Date?
+    private var rateLimitBackoff: TimeInterval = 0
+    private let rateLimitBaseBackoff: TimeInterval = 120
+    private let rateLimitMaxBackoff: TimeInterval = 1800
+    private let rateLimitMinBackoff: TimeInterval = 30
+
+    /// Whether a 429 backoff window is currently open.
+    var isRateLimited: Bool {
+        guard let until = rateLimitedUntil else { return false }
+        return until > Date()
+    }
+
     /// Set when the active account changes, so the next successful fetch skips the
     /// previous-vs-current comparison that drives reset detection. Cleared by that fetch.
     private var pendingAccountSwitch = false
@@ -111,6 +130,13 @@ class DataRefreshManager: ObservableObject {
     }
 
     func fetchUsage() {
+        // Single choke point for all fetch triggers (timer, popover, wake, account
+        // switch, manual). Returning here is what actually lets the limit expire.
+        if let until = rateLimitedUntil, until > Date() {
+            Logger.menuBar.debug("Skipping fetch: rate-limited for another \(Int(until.timeIntervalSinceNow))s")
+            return
+        }
+
         isLoading = true
         errorMessage = nil
 
@@ -132,6 +158,10 @@ class DataRefreshManager: ObservableObject {
                     // previous account's numbers right after a switch, and the
                     // reset heuristic (different resetsAt + any lower percentage)
                     // would read that as a limit reset that never happened.
+                    // A successful fetch ends any backoff and resets the escalation.
+                    self.rateLimitedUntil = nil
+                    self.rateLimitBackoff = 0
+
                     let previousData = self.pendingAccountSwitch ? nil : self.usageData
                     self.pendingAccountSwitch = false
                     self.usageData = data
@@ -171,6 +201,23 @@ class DataRefreshManager: ObservableObject {
                 case .failure(let error):
                     self.errorMessage = error.localizedDescription
                     Logger.menuBar.error("API request failed: \(error.localizedDescription)")
+
+                    // 429 → open a backoff window. Prefer the server's Retry-After
+                    // (clamped so a tiny value can't produce a tight loop); otherwise
+                    // double the previous delay.
+                    if case UsageError.rateLimited(let retryAfter) = error {
+                        let delay: TimeInterval
+                        if let retryAfter = retryAfter, retryAfter > 0 {
+                            delay = min(max(retryAfter, self.rateLimitMinBackoff), self.rateLimitMaxBackoff)
+                        } else if self.rateLimitBackoff == 0 {
+                            delay = self.rateLimitBaseBackoff
+                        } else {
+                            delay = min(self.rateLimitBackoff * 2, self.rateLimitMaxBackoff)
+                        }
+                        self.rateLimitBackoff = delay
+                        self.rateLimitedUntil = Date().addingTimeInterval(delay)
+                        Logger.menuBar.notice("Rate limited; suppressing fetches for \(Int(delay))s\(retryAfter != nil ? " (server Retry-After)" : "")")
+                    }
 
                     // First sessionExpired hit → prompt user to re-login. Skip on subsequent
                     // ticks until a successful fetch resets the flag, so we don't re-pop
@@ -255,8 +302,10 @@ class DataRefreshManager: ObservableObject {
     func refreshOnPopoverOpen() {
         let now = Date()
 
-        // User opened the detail view, force switch to active mode (1-minute refresh)
-        if settings.refreshMode == .smart {
+        // User opened the detail view, force switch to active mode (1-minute refresh).
+        // Skipped while rate-limited: seeing the error and opening the popover to look
+        // would otherwise escalate polling back to 60s and keep renewing the limit.
+        if settings.refreshMode == .smart && !isRateLimited {
             // If we were in any idle tier, the running timer is still on the
             // longer interval. `updateSmartMonitoringMode` won't restart it for
             // us (its switchToActiveMode path early-returns when already active),

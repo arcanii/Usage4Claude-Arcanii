@@ -66,6 +66,20 @@ class ClaudeAPIService {
         credential.hasPrefix("sk-ant-ort01-")
     }
 
+    /// Parse a `Retry-After` header into seconds. Handles both forms RFC 9110 allows:
+    /// a delta in seconds, and an HTTP-date.
+    static func retryAfterSeconds(from response: HTTPURLResponse) -> TimeInterval? {
+        guard let raw = response.value(forHTTPHeaderField: "Retry-After")?
+            .trimmingCharacters(in: .whitespacesAndNewlines), !raw.isEmpty else { return nil }
+        if let seconds = TimeInterval(raw) { return max(0, seconds) }
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.dateFormat = "EEE, dd MMM yyyy HH:mm:ss zzz"
+        if let date = formatter.date(from: raw) { return max(0, date.timeIntervalSinceNow) }
+        return nil
+    }
+
     /// Clear the cached OAuth access_token (call on account switch or on 401).
     func clearOAuthTokenCache() {
         oauthLock.lock()
@@ -237,7 +251,8 @@ class ClaudeAPIService {
                     return
                 case 429:
                     // Request rate too high
-                    completion(.failure(UsageError.rateLimited))
+                    completion(.failure(UsageError.rateLimited(
+                        retryAfter: Self.retryAfterSeconds(from: httpResponse))))
                     return
                 default:
                     // Other HTTP error
@@ -337,7 +352,7 @@ class ClaudeAPIService {
                     throw UsageError.cloudflareBlocked
                 }
             case 429:
-                throw UsageError.rateLimited
+                throw UsageError.rateLimited(retryAfter: Self.retryAfterSeconds(from: httpResponse))
             default:
                 Logger.api.error("HTTP error: \(httpResponse.statusCode)")
                 throw UsageError.httpError(statusCode: httpResponse.statusCode)
@@ -595,7 +610,8 @@ class ClaudeAPIService {
                     }
                     return
                 case 429:
-                    completion(.failure(UsageError.rateLimited))
+                    completion(.failure(UsageError.rateLimited(
+                        retryAfter: Self.retryAfterSeconds(from: http))))
                     return
                 default:
                     completion(.failure(UsageError.httpError(statusCode: http.statusCode)))
@@ -735,7 +751,9 @@ enum UsageError: LocalizedError {
     case networkError
     case decodingError
     case unauthorized              // 401 Unauthorized
-    case rateLimited               // 429 Rate limited
+    /// 429. `retryAfter` carries the server's `Retry-After` hint in seconds when it
+    /// supplied one; nil means the caller should fall back to its own backoff.
+    case rateLimited(retryAfter: TimeInterval?)
     case httpError(statusCode: Int)  // Other HTTP error
 
     var errorDescription: String? {
