@@ -5,7 +5,9 @@ import XCTest
 /// that backs the main /api/organizations/<id>/usage fetch.
 ///
 /// Specs the production code intends to honor:
-/// - 5-hour data is always parsed (utilization + resets_at).
+/// - 5-hour data is parsed when present (utilization + resets_at), and left nil when
+///   the field is null or absent — accounts whose plan has no usage dashboard return
+///   null for every window, and unlike `seven_day` no 0% placeholder is faked.
 /// - 7-day always emits a placeholder. Every Claude account has a 7-day limit
 ///   even before usage starts; when `seven_day` is missing OR returns
 ///   (utilization=0, resets_at=null), the transform yields a 0% placeholder
