@@ -23,20 +23,19 @@ final class OAuthCallbackServer {
     private var onCallback: (([String: String]) -> Void)?
     private var didDeliver = false
 
-    /// Release the bound port if this server is deallocated without `stop()`.
+    /// Release the bound listener if this server is deallocated without `stop()`.
     ///
     /// The ordinary paths already call `stop()` — the coordinator's `cleanup()` runs on
     /// success, failure, timeout, and the login view's `onDisappear`. This covers the
     /// one that doesn't: if the window is torn down mid-flow and SwiftUI never delivers
     /// `onDisappear`, the coordinator (which has no `deinit` of its own) is released and
-    /// takes this server with it, leaving the listener bound for the app's lifetime and
-    /// a retry reporting "port busy".
+    /// takes this server with it, dropping a still-bound listener on the floor.
     ///
-    /// Safe from a nonisolated `deinit`: `NWListener` is `Sendable`, so `cancel()`
-    /// crosses no isolation boundary even though this class is implicitly `@MainActor`
-    /// (SWIFT_DEFAULT_ACTOR_ISOLATION). Do NOT rewrite this as `deinit { stop() }` — the
-    /// shape used elsewhere in this codebase — because `stop()` is MainActor-isolated
-    /// and that form is an error under the Swift 6 language mode.
+    /// Call `listener?.cancel()` directly, not `stop()`. This class is implicitly
+    /// MainActor-isolated (SWIFT_DEFAULT_ACTOR_ISOLATION), which makes `stop()` isolated
+    /// too, and calling it from a nonisolated `deinit` is an error under the Swift 6
+    /// language mode. `NWListener.cancel()` is declared in the Network module, which is
+    /// not built with that default, so it stays nonisolated and is safe to call here.
     deinit {
         listener?.cancel()
     }
