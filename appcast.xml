@@ -6,6 +6,28 @@
         <description>Updates to U4Claude (Arcanii Mod) — Claude.ai usage menu bar app for macOS.</description>
         <language>en</language>
         <item>
+            <title>v1.9.2</title>
+            <pubDate>Wed, 02 Sep 2026 00:00:00 +0000</pubDate>
+            <sparkle:version>21</sparkle:version>
+            <sparkle:shortVersionString>1.9.2</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <link>https://github.com/arcanii/Usage4Claude-Arcanii/releases/tag/v1.9.2</link>
+            <description><![CDATA[
+                <h2>v1.9.2 &mdash; Rate-limit backoff</h2>
+                <p>One fix. No re-login required.</p>
+                <ul>
+                    <li><strong>"Too many requests" now clears itself.</strong> Hitting a rate limit didn't change how often the app polled, so it kept asking every 60 seconds and renewed the limit instead of letting it lapse. The app now pauses and resumes on its own, honoring the server's requested wait when it sends one.</li>
+                    <li><strong>Opening the popover no longer makes it worse.</strong> Doing so used to switch smart mode to its fastest tier &mdash; so looking at the error re-armed the problem. That escalation is now skipped while a rate limit is in effect.</li>
+                </ul>
+                <p>See <a href="https://github.com/arcanii/Usage4Claude-Arcanii/blob/main/docs/RELEASES/v1.9.2.md">the full release notes</a>.</p>
+            ]]></description>
+            <enclosure
+                url="https://github.com/arcanii/Usage4Claude-Arcanii/releases/download/v1.9.2/U4Claude-v1.9.2.dmg"
+                sparkle:edSignature="PBx3ww81LJHoC8Hx2MH9Hnsdl+H1WQ01WjaBi6q0jRPSjsPBjflC3Bfme27z+ITzpLL3HCmzxI6JHEf28xz5CQ=="
+                length="7331733"
+                type="application/octet-stream"/>
+        </item>
+        <item>
             <title>v1.9.1</title>
             <pubDate>Wed, 26 Aug 2026 00:00:00 +0000</pubDate>
             <sparkle:version>20</sparkle:version>

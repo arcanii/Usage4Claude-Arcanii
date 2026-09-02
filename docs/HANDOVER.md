@@ -4,14 +4,18 @@ If you're picking this project up cold, read this first. It's the orientation gu
 
 ## What this is
 
-A macOS menu bar app that polls the **private** `claude.ai/api/organizations/<id>/usage` endpoint and renders the user's 5-hour, 7-day, Opus, Sonnet, and Extra Usage limits as compact rings/numbers in the menu bar. Authentication is by session cookie scraped from a logged-in `WKWebView` — **not** the official Anthropic API, and not an API key. Cloudflare bypass is achieved by spoofing Chrome browser headers.
+A macOS menu bar app that renders the user's 5-hour, 7-day, weekly per-model (Opus / Sonnet / Fable — named by the API) and Extra Usage limits as compact rings/numbers in the menu bar. **Two auth paths since v1.8.0:**
+  - **OAuth (default).** "Sign in with Claude" runs the Claude Code public OAuth client (PKCE) in the system browser; usage comes from `api.anthropic.com/api/oauth/usage` with a Bearer token. **No cookie, no Cloudflare header spoofing on this path.**
+  - **Legacy session key.** Polls the **private** `claude.ai/api/organizations/<id>/usage` endpoint with a cookie scraped from a logged-in `WKWebView`, using spoofed Chrome headers to get past Cloudflare. Still supported; still the path the spoofed UA and `accept-language` header matter for.
+
+  Neither path is the official/documented Anthropic API, and neither uses an API key.
 
 - **Bundle id:** `com.arcanii.Usage4Claude`
 - **Product name:** `U4Claude.app` (renamed from upstream's `Usage4Claude.app` so both can coexist)
 - **macOS deployment target:** **26.0** (Tahoe). Bumped from 13.0 in v1.4.0. We use the macOS 26 Liquid Glass APIs unconditionally.
 - **App Sandbox:** **on** for both main app and widget since v1.7.0. Sparkle's bundled XPC services handle update install under sandbox. See the sandbox gotchas section below.
 - **Universal binary** (x86_64 + arm64).
-- **Current version:** v1.9.1 (2026-08-26) — see [RELEASES/](RELEASES/).
+- **Current version:** v1.9.2 (2026-08-26) — see [RELEASES/](RELEASES/).
 
 ## Where we are right now (read if you're resuming a session)
 
