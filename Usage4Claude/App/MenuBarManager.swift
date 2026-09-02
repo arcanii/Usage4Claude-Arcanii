@@ -47,6 +47,10 @@ class MenuBarManager: ObservableObject {
     @Published var isLoading = false
     /// Error message (synced from dataManager)
     @Published var errorMessage: String?
+    /// Whether the current error needs the full-screen treatment (synced from dataManager)
+    @Published var errorRequiresFullScreen = false
+    /// Whether cached numbers are on screen after a transient failure (synced from dataManager)
+    @Published var isShowingStaleData = false
 
     /// Refresh state manager (referenced from dataManager)
     var refreshState: RefreshState {
@@ -76,6 +80,12 @@ class MenuBarManager: ObservableObject {
 
         dataManager.$errorMessage
             .assign(to: &$errorMessage)
+
+        dataManager.$errorRequiresFullScreen
+            .assign(to: &$errorRequiresFullScreen)
+
+        dataManager.$isShowingStaleData
+            .assign(to: &$isShowingStaleData)
     }
     
     /// Handle menu bar icon click event
@@ -242,6 +252,16 @@ class MenuBarManager: ObservableObject {
             errorMessage: Binding(
                 get: { self.errorMessage },
                 set: { self.errorMessage = $0 }
+            ),
+            // Bindings, not plain values: UsageDetailView is constructed once per
+            // popover open and re-reads these on every body evaluation.
+            errorRequiresFullScreen: Binding(
+                get: { self.errorRequiresFullScreen },
+                set: { self.errorRequiresFullScreen = $0 }
+            ),
+            isShowingStaleData: Binding(
+                get: { self.isShowingStaleData },
+                set: { self.isShowingStaleData = $0 }
             ),
             refreshState: self.refreshState,
             onMenuAction: { [weak self] action in

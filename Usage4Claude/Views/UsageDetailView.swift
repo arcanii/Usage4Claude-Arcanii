@@ -13,6 +13,10 @@ import SwiftUI
 struct UsageDetailView: View {
     @Binding var usageData: UsageData?
     @Binding var errorMessage: String?
+    /// Mirrors DataRefreshManager.errorRequiresFullScreen.
+    @Binding var errorRequiresFullScreen: Bool
+    /// Mirrors DataRefreshManager.isShowingStaleData.
+    @Binding var isShowingStaleData: Bool
     @ObservedObject var refreshState: RefreshState
     /// Menu action callback
     var onMenuAction: ((MenuAction) -> Void)? = nil
@@ -103,7 +107,55 @@ struct UsageDetailView: View {
         let overflowRowHeight: CGFloat = 34
         let overflowHeight = CGFloat(overflowCount) * (overflowRowHeight + spacing)
 
-        return baseHeight + textHeight + overflowHeight
+        // The banner is a sibling of the ring block, so it costs its own height plus
+        // one gap of the outer VStack's conditional spacing (see `body`).
+        let bannerHeight: CGFloat = showsStaleDataBanner
+            ? (bannerContentHeight + (activeCount >= 2 ? 10 : 16))
+            : 0
+
+        return baseHeight + textHeight + overflowHeight + bannerHeight
+    }
+
+    /// Height of `staleDataBanner`'s own content (icon/text line + vertical padding).
+    private let bannerContentHeight: CGFloat = 37
+
+    /// Whether to show cached numbers under a stale-data banner instead of the
+    /// full-screen error. Requires rows to actually render: in custom display mode
+    /// `activeDisplayTypes` can be empty while `usageData` is non-nil, which would
+    /// otherwise produce a near-blank popover carrying nothing but the banner.
+    private var showsStaleDataBanner: Bool {
+        isShowingStaleData
+            && !errorRequiresFullScreen
+            && usageData != nil
+            && !activeDisplayTypes.isEmpty
+    }
+
+    /// Shown above the cached rings when a transient fetch failure left the previous
+    /// numbers on screen. Tapping it opens the auth settings tab, where diagnostics
+    /// live — the same destination as the full-screen branch's "Run Diagnostic" button.
+    /// Without this, routing transient errors to a banner would remove the popover's
+    /// only entry point to diagnostics for exactly the failures worth diagnosing.
+    private var staleDataBanner: some View {
+        Button(action: { onMenuAction?(.authSettings) }) {
+            HStack(spacing: 6) {
+                Image(systemName: "exclamationmark.arrow.triangle.2.circlepath")
+                Text(L.Error.showingCachedData)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
+            }
+            .font(.system(size: 11))
+            .foregroundColor(.secondary)
+            .padding(.vertical, 6)
+            .padding(.horizontal, 14)
+            .frame(maxWidth: .infinity)
+            .background(Color.secondary.opacity(0.1))
+            .cornerRadius(6)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .focusable(false)
+        .padding(.horizontal, 14)
+        .help(L.Error.showingCachedData)
     }
 
     var body: some View {
@@ -218,8 +270,12 @@ struct UsageDetailView: View {
             }
             .padding(.horizontal)
             .padding(.top)
-            
-            if let error = errorMessage {
+
+            if showsStaleDataBanner {
+                staleDataBanner
+            }
+
+            if let error = errorMessage, !showsStaleDataBanner {
                 // Error message
                 VStack(spacing: 12) {
                     Image(systemName: "exclamationmark.triangle.fill")
@@ -623,12 +679,16 @@ struct UsageDetailView_Previews: PreviewProvider {
     )
 
     @State static var errorMsg: String? = nil
+    @State static var errorRequiresFullScreen = false
+    @State static var isShowingStaleData = false
     @StateObject static var refreshState = RefreshState()
 
     static var previews: some View {
         UsageDetailView(
             usageData: $sampleData,
             errorMessage: $errorMsg,
+            errorRequiresFullScreen: $errorRequiresFullScreen,
+            isShowingStaleData: $isShowingStaleData,
             refreshState: refreshState
         )
     }

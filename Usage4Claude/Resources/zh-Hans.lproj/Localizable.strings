@@ -182,6 +182,7 @@
 "error.rate_limited" = "请求过于频繁，请稍后再试";
 "error.http_error" = "HTTP 错误: %d";
 "error.usage_dashboard_unavailable" = "当前账号套餐不提供用量数据。免费版没有用量看板；Team/Enterprise 请联系管理员开启成员用量看板。";
+"error.showing_cached_data" = "正在显示缓存数据 — 刷新失败";
 
 // MARK: - Launch at Login
 "launch.status.enabled" = "已启用";

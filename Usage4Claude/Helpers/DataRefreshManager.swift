@@ -33,6 +33,20 @@ class DataRefreshManager: ObservableObject {
     @Published var isLoading = false
     /// Error message
     @Published var errorMessage: String?
+    /// Whether the current error must keep the full-screen error view because it carries
+    /// something the user has to act on — re-authenticating, clearing a Cloudflare
+    /// challenge, or a plan that simply exposes no usage data. Everything else is
+    /// transient and may be shown as a banner over the cached numbers instead.
+    ///
+    /// Classified here, from the `UsageError` case itself, rather than in the view by
+    /// comparing `errorMessage` against `L.Error.*`: the message is a snapshot taken at
+    /// failure time while those strings re-resolve against the current language, so a
+    /// language switch with a live auth error would silently reclassify it as transient.
+    @Published var errorRequiresFullScreen = false
+    /// Latched when a transient failure left older numbers on screen. Deliberately NOT
+    /// cleared at the start of a fetch — only by a success, or by an account switch —
+    /// so the banner and the popover height stay put while a retry is in flight.
+    @Published var isShowingStaleData = false
     /// Refresh state manager
     let refreshState = RefreshState()
 
@@ -124,9 +138,19 @@ class DataRefreshManager: ObservableObject {
     /// previous-vs-current comparison that drives reset detection. Cleared by that fetch.
     private var pendingAccountSwitch = false
 
+    /// Set on an account switch, cleared by the first successful fetch for that account.
+    /// Guards the stale-data banner against showing another account's cached numbers.
+    private var staleDataSuppressedUntilSuccess = false
+
     /// Called before refetching for a newly selected account.
     func prepareForAccountSwitch() {
         pendingAccountSwitch = true
+        // `usageData` still holds the PREVIOUS account's numbers until the new fetch
+        // returns. Drop the latch and suppress it until this account has succeeded once,
+        // so a failed first fetch can't label another account's percentages as this
+        // account's cached data.
+        isShowingStaleData = false
+        staleDataSuppressedUntilSuccess = true
     }
 
     func fetchUsage() {
@@ -166,6 +190,11 @@ class DataRefreshManager: ObservableObject {
                     self.pendingAccountSwitch = false
                     self.usageData = data
                     self.errorMessage = nil
+                    self.errorRequiresFullScreen = false
+                    // A success is the only thing that clears the stale latch, and it
+                    // re-arms the banner for this account.
+                    self.isShowingStaleData = false
+                    self.staleDataSuppressedUntilSuccess = false
                     self.sessionExpiredPrompted = false
                     UsageHistoryStore.shared.append(data)
                     // Publish to the App Group container + nudge the widget so
@@ -201,6 +230,24 @@ class DataRefreshManager: ObservableObject {
                 case .failure(let error):
                     self.errorMessage = error.localizedDescription
                     Logger.menuBar.error("API request failed: \(error.localizedDescription)")
+
+                    // Classify from the case, not the message. Anything that isn't a
+                    // UsageError (a raw URLSession failure, forwarded verbatim) is
+                    // transient by definition.
+                    switch error as? UsageError {
+                    case .unauthorized, .sessionExpired, .noCredentials,
+                         .cloudflareBlocked, .usageDashboardUnavailable:
+                        // Each of these tells the user to do something — sign in again,
+                        // clear a browser challenge, or check the plan — so the message
+                        // must not be reduced to a "refresh failed" banner.
+                        self.errorRequiresFullScreen = true
+                    default:
+                        self.errorRequiresFullScreen = false
+                    }
+
+                    self.isShowingStaleData = !self.errorRequiresFullScreen
+                        && self.usageData != nil
+                        && !self.staleDataSuppressedUntilSuccess
 
                     // 429 → open a backoff window. Prefer the server's Retry-After
                     // (clamped so a tiny value can't produce a tight loop); otherwise

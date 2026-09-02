@@ -182,6 +182,7 @@
 "error.rate_limited" = "請求過於頻繁，請稍後再試";
 "error.http_error" = "HTTP 錯誤: %d";
 "error.usage_dashboard_unavailable" = "目前帳號方案不提供用量資料。免費版沒有用量儀表板；Team/Enterprise 請聯絡管理員開啟成員用量儀表板。";
+"error.showing_cached_data" = "正在顯示快取資料 — 重新整理失敗";
 
 // MARK: - Launch at Login
 "launch.status.enabled" = "已啟用";

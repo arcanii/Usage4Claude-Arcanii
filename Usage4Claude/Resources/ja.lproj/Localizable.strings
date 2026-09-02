@@ -182,6 +182,7 @@
 "error.rate_limited" = "リクエストが多すぎます。しばらくしてから再試行してください";
 "error.http_error" = "HTTP エラー: %d";
 "error.usage_dashboard_unavailable" = "現在のプランでは使用量データを取得できません。無料プランには使用量ダッシュボードがありません。Team/Enterprise の場合は、管理者にメンバー使用量ダッシュボードの有効化を依頼してください。";
+"error.showing_cached_data" = "キャッシュされたデータを表示中 — 更新に失敗しました";
 
 // MARK: - Launch at Login
 "launch.status.enabled" = "有効";
