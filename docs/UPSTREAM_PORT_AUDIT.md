@@ -140,3 +140,23 @@ Fork's `SettingsView.swift` is byte-identical to upstream's pre-fix version apar
 
 ## Does NOT change the upstream-PR plan
 PR #77's callback change is a `deinit`, **not** the wildcard-bind hardening. The fork's loopback-peer fix and the `59f4efd` weekly-slot-collapse bug both remain unreported upstream — see `UPSTREAM_CONTRIBUTIONS.md`.
+
+## Synthesis refinements (arrived after the above was written)
+
+Three corrections to the port list — the synthesis agent reported last:
+
+1. **Do ports 1 and 2 as ONE commit, with `494957d` as the superset.** They overlap almost entirely and touch the same lines (`ClaudeAPIResponseModels.swift:47/100/154`, `DiagnosticManager.swift:326`). `494957d` already contains the optional-`five_hour` change and adds the "dashboard unavailable" diagnosis on top — porting them separately means editing the same lines twice.
+
+2. **There is exactly one compile-breaking site.** `DiagnosticManager.swift:326` reads `usageData.five_hour.utilization` and will not compile once the field is optional. It must be fixed in the same commit. Note `createReportForSuccess` (`:302`) is an implicit-return single-expression body, so introducing a `let` also requires adding an explicit `return`:
+   ```swift
+   let fiveHourSummary = usageData.five_hour.map { "\($0.utilization)%" } ?? "n/a"
+   return DiagnosticReport(
+       responseBodyPreview: "Valid usage data received (utilization: \(fiveHourSummary))",
+   ```
+   Putting `%` inside the `.map` avoids upstream's slightly wrong `"n/a%"`. These preview strings are hardcoded English, so **no localization work** for this part. `docs/archive/DIAGNOSTICS_IMPLEMENTATION.md:627` quotes the old line — archived, leave it.
+
+3. **The damage is worse than a blank UI: it silently loses history.** `UsageHistoryStore.shared.append(data)` sits in the success branch (`DataRefreshManager.swift:170`); the failure branch (`:202`) only sets `errorMessage`. So for an affected account every tick writes **nothing** to the append-only NDJSON — a permanent, unrecoverable gap — and leaves a stale widget snapshot. And `DiagnosticManager.swift:273`'s `try?` fails, so the built-in diagnostic reports "Data Parsing Error / check if your credentials are correct" at medium confidence, actively pointing the user at a problem that does not exist.
+
+Worst case isn't the all-null payload: it's an account returning `five_hour: null` alongside **real** `seven_day` / `limits[]` data — a fully usable response thrown away.
+
+Suggested tests (SwiftPM target already compiles `ClaudeAPIResponseModels.swift`): upstream's all-null decode test; a field-absent-entirely variant; a **fork-only** regression pairing `"five_hour": null` with a populated `limits[]` asserting `opus`/`sonnetModelName` still resolve (proves a null five_hour doesn't disturb `scopedWeeklyModels` slot resolution); and `primaryLimit` falling back to `sevenDay`.
