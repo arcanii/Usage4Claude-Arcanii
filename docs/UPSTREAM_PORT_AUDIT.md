@@ -102,3 +102,41 @@ The Cloudflare header-emulation in `ClaudeAPIHeaderBuilder.swift` is inherited f
 ## Provenance
 
 Reference clone `../Usage4Claude` (read-only, `origin/main` @ v3.2.2). Full agent transcripts: session `subagents/workflows/wf_4611ab88-cd5/journal.jsonl`. Re-run/resume: `Workflow({scriptPath: ".../upstream-improvements-audit-wf_4611ab88-cd5.js", resumeFromRunId: "wf_4611ab88-cd5"})` — completed agents replay from cache; only the failed verify/synthesize agents re-run (once spend limit resets).
+
+---
+
+# Delta audit #3 — upstream post-v3.3.0 (2026-09-02)
+
+**Upstream:** `1b42d1e` (2026-09-01), still tagged **v3.3.0** — 11 commits since the previous baseline `25bdf2b`.
+**Fork:** v1.9.2 shipped. Method: same fan-out (assess per area → adversarial verify → synthesize).
+**Status:** 6 areas assessed; verifications returned `holds=true` on every port/partial recommendation checked. The workflow run was `wf_cd18d6ec-42d` (journal under this session's `subagents/workflows/`); the final synthesis agent had not reported when this was written, but the per-area results below are complete and verified.
+
+## 🔴 Port — both are TOTAL-fetch failures, not missing rows
+
+### 1. `five_hour` must be Optional (upstream `3878868`, PR #80) — high / small
+**CONFIRMED EXPOSED, unmodified.** `Usage4Claude/Helpers/ClaudeAPIResponseModels.swift:47` declares `let five_hour: LimitUsage` — the **only** non-optional window (`seven_day`:49, `seven_day_oauth_apps`:51, `seven_day_opus`:53, `seven_day_sonnet`:55, `limits`:62 are all optional). A `"five_hour": null` payload makes JSONDecoder throw `valueNotFound` and kills the **entire** decode. Upstream cites real accounts (Team plans) returning it null.
+
+Both fetch paths die: session-key at `ClaudeAPIService.swift:277-283` → `UsageError.decodingError`; OAuth at `:629` (error at `:671`).
+
+Fix is ~3 lines + one diagnostics fix. Everything downstream **already tolerates nil** — `UsageData.fiveHour` is already `LimitData?` (:289), and there are **zero force-unwraps of `fiveHour` in the tree** (verified across MenuBarUI, MenuBarIconRenderer, UsageDetailView(+Helpers), UsageRowComponents, NotificationManager, UsageSnapshotBridge, UsageHistorySampleBridge/Store). Adapt upstream's `toUsageData()` to the fork's own init (`fiveHour:sevenDay:legacyOpus:legacySonnet:scopedWeeklyModels:extraUsage:`) — **not** upstream's `weeklyModels:`.
+
+### 2. Plans without a usage dashboard (upstream `494957d`) — high / small
+Same root cause, different symptom. Trigger: HTTP 200 with **every** window null — Free Tier, and Team/Enterprise orgs that haven't enabled the member usage dashboard. The fork emits `decodingError`, which maps to *"Failed to parse response data. Please check if your credentials are correct."* (`en.lproj:179`) — **wrong advice for valid credentials**; it sends people to re-authenticate for nothing. `DiagnosticManager.swift:273` repeats the wrong verdict. Needs a distinct error case + string in the fork's 5 locales.
+
+## 🟠 Partial
+
+### 3. Stale-data banner on transient errors (upstream `a23c801`, PR #75) — high / small
+The fork already keeps `usageData` on failure (piece 2 is a non-issue — Claude-only, no `fetchClaudeOnly`/`clearClaudeUsageState`). **Missing piece is the view layer**, which is the part that fixes what was actually observed: `UsageDetailView` should show cached numbers with a stale-data banner instead of a full-screen error, gated on `errorMessage != nil && usageData != nil && !errorRequiresAuthAction`. Needs `@Published errorRequiresAuthAction` on `DataRefreshManager` (typed switch over `.unauthorized/.sessionExpired/.noCredentials`), a `staleDataBanner`, +53pt popover height, and `error.showing_cached_data` in the fork's **5** locales (upstream has 7). Note the fork already replaced upstream's string-matching auth check with `isAuthenticationError(_:)`, so wire the banner to that rather than reintroducing string matches.
+
+### 4. `OAuthCallbackServer` deinit (upstream `417a0d3` / PR #77) — medium / small
+**GAP IS REAL AND UNFIXED.** Only one hunk of that PR is provider-neutral: a `deinit { listener?.cancel() }` after `private var didDeliver = false`. Without it a login window closed mid-flow can leave an `NWListener` bound to 1456/1458 for the app's lifetime → spurious "port busy" on retry. **SKIP** the rest of PR #77: the `shared` singleton keep-alive, the Codex manual-paste (the fork already has a better Claude version at `ClaudeOAuthCoordinator.swift:94-161`), the `codex_cli_simplified_flow` param, Codex locale aliases, and the window-height change (fork is already 440×380).
+
+### 5. Settings-tab stability (upstream `92223a2`) — medium / small, cosmetic
+Fork's `SettingsView.swift` is byte-identical to upstream's pre-fix version apart from translated comments, so all three defects are present. Load-bearing fix: `SettingsView.swift:81` `.frame(width: 500, height: 550)` → add `alignment: .top` (AboutView is a rigid VStack; centre alignment pushes the tab strip above the window edge, clipped and partly unclickable). Plus `ToolbarButton.swift:21-30` icon `.frame(24×24)`, label `.lineLimit(1)`/`.minimumScaleFactor(0.85)`, and `.padding(.vertical, 8)` → `.frame(height: 54)`.
+
+## ✅ Already-have / skip
+- **Redundant incoming-connections build setting** (`1b42d1e`) — the fork already sits at the post-revert value in both app-target configs. Nothing to do.
+- **Codex reset announcement badge** (`188554f`), **sponsorship links** (`bda4ce5`) — Codex-only / not applicable.
+
+## Does NOT change the upstream-PR plan
+PR #77's callback change is a `deinit`, **not** the wildcard-bind hardening. The fork's loopback-peer fix and the `59f4efd` weekly-slot-collapse bug both remain unreported upstream — see `UPSTREAM_CONTRIBUTIONS.md`.
