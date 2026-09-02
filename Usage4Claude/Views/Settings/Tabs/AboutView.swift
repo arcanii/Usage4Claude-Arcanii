@@ -59,7 +59,9 @@ struct AboutView: View {
                 AboutInfoRow(icon: "doc.text", title: L.SettingsAbout.license, value: L.SettingsAbout.licenseValue)
             }
             
-            Spacer()
+            // Let the middle gap collapse fully when the content height is fixed,
+            // so it cannot push the tab strip out of view.
+            Spacer(minLength: 0)
             
             // Link buttons
             VStack(spacing: 8) {
