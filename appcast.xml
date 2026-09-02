@@ -6,6 +6,30 @@
         <description>Updates to U4Claude (Arcanii Mod) — Claude.ai usage menu bar app for macOS.</description>
         <language>en</language>
         <item>
+            <title>v1.9.3</title>
+            <pubDate>Wed, 02 Sep 2026 00:00:00 +0000</pubDate>
+            <sparkle:version>22</sparkle:version>
+            <sparkle:shortVersionString>1.9.3</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <link>https://github.com/arcanii/Usage4Claude-Arcanii/releases/tag/v1.9.3</link>
+            <description><![CDATA[
+                <h2>v1.9.3 &mdash; Missing limits, stale data, settings tabs</h2>
+                <p>Four upstream fixes. No re-login required.</p>
+                <ul>
+                    <li><strong>A missing 5-hour limit no longer wipes out the whole reading.</strong> If Claude returned that one window empty &mdash; as some Team plans do &mdash; the entire response was discarded, along with the 7-day and per-model numbers in it.</li>
+                    <li><strong>Plans without a usage dashboard now say so.</strong> Free accounts and Team/Enterprise orgs without the member dashboard used to be told to check their credentials, which were never the problem.</li>
+                    <li><strong>A failed refresh keeps the numbers you were looking at,</strong> behind a small "Showing cached data" banner, instead of replacing them with an error page. Errors you need to act on still take over.</li>
+                    <li><strong>The settings tab strip no longer gets clipped</strong> off the top of the window.</li>
+                </ul>
+                <p>See <a href="https://github.com/arcanii/Usage4Claude-Arcanii/blob/main/docs/RELEASES/v1.9.3.md">the full release notes</a>.</p>
+            ]]></description>
+            <enclosure
+                url="https://github.com/arcanii/Usage4Claude-Arcanii/releases/download/v1.9.3/U4Claude-v1.9.3.dmg"
+                sparkle:edSignature="z8tz/PwLjiG0SHwuMen6+v9JenD0tilmykaivkBPLtWlzE4ATq2fnzOMr0fZz34JL3uOMwYtcZDpuWz/t08VAg=="
+                length="7348482"
+                type="application/octet-stream"/>
+        </item>
+        <item>
             <title>v1.9.2</title>
             <pubDate>Wed, 02 Sep 2026 00:00:00 +0000</pubDate>
             <sparkle:version>21</sparkle:version>

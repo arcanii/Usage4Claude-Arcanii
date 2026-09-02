@@ -107,6 +107,15 @@ Reference clone `../Usage4Claude` (read-only, `origin/main` @ v3.2.2). Full agen
 
 # Delta audit #3 — upstream post-v3.3.0 (2026-09-02)
 
+> **STATUS: all four ports applied 2026-09-02** (commits `b2c9606`, `3460dd2`+`e83df2d`, `3233dd7`, `3cff48a`; shipping as v1.9.3).
+> Every claim below was re-verified against the real tree before editing, with an adversarial refutation pass per area. Corrections found:
+> - **Two** compile breaks for the Optional `five_hour`, not one — `ClaudeAPIResponseModels.swift:100` (`parseLimitData` takes a non-optional, dragging `:154`) as well as `DiagnosticManager.swift:326`.
+> - **Missing edit:** once `five_hour` is Optional an all-null payload *decodes cleanly*, so `DiagnosticManager.analyzeResponse` falls into `createReportForSuccess` and reports a healthy connection reading "utilization: n/a". The all-null branch there is part of the fix, not polish.
+> - **Missing edit:** `92223a2` touches 10 files; the write-up listed 4 sites across 2. `AboutView.swift` `Spacer()` → `Spacer(minLength: 0)` was omitted. (Its `alignment: .top` is nonetheless the load-bearing change, and it covers all three tabs — the write-up's "symptom-masking" framing was wrong.)
+> - **Banner design:** the view-layer string gate proposed here is unsafe. `errorMessage` is a snapshot while `L.Error.*` re-resolves per access, so a language switch with a live auth error reclassifies it as transient. Landed with the typed `errorRequiresFullScreen` instead. Three further defects had to be handled — a latch (the banner would otherwise blink and resize the popover on every manual refresh), account-switch suppression (`usageData` still holds the previous account's numbers), and an `!activeDisplayTypes.isEmpty` guard. `.usageDashboardUnavailable` — added by this very audit's port 2 — would have landed in the transient bucket and been hidden behind a "refresh failed" banner.
+> - **Overstated:** the OAuth port. The ordinary paths already call `stop()` via `onDisappear`; the real gap is only the dealloc path. `start()` also tries multiple ports and sets `allowLocalEndpointReuse = true`, so a single leaked listener need not surface at all. The load-bearing detail is that it must be `listener?.cancel()`, not `deinit { stop() }`, under `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`.
+
+
 **Upstream:** `1b42d1e` (2026-09-01), still tagged **v3.3.0** — 11 commits since the previous baseline `25bdf2b`.
 **Fork:** v1.9.2 shipped. Method: same fan-out (assess per area → adversarial verify → synthesize).
 **Status:** 6 areas assessed; verifications returned `holds=true` on every port/partial recommendation checked. The workflow run was `wf_cd18d6ec-42d` (journal under this session's `subagents/workflows/`); the final synthesis agent had not reported when this was written, but the per-area results below are complete and verified.
