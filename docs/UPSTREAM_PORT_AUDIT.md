@@ -169,3 +169,110 @@ Three corrections to the port list — the synthesis agent reported last:
 Worst case isn't the all-null payload: it's an account returning `five_hour: null` alongside **real** `seven_day` / `limits[]` data — a fully usable response thrown away.
 
 Suggested tests (SwiftPM target already compiles `ClaudeAPIResponseModels.swift`): upstream's all-null decode test; a field-absent-entirely variant; a **fork-only** regression pairing `"five_hour": null` with a populated `limits[]` asserting `opus`/`sonnetModelName` still resolve (proves a null five_hour doesn't disturb `scopedWeeklyModels` slot resolution); and `primaryLimit` falling back to `sevenDay`.
+
+---
+
+# Delta audit #4 — upstream v3.3.0 → v3.5.0 (2026-10-25)
+
+**Upstream:** `e0030f1`, tagged **v3.5.0** — **71 commits** since audit #3's baseline `1b42d1e`. Three upstream releases in between (v3.4.0, v3.4.1, v3.5.0).
+**Fork:** v1.9.3 shipped (`c45cc84`). Method: scope inline → 5 themed areas assessed in parallel → an adversarial refutation pass per area (10 agents). **Every refutation returned `refuted=true`**, and between them they overturned two whole commits the areas had omitted, flipped three verdicts, and caught one proposed edit that was a silent no-op. Corrections are folded in below rather than left in the area reports.
+
+**Toolchain moved too.** The machine now runs **macOS 27.0.1**, with **Xcode 27.1** and the macOS 27.0 SDK as the only installed SDK. The fork still builds clean on it (`MACOSX_DEPLOYMENT_TARGET = 26.0`) and all 72 tests pass — verified 2026-10-25. This changes which half of upstream's macOS 27 work applies; see A1.
+
+**Two scoping errors to record, both mine.** `908f3ce` was filed as Codex-only during scoping and left out of the area briefs; it is a **high-severity Claude OAuth bug** and the Area C refutation caught it. `1323df3` was scoped as a single-site fix in `ClaudeAPIService`; it also changes both OAuth token services. Lesson for audit #5: a commit touching `*Codex*` paths may still carry a Claude half, and upstream's commit message names which path is worst — read it before filing.
+
+## 🔴 Port — high
+
+### A1. Menu bar menu icons are invisible on macOS 27 (`ecaa14d`) — high / trivial
+**This is live for the user today, not hypothetical.** Verified from Apple's own header on this machine, not from upstream's claim: `MacOSX27.0.sdk/.../AppKit.framework/Headers/NSMenuItem.h:95` — "in macOS 27 and later, AppKit determines the visibility of menu item images, and will typically hide images. Use the `preferredImageVisibility` property with the `.visible` constant…", and `:101` declares `preferredImageVisibility API_AVAILABLE(macos(27.0))`.
+
+`MenuBarUI.swift:336-342` (`setMenuItemIcon`) sets `item.image` and nothing else — byte-identical to upstream's pre-fix shape — and `grep preferredImageVisibility` over the fork returns **zero hits**. All seven icon'd items in the status item's right-click menu funnel through that one function (`MenuBarUI.swift:258, 270, 281, 291, 301, 314, 326`), so all seven are stripped. Account-submenu items set only `item.state` and render via `onStateImage`, so they are unaffected; the fork has no update-badge path (`MenuBarUI.swift:284`), so upstream's second hunk has no counterpart here.
+
+Fix is a two-line helper plus an `#available(macOS 27.0, *)` guard — the guard is **required**, not optional, since the property is `API_AVAILABLE(macos(27.0))` and the deployment target is 26.0.
+
+**Use `ecaa14d`'s typed form, NOT `cedffaa`'s KVC workaround.** `cedffaa` exists only because upstream's release CI is pinned to Xcode 26.6, whose SDK lacks the symbol. The fork's CI is `xcode-version: latest-stable` (`.github/workflows/release.yml:162-165`) and the local toolchain has the symbol. Porting the KVC form would be cargo-culting a constraint the fork doesn't have.
+
+*Caveat kept deliberately:* the header says AppKit "will typically hide" based on "system configuration" — the documented default, not a proof for every configuration. Nobody launched the app and looked. Confirm on screen before claiming a visible before/after.
+
+### A2. A rotated refresh_token can be written to the wrong account (`908f3ce`) — high / small
+**Omitted from scoping as Codex-only; it is not.** `ClaudeAPIService.swift:548-556` writes the rotated token via `UserSettings.shared.silentlyUpdateCurrentClaudeSessionToken(newRefresh)`, inside a `DispatchQueue.main.async` — i.e. it targets whichever account is *selected when the callback lands*, not the one that asked for the refresh. Switching accounts inside that window puts account A's new token into account B's entry.
+
+Upstream's message names the Claude OAuth path as the worst case, and the reasoning holds here: refresh_tokens rotate and the server invalidates the old one immediately, so A loses its new token while B has its own overwritten — **both accounts permanently signed out, recoverable only by re-authenticating twice.** Multi-account users only, but the fork has supported multiple accounts since before v1.9.1.
+
+Upstream's fix: locate the account by the token held when the refresh *started*, never by current selection, and drop the write on a miss (a miss means the account was deleted mid-refresh or another refresh already rotated it; "fall back to current" is exactly the wrong answer). Upstream factored this into a pure `AccountTokenRotation` resolver — which would be unit-testable in the fork's SwiftPM target if placed under `Helpers/`.
+
+### A3. A revoked OAuth grant isn't reported as an expired session (`a6b2b83`) — medium-high / small
+`ClaudeOAuthService.swift:119-124` is byte-identical to upstream's pre-fix code: it decides grant death from the HTTP status code alone. Anthropic returns RFC 6749 §5.2's **HTTP 400 with `invalid_grant`**, which the fork maps to `httpError(400)`.
+
+Two concrete fork consequences: the re-login prompt at `DataRefreshManager.swift:272-275` only fires on `.sessionExpired`, so it never fires; and `isAuthenticationError(_:)` (`UsageDetailView+Helpers.swift:173-177`) doesn't match `httpError`, so the popover shows no **Go to Settings** button either (consumed at `UsageDetailView.swift:292`). The user is stuck with a dead grant and no offered route back.
+
+Upstream added `Helpers/OAuthGrantFailure.swift` with `isDeadGrant(statusCode:body:)`. Put it under `Helpers/` and register it in `Package.swift` so the predicate is testable; port upstream's `OAuthGrantFailureTests`. *Note:* this also changes the plain-401 mapping from `.unauthorized` to `.sessionExpired` — intended, since only `.sessionExpired` triggers the prompt, but it is a behaviour change beyond the revoked-grant case.
+
+### A4. The request-burst triad (`b1b89f4` + `48a156a`, `1c24bbf`, and the `bypassBackoff` half of `e897012`) — high / trivial-small
+Three separate defects that each leave a path open; land them together.
+
+- **Duplicate request on every tier change.** `MenuBarManager.swift:179-186` handles `.refreshIntervalChanged` with `stopRefreshing()` + `startRefreshing()`, and `startRefreshing()` fetches immediately (`DataRefreshManager.swift:283-286`). A smart-mode tier change is posted within a few hundred ms of the fetch that caused it, so every tier transition — and every refresh-mode or interval change — fires a second request. Replace with reschedule-only. *Note:* this leaves `stopRefreshing()` (`:297-300`) with no callers; upstream deleted it.
+- **Off-cycle requests don't push the timer back.** `DataRefreshManager.swift:168` records `lastAPIFetchTime` but never reschedules. `restartTimer()` (`:318`) has three call sites — `:286`, `:364`, `:405` — and the latter two are inside `if wasIdle`, so **in active mode neither a manual refresh nor a popover open reschedules the 60s timer**; a manual refresh can be followed seconds later by a tick. Upstream funnels everything through `markRequestIssued(at:)`, which does both.
+- **The backoff suppresses the user's own refresh — a fork-only defect, strictly worse than the upstream bug `e897012` fixed.** v1.9.2 put the guard at the very top of the shared choke point (`DataRefreshManager.swift:156-163`), which was the right instinct for *automatic* triggers but also swallows a manual refresh: the user presses refresh during a backoff window and nothing happens, with no feedback. Upstream gates only the automatic triggers (`fetchUsage(bypassBackoff:)`, true from manual refresh). *Caveat:* `bypassBackoff` lets a manual refresh re-trigger a limit the app is waiting out; the only bound is the 10s debounce at `:390-396`, **which is compiled out under `#if !DEBUG`** — check that before relying on it.
+
+## 🟠 Port — medium
+
+### B1. API responses are written to the on-disk URL cache (`1323df3`) — medium / small
+All three of the fork's `URLSession`s are built on `URLSessionConfiguration.default`, whose `urlCache` is `URLCache.shared` with a ~2 GB disk capacity: `ClaudeAPIService.swift:50-60` (every usage poll), `DiagnosticManager.swift:69`, and — found by the Area C refutation, not the area itself — `ClaudeOAuthService.swift:92-95` plus a second OAuth site, i.e. **token-endpoint responses too**.
+
+Characterize this accurately rather than dramatically: usage response bodies are percentages and reset times, not credentials. The sharper points are (a) OAuth *token* responses are a different matter, and whether Anthropic sends `Cache-Control: no-store` there is unverified — checking costs a real credential round-trip; (b) `URLCache` stores the `HTTPURLResponse` alongside the body, so response headers are plausibly persisted; and (c) `DiagnosticManager.swift:69` sets **no** `requestCachePolicy` at all, so unlike the other two it can *read* from the cache — a diagnostic run could report a cached response as a live result, which is a correctness bug in the one tool meant to establish ground truth. App Sandbox confines the files to the container but does not stop them being written. The agent could not read the container's Caches directory (no TCC access), so the on-disk claim is from configuration, not observation.
+
+Upstream's `NetworkCachePolicy.swift` adds `URLSessionConfiguration.uncached` (`.default` with `urlCache = nil`, deliberately not `.ephemeral`, which would also drop cookies — and the fork's session-key path **needs** its cookie).
+
+### B2. Menu bar icon colors follow the system theme, not the menu bar (`cc31d63`) — medium / small-medium
+The menu bar's lightness follows the wallpaper and is independent of the system Dark/Light setting, so `AppleInterfaceStyle` cannot decide the text color; only the status item's `button.effectiveAppearance` can.
+
+The fork is **half-fixed**, which is why it looks wrong rather than merely imperfect. The correct source already exists — `ColorScheme.swift:22-33`, `isDarkMode(for statusButton:)` — and the circle renderer uses it (`MenuBarIconRenderer.swift:352`). But three shape renderers read `UsageColorScheme.isDarkMode` with no button (`ShapeIconRenderer.swift:156, 341, 465`) while the correct `button` is in scope in the same function, and four backdrop fills are still hardcoded `NSColor.white.withAlphaComponent(0.5)` (`MenuBarIconRenderer.swift:296`, `ShapeIconRenderer.swift:49, 228`, +1).
+
+Worse, the fork has the same cache-staleness bug upstream fixed: `generateCacheKey` (`MenuBarUI.swift:404-428`) does **not** include appearance — and its doc comment at `:31` claims the key is `"mode_style_percentage_appearance"`, which is stale and wrong. Nothing observes menu bar appearance, so even the already-correct line 352 is baked into a cached `NSImage` and won't repaint when the wallpaper flips.
+
+Split this: the wrong-source routing and the backdrop fill are small and safe; the **KVO half is the riskiest edit in this delta** (making `MenuBarUI` an `NSObject`, observing `button.effectiveAppearance` on the status item, and tearing the observer down before dealloc or it crashes). Upstream's 200ms debounce was tuned against its own build — it reports the appearance bouncing ~6 times in a second at creation. Treat the 0.50 → 0.30 alpha drop as a **taste change, not a fix**; it alters how "Color with Background" looks for users who chose it deliberately.
+
+### B3. Nothing backs off on transient failures (`e897012`) — medium / medium
+`rateLimitedUntil` is assigned in exactly two places — `:186` (cleared on success) and `:265`, inside `if case UsageError.rateLimited`. So a sustained 5xx, a Cloudflare block, or an offline Mac keeps hitting at `effectiveRefreshInterval` (60s in active mode) **indefinitely**. Upstream backs off on 5xx, network errors and Cloudflare blocks too, with a *lower* cap for network errors precisely because nothing clears the backoff when connectivity returns — keep that 5-minute cap if ported; the fork has no connectivity-restored event either.
+
+Two smaller pieces of the same commit:
+- **Retry-After should widen the ladder, not replace it.** `:256-264` lets a positive `Retry-After` overwrite the exponential ladder and writes it back as the new ladder value; upstream takes the *greater* of the two. Also restrict the delta-seconds form to digits only so `inf` / `1e3` / `+5` don't parse (`ClaudeAPIService.swift:74`).
+- **A cancelled request is counted as a failure.** `ClaudeAPIService.swift:113` cancels the in-flight task at the head of every fetch, and `:202-205` maps any `URLSession` error — cancellation included — to `networkError`. **Only `:202` is affected**: the refutation established that `currentTask` is assigned solely at `:201` in `fetchMainUsage`, so the OAuth site at `:594` is *not* reachable this way. Audit #3's habit of listing both paths led the area astray here.
+
+### B4. An account switch doesn't clear the backoff — medium / trivial
+A rate limit belongs to the token, not the app, so switching accounts should reset it. `prepareForAccountSwitch()` (`DataRefreshManager.swift:146-154`) clears the stale-data latch added in v1.9.3 but leaves `rateLimitedUntil` and `rateLimitBackoff` untouched, so a fresh account inherits the previous one's suppression window.
+
+⚠️ **The area's proposed edit for this was a no-op** — it added three comment lines and never assigned anything. Caught by the refutation. Whoever lands it must actually clear both fields.
+
+### B5. The onboarding flow breaks a successful sign-in (`4ec7b6c`) — medium / medium
+The fork **does** have an onboarding flow (`Views/Settings/Welcome/WelcomeView.swift`) and it carries upstream's bug exactly: `WelcomeView.swift:293-298` takes the `Account.sessionKey` returned by browser login — an OAuth **refresh token** — and feeds it to `fetchOrganizations` as if it were a cookie. That request always fails, so a *successful* sign-in ends with "failed to fetch organization ID". Severity was downgraded from high by the refutation: `.accountChanged` already triggers a fetch, so the user is not left with no data, just a spurious error.
+
+Trivial second half of the same commit: the onboarding and OAuth windows are `.floating` (`WebLoginWindowManager.swift:48`, `ClaudeUsageMonitorApp.swift:112`), so they draw above every other app **including the browser they are telling the user to go to**. Making them ordinary windows is a one-line change each and matters more here than upstream, since the fork's OAuth flow is explicitly a system-browser flow.
+
+## 🟢 Port — low
+
+- **`7a227ce` launch-at-login shows a red error before first registration** — trivial. `SMAppService.Status.notFound` is the normal state before `register()` has ever been called, but the fork renders it as a red `xmark.circle.fill` / "Not Found" (`GeneralSettingsView.swift:634-635, 651-652, 668-669`). Fold it in with `.notRegistered` ("Disabled"). 9 one-line edits: three case merges, one accessor deletion (`LocalizationHelper.swift:399`), and one string removed from each of the 5 locales (all at `:191`). It misreports as an *error*, not as enabled. *Unverified:* that `.notFound` really is the pre-registration state comes from upstream's commit message, not from observation here.
+- **`cedffaa`'s CI half** — trivial, and unrelated to the KVC change. `build.sh:183` sends all `xcodebuild` output to `build.log` (`:219, 274, 339, 407`), and `release.yml:219` calls it with no failure handler, so a CI compile failure surfaces as a bare "exit code 65" with the cause invisible. Add upstream's `if: failure()` step that tails the log. Cheap insurance given the fork's CI pins `latest-stable`, which the runner image resolves — nothing in the repo controls which Xcode that yields.
+- **`cc31d63`'s string half** — the fork still ships the obsolete advice telling users to switch to "Color with Background" when "Color Translucent" fails on dark wallpapers (`en.lproj:70-71` and the 4 other locales), which stops being true once B2 lands.
+- **`5a60f17` menu bar icon size setting** — low / medium, and genuinely conflict-free: with comments stripped, the fork's `ShapeIconRenderer` differs from upstream's pre-commit version by only 81 lines, all of them the fork's own additive divergences. ⚠️ Three of the area's twelve edit sites are wrong or missing, and `GeneralSettingsDisplaySection.swift` does not exist in the fork. Re-derive the sites if porting.
+- **`72c23d5` debug gating** — `PARTIAL`, and **DEBUG builds only**. The area labelled the fork `NOT_AFFECTED` while proposing seven edit sites; the refutation corrected it to `AFFECTED (DEBUG only)`. Nothing debug-only is reachable in a Release build — all twelve debug properties sit inside `#if DEBUG` (`UserSettings.swift:553+`). Optional cleanup, not a security item.
+
+## ⏸️ Partial — larger, defer unless wanted
+
+- **`639cb48` customizable notification thresholds** — medium / large. The fork's thresholds are three hardcoded constants (`NotificationManager.swift:24, 27, 30`); upstream replaced them with a configurable range (50…100 step 5) and decoupled reset detection from the warning threshold. Any port **must preserve the fork's per-account dedup** keyed `"<accountId>:<limitType>"` (v1.9.1) — that is a fork divergence upstream doesn't have.
+- **`cc764d9` used/remaining toggle doesn't reach the menu bar** — medium / large. Real bug, present identically: the toggle is view-local (`UsageDetailView.swift:63, 67`, written at `:548-550`) so it never reaches the menu bar icon. Upstream's fix is entangled with its own spring-animation rework; the fork could take just the state move.
+
+## ✅ Skip / product decisions
+
+- **Pace Graph** (`abf8097`, `fec32d4`, `29573e7`, `eb6a8c4`, `c78e700`, `9e31a42`, `e5b4849`, `3a6d415`) — v3.5.0's headline feature, ~1,300 lines across ~18 files. A second popover visualization plotting each limit against an "ideal pace" line. Purely a product decision; no defect behind it.
+- **`67232bb` five-tab settings reorganization** — large refactor with no bug behind it. Note it **supersedes upstream's own `92223a2`**, the layout fix the fork ported in v1.9.3; the fork's version stands on its own.
+- **`7a8b023` unified logging** — `PRODUCT_DECISION`, medium / large. One auditable logging system replacing two parallel loggers, with an expanded `SensitiveDataRedactor`. Worth considering *if* the fork ever does the OAuth-aware diagnostics below, since the two overlap.
+- **`90ae544` auth-path-aware diagnostics** — `PARTIAL`, high value but **large**. The fork's diagnostic has **no auth-path awareness at all**: `grep -i oauth` over `DiagnosticsView.swift`, `DiagnosticManager.swift` and `DiagnosticReport.swift` returns zero hits, and `runDiagnosticTest()` (`DiagnosticManager.swift:37-66`) branches only on `hasValidCredentials`. For an OAuth account it reports redacted `organizationId` / `sessionKey` fields that mean nothing. Upstream's version is built on a `ProviderType`/`ProviderAuthPath` abstraction the fork never had, so this is a rewrite, not a port. ⚠️ Also note upstream's approach makes the diagnostic trigger a **real token refresh**, which — because refresh_tokens are single-use and rotate — means running diagnostics mutates stored credentials as a side effect.
+- **`14b364d` transient-error header indicator** — decline the redesign; the fork's v1.9.3 stale-data banner already solves the same user problem. But the refutation corrected the blanket `SKIP`: **take upstream's last-fetched timestamp**, and note its actual objection was the *popover window jumping in size* — which the fork's banner also does, by 47–53pt (`UsageDetailView.swift:112-114`, `:120` feeding the fixed frame at `:635`). That is the open field-watch item from v1.9.3, now with upstream's independent judgement that the jump itself is the problem.
+- **`d72a0fc` ring-toggle stray marks** — omitted from scoping, flagged by the refutation as a likely small `PARTIAL`: the fork strokes a raw `Circle().trim` with `lineCap: .round` under the same spring (`UsageDetailView.swift:370-382`, `:425`) with no minimum-arc guard, so the zero-length-arc dot artifact is plausible here too. Not verified on screen.
+- Everything Codex — token/Keychain handling, credit balance, reset announcements, the hexagon badge hunks of `cc31d63` — and the website rebuild and localization commits.
+
+## Not from upstream: Swift 6 readiness
+
+Surfaced while confirming the fork builds under Xcode 27.1, so recording it here rather than losing it. The tree carries warnings that are **hard errors in the Swift 6 language mode**: `UsageHistoryStore.swift:50, 66` (`reference to captured var 'self' in concurrently-executing code`), `:126` and `ClaudeAPIResponseModels.swift:197` (MainActor-isolated calls from nonisolated contexts — the latter because `UsageData` is `Sendable` but not `nonisolated`, pre-existing and merely relocated by v1.9.3), plus deprecated `onChange(of:perform:)` in three views. None bite today. This is the same hazard class the `OAuthCallbackServer` deinit comment warned about in v1.9.3.
