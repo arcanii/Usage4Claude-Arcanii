@@ -330,6 +330,17 @@ class MenuBarUI {
     }
 
     /// Set icon for a menu item
+    ///
+    /// From macOS 27, AppKit decides whether a menu item's image is drawn and defaults
+    /// to hiding it — `NSMenuItem.h` puts it plainly: "in macOS 27 and later, AppKit
+    /// determines the visibility of menu item images, and will typically hide images."
+    /// Setting `image` alone therefore leaves every icon in this menu blank. Declaring
+    /// `.visible` opts back in.
+    ///
+    /// Every icon in the menu is assigned here, so this one guard covers all of them.
+    /// The `#available` check is required rather than defensive: the property is
+    /// `API_AVAILABLE(macos(27.0))` and the deployment target is 26.0.
+    ///
     /// - Parameters:
     ///   - item: Menu item
     ///   - systemName: SF Symbol icon name
@@ -338,6 +349,9 @@ class MenuBarUI {
             image.size = NSSize(width: 16, height: 16)
             image.isTemplate = true
             item.image = image
+            if #available(macOS 27.0, *) {
+                item.preferredImageVisibility = .visible
+            }
         }
     }
 
