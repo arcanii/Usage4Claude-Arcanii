@@ -6,6 +6,27 @@
         <description>Updates to U4Claude (Arcanii Mod) — Claude.ai usage menu bar app for macOS.</description>
         <language>en</language>
         <item>
+            <title>v1.9.4</title>
+            <pubDate>Mon, 26 Oct 2026 00:00:00 +0000</pubDate>
+            <sparkle:version>23</sparkle:version>
+            <sparkle:shortVersionString>1.9.4</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <link>https://github.com/arcanii/Usage4Claude-Arcanii/releases/tag/v1.9.4</link>
+            <description><![CDATA[
+                <h2>v1.9.4 &mdash; Menu icons on macOS 27</h2>
+                <p>One fix. No re-login required.</p>
+                <ul>
+                    <li><strong>Menu icons are visible again on macOS 27.</strong> All seven icons in the menu bar's right-click menu disappeared on macOS 27, leaving a column of bare text. macOS now decides whether a menu item's icon is drawn and hides it unless the app explicitly asks &mdash; the app now asks.</li>
+                </ul>
+                <p>On macOS 26 this release makes no visible difference. See <a href="https://github.com/arcanii/Usage4Claude-Arcanii/blob/main/docs/RELEASES/v1.9.4.md">the full release notes</a>.</p>
+            ]]></description>
+            <enclosure
+                url="https://github.com/arcanii/Usage4Claude-Arcanii/releases/download/v1.9.4/U4Claude-v1.9.4.dmg"
+                sparkle:edSignature="rFg36xgdyV7NvXuUhZU/SB32AJUOIodyT+U6oV9Wg7goZuEevKPtEgPWc9Jfysp5uJUYYUxxjCAf7ho/4uiCDw=="
+                length="7285879"
+                type="application/octet-stream"/>
+        </item>
+        <item>
             <title>v1.9.3</title>
             <pubDate>Wed, 02 Sep 2026 00:00:00 +0000</pubDate>
             <sparkle:version>22</sparkle:version>
