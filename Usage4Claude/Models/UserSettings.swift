@@ -1093,11 +1093,25 @@ class UserSettings: ObservableObject {
             var types: [LimitType] = []
 
             // In canonical order: fiveHour -> sevenDay -> extraUsage -> opus -> sonnet
-            // 5-hour and 7-day always show in smart mode — every Claude account
-            // is subject to both limits, so there's no scenario where hiding
-            // them is correct. Backported from upstream commit `fffff55`.
-            types.append(.fiveHour)
-            types.append(.sevenDay)
+            //
+            // 5-hour and 7-day are listed only when the account actually has them.
+            // These were previously appended unconditionally, on the reasoning that
+            // "every Claude account is subject to both limits" (backported from
+            // upstream `fffff55`). That stopped being true when Anthropic dropped the
+            // 5-hour window from the top subscription: the API returns no 5-hour
+            // window at all, and naming a type active with no data behind it left the
+            // popover with no primary ring, because the ring reads the first active
+            // circular type and found nothing.
+            //
+            // `sevenDay` is still effectively always present — `toUsageData()` emits a
+            // 0% placeholder for it so brand-new accounts show the row from day one —
+            // so this does not regress new accounts.
+            if data.fiveHour != nil {
+                types.append(.fiveHour)
+            }
+            if data.sevenDay != nil {
+                types.append(.sevenDay)
+            }
             if data.extraUsage?.enabled == true {
                 types.append(.extraUsage)
             }

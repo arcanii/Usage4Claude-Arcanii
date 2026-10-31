@@ -188,19 +188,22 @@ extension UsageDetailView {
         let showPlaceholder = UserSettings.shared.shouldShowCustomPlaceholderInPopover
         let placeholderData = UsageData.LimitData(percentage: 0, resetsAt: nil)
 
-        // Find the first circular type from active types
-        if activeTypes.contains(.fiveHour) {
-            if let fiveHour = data.fiveHour {
-                return fiveHour
-            } else if showPlaceholder {
-                return placeholderData
-            }
-        } else if activeTypes.contains(.sevenDay) {
-            if let sevenDay = data.sevenDay {
-                return sevenDay
-            } else if showPlaceholder {
-                return placeholderData
-            }
+        // Find the first circular type that actually has data. These were previously
+        // chained with `else if`, so an active 5-hour type with no data fell straight
+        // past the 7-day case to `return nil` and the popover drew no primary ring at
+        // all — which is what the top subscription hit once Anthropic stopped
+        // returning a 5-hour window. Smart mode no longer lists a type it has no data
+        // for, and this independent fallback keeps custom mode honest too.
+        if activeTypes.contains(.fiveHour), let fiveHour = data.fiveHour {
+            return fiveHour
+        }
+        if activeTypes.contains(.sevenDay), let sevenDay = data.sevenDay {
+            return sevenDay
+        }
+        // A circular type is selected but carries no data: in custom mode the user
+        // asked for that row explicitly, so show a 0% placeholder rather than nothing.
+        if showPlaceholder, activeTypes.contains(.fiveHour) || activeTypes.contains(.sevenDay) {
+            return placeholderData
         }
         // If no circular type found, return nil
         return nil
@@ -212,21 +215,16 @@ extension UsageDetailView {
     ///   - activeTypes: Currently active display types
     /// - Returns: Primary limit color
     func colorForPrimaryByActiveTypes(data: UsageData, activeTypes: [LimitType]) -> Color {
-        // Find the first circular type from active types and return its color
-        if activeTypes.contains(.fiveHour) {
-            if let fiveHour = data.fiveHour {
-                return colorForPercentage(fiveHour.percentage)
-            } else {
-                // Return gray when data is nil
-                return .gray
-            }
-        } else if activeTypes.contains(.sevenDay) {
-            if let sevenDay = data.sevenDay {
-                return colorForSevenDay(sevenDay.percentage)
-            } else {
-                return .gray
-            }
+        // Mirrors `getPrimaryLimitData`'s order, and must stay in step with it: these
+        // were also chained with `else if`, so a 5-hour type with no data returned gray
+        // instead of falling back to the 7-day color the ring was actually drawing.
+        if activeTypes.contains(.fiveHour), let fiveHour = data.fiveHour {
+            return colorForPercentage(fiveHour.percentage)
         }
+        if activeTypes.contains(.sevenDay), let sevenDay = data.sevenDay {
+            return colorForSevenDay(sevenDay.percentage)
+        }
+        // Gray when the selected circular type has no data behind it.
         return .gray
     }
 
