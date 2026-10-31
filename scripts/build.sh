@@ -91,6 +91,10 @@ fi
 BUILD_CONFIG="Release"
 SHOULD_CLEAN=true
 VERBOSE=false
+# Allow a Release build to continue when it cannot be notarized. Off by default:
+# an un-notarized Release DMG is unpublishable (Sparkle signing is gated on it),
+# so silently producing one is how a bad release gets cut.
+ALLOW_UNNOTARIZED=false
 
 # ============================================
 # Parse command-line arguments
@@ -109,6 +113,10 @@ while [[ $# -gt 0 ]]; do
             VERBOSE=true
             shift
             ;;
+        --allow-unnotarized)
+            ALLOW_UNNOTARIZED=true
+            shift
+            ;;
         --help|-h)
             echo "Usage: $0 [options]"
             echo ""
@@ -116,6 +124,8 @@ while [[ $# -gt 0 ]]; do
             echo "  --no-clean          Skip the Xcode clean step (clean runs by default)"
             echo "  --config <config>   Build configuration (Release|Debug). Default: Release"
             echo "  --verbose, -v       Show full build log instead of a summary"
+            echo "  --allow-unnotarized Continue a Release build that cannot be notarized."
+            echo "                      Produces an UNPUBLISHABLE DMG; local testing only."
             echo "  --help, -h          Show this help"
             echo ""
             echo "Examples:"
@@ -434,6 +444,27 @@ print_success "DMG created: $DMG_PATH"
 # ============================================
 # Notarize — Release builds only
 # ============================================
+# A Release DMG that is not notarized AND stapled must never reach the publish
+# steps. The Sparkle signing block below is gated on NOTARIZED, so a skipped
+# notarization leaves the appcast enclosure unfilled — which is the only thing
+# that caught this during the v1.9.4 build, where the notarytool keychain profile
+# had gone missing and the script still exited 0. Fail loudly instead.
+notarization_unavailable() {
+    if [ "$ALLOW_UNNOTARIZED" = true ]; then
+        print_warning "$1"
+        print_warning "Continuing because --allow-unnotarized was passed."
+        print_warning "This DMG is NOT publishable: do not tag or upload it."
+        return 0
+    fi
+    print_error "$1"
+    echo ""
+    print_info "A Release build must be notarized and stapled before it can be published:"
+    print_info "  - Sparkle signing is skipped without it, so appcast.xml cannot be completed"
+    print_info "  - users would be told to right-click -> Open on first launch"
+    print_info "Pass --allow-unnotarized to build an unpublishable DMG anyway (local testing only)."
+    exit 1
+}
+
 NOTARIZED=false
 if [ "$BUILD_CONFIG" = "Release" ]; then
     print_header "Notarizing DMG"
@@ -451,22 +482,18 @@ if [ "$BUILD_CONFIG" = "Release" ]; then
                 print_success "Staple complete"
                 NOTARIZED=true
             else
-                print_warning "Staple failed; DMG is still notarized but first launch will require network access"
+                notarization_unavailable "Staple failed; the ticket is not attached to the DMG"
             fi
         else
-            print_error "Notarization failed — see log: $LOG_FILE"
             print_info "Use 'xcrun notarytool log <submission-id> --keychain-profile $NOTARY_PROFILE' to see details"
+            notarization_unavailable "Notarization failed — see log: $LOG_FILE"
         fi
     else
-        print_warning "notarytool keychain profile '$NOTARY_PROFILE' not found; skipping notarization"
-        echo ""
         print_info "First-time setup (one-off) — generate an app-specific password at appleid.apple.com, then:"
-        echo "    xcrun notarytool store-credentials \"$NOTARY_PROFILE\" \\"
-        echo "      --apple-id <your-apple-id-email> \\"
-        echo "      --team-id $DEVELOPMENT_TEAM \\"
-        echo "      --password <app-specific-password>"
+        echo "    xcrun notarytool store-credentials \"$NOTARY_PROFILE\" --team-id $DEVELOPMENT_TEAM"
         echo ""
         print_info "(Or set the NOTARY_PROFILE env var to point at an existing profile)"
+        notarization_unavailable "notarytool keychain profile '$NOTARY_PROFILE' not found"
     fi
 fi
 
