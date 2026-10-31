@@ -6,6 +6,27 @@
         <description>Updates to U4Claude (Arcanii Mod) — Claude.ai usage menu bar app for macOS.</description>
         <language>en</language>
         <item>
+            <title>v1.9.5</title>
+            <pubDate>Sat, 31 Oct 2026 00:00:00 +0000</pubDate>
+            <sparkle:version>24</sparkle:version>
+            <sparkle:shortVersionString>1.9.5</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <link>https://github.com/arcanii/Usage4Claude-Arcanii/releases/tag/v1.9.5</link>
+            <description><![CDATA[
+                <h2>v1.9.5 &mdash; The circle is back on plans without a 5-hour limit</h2>
+                <p>One fix. No re-login required.</p>
+                <ul>
+                    <li><strong>The circle shows your 7-day limit when your plan has no 5-hour window.</strong> Anthropic removed the 5-hour limit from the top subscription and the API stopped returning that window, so the popover's main circle &mdash; which reads the 5-hour number by default &mdash; vanished, even though the 7-day and weekly per-model numbers were arriving normally. The app now drops the missing 5-hour row and promotes the 7-day limit to the main circle.</li>
+                </ul>
+                <p>If your plan still has a 5-hour limit, nothing changes. See <a href="https://github.com/arcanii/Usage4Claude-Arcanii/blob/main/docs/RELEASES/v1.9.5.md">the full release notes</a>.</p>
+            ]]></description>
+            <enclosure
+                url="https://github.com/arcanii/Usage4Claude-Arcanii/releases/download/v1.9.5/U4Claude-v1.9.5.dmg"
+                sparkle:edSignature="jjFZJxzfqxAYWGhPLpmYPjmW2Y9/DDzFK1/yPHUw4iw9R9vozdSZq8WhmJWO0ec1q8mTV33l2sZNxvG32VXSBw=="
+                length="7287843"
+                type="application/octet-stream"/>
+        </item>
+        <item>
             <title>v1.9.4</title>
             <pubDate>Mon, 26 Oct 2026 00:00:00 +0000</pubDate>
             <sparkle:version>23</sparkle:version>
