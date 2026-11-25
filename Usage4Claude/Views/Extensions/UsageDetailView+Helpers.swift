@@ -178,54 +178,59 @@ extension UsageDetailView {
 
     // MARK: - Primary Limit Selection
 
+    /// Which limit the large ring shows. The decision lives in `LimitDisplayLayout`,
+    /// where it is unit tested; this supplies the popover's placeholder setting.
+    func primaryRingType(data: UsageData, activeTypes: [LimitType]) -> LimitType? {
+        LimitDisplayLayout.primaryRingType(
+            data: data,
+            activeTypes: activeTypes,
+            showPlaceholder: UserSettings.shared.shouldShowCustomPlaceholderInPopover
+        )
+    }
+
+    /// Whether to draw the thin outer 7-day ring and stack both percentages in the
+    /// center. See `LimitDisplayLayout.showsSevenDayOuterRing`.
+    func showsSevenDayOuterRing(data: UsageData, activeTypes: [LimitType]) -> Bool {
+        LimitDisplayLayout.showsSevenDayOuterRing(
+            data: data,
+            activeTypes: activeTypes,
+            showPlaceholder: UserSettings.shared.shouldShowCustomPlaceholderInPopover
+        )
+    }
+
     /// Determine primary limit data based on user-selected display types
     /// - Parameters:
     ///   - data: Usage data
     ///   - activeTypes: Currently active display types
-    /// - Returns: Primary limit data
+    /// - Returns: Primary limit data, a 0% placeholder in custom mode when the chosen
+    ///   limit has no data, or nil when no ring should be drawn
     func getPrimaryLimitData(data: UsageData, activeTypes: [LimitType]) -> UsageData.LimitData? {
-        // In custom mode, show placeholder data (0%) even when data is nil
-        let showPlaceholder = UserSettings.shared.shouldShowCustomPlaceholderInPopover
         let placeholderData = UsageData.LimitData(percentage: 0, resetsAt: nil)
 
-        // Find the first circular type that actually has data. These were previously
-        // chained with `else if`, so an active 5-hour type with no data fell straight
-        // past the 7-day case to `return nil` and the popover drew no primary ring at
-        // all — which is what the top subscription hit once Anthropic stopped
-        // returning a 5-hour window. Smart mode no longer lists a type it has no data
-        // for, and this independent fallback keeps custom mode honest too.
-        if activeTypes.contains(.fiveHour), let fiveHour = data.fiveHour {
-            return fiveHour
+        switch primaryRingType(data: data, activeTypes: activeTypes) {
+        case .fiveHour:
+            return data.fiveHour ?? placeholderData
+        case .sevenDay:
+            return data.sevenDay ?? placeholderData
+        default:
+            return nil
         }
-        if activeTypes.contains(.sevenDay), let sevenDay = data.sevenDay {
-            return sevenDay
-        }
-        // A circular type is selected but carries no data: in custom mode the user
-        // asked for that row explicitly, so show a 0% placeholder rather than nothing.
-        if showPlaceholder, activeTypes.contains(.fiveHour) || activeTypes.contains(.sevenDay) {
-            return placeholderData
-        }
-        // If no circular type found, return nil
-        return nil
     }
 
     /// Determine primary limit color based on user-selected display types
     /// - Parameters:
     ///   - data: Usage data
     ///   - activeTypes: Currently active display types
-    /// - Returns: Primary limit color
+    /// - Returns: Primary limit color, gray for a placeholder
     func colorForPrimaryByActiveTypes(data: UsageData, activeTypes: [LimitType]) -> Color {
-        // Mirrors `getPrimaryLimitData`'s order, and must stay in step with it: these
-        // were also chained with `else if`, so a 5-hour type with no data returned gray
-        // instead of falling back to the 7-day color the ring was actually drawing.
-        if activeTypes.contains(.fiveHour), let fiveHour = data.fiveHour {
-            return colorForPercentage(fiveHour.percentage)
+        switch primaryRingType(data: data, activeTypes: activeTypes) {
+        case .fiveHour:
+            return data.fiveHour.map { colorForPercentage($0.percentage) } ?? .gray
+        case .sevenDay:
+            return data.sevenDay.map { colorForSevenDay($0.percentage) } ?? .gray
+        default:
+            return .gray
         }
-        if activeTypes.contains(.sevenDay), let sevenDay = data.sevenDay {
-            return colorForSevenDay(sevenDay.percentage)
-        }
-        // Gray when the selected circular type has no data behind it.
-        return .gray
     }
 
     // MARK: - Color Methods

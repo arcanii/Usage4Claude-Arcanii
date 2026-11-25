@@ -27,7 +27,8 @@ let package = Package(
                 "SemverCompare.swift",
                 "ClaudeAPIResponseModels.swift",
                 "UsageHistorySample.swift",
-                "UsageSnapshot.swift"
+                "UsageSnapshot.swift",
+                "LimitDisplayLayout.swift"
             ]
         ),
         .testTarget(

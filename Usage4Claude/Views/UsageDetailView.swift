@@ -326,6 +326,9 @@ struct UsageDetailView: View {
                     ZStack {
                         // Determine primary limit based on user-selected display types
                         let primaryLimitData = getPrimaryLimitData(data: data, activeTypes: activeDisplayTypes)
+                        // One decision for the outer ring and the stacked center, so
+                        // neither can disagree with the primary ring above.
+                        let showsOuterRing = showsSevenDayOuterRing(data: data, activeTypes: activeDisplayTypes)
 
                         if let primary = primaryLimitData {
                             // 1. Main ring background (gray)
@@ -384,9 +387,10 @@ struct UsageDetailView: View {
                                     )
                             }
 
-                            // 3. Outer thin ring (only shown when user has selected both 5h and 7d limits)
-                            if activeDisplayTypes.contains(.fiveHour) &&
-                               activeDisplayTypes.contains(.sevenDay) {
+                            // 3. Outer thin 7-day ring, only around a 5-hour primary ring.
+                            // Checking "both types active" was not enough: when the primary
+                            // ring falls back to 7-day, that drew the 7-day limit twice.
+                            if showsOuterRing {
                                 // In custom mode, show placeholder ring even when data is nil
                                 let sevenDayPercentage = data.sevenDay?.percentage ?? (UserSettings.shared.shouldShowCustomPlaceholderInPopover ? 0 : nil)
 
@@ -440,13 +444,12 @@ struct UsageDetailView: View {
                                 }
                             }
 
-                            // 4. Center display area: stacked percentages when both
-                            // limits active. Both percentages invert in remaining
-                            // mode so the numbers stay coherent with the ring
-                            // direction. The single-ring branch additionally swaps
-                            // its "Used"/"Available" label.
-                            if activeDisplayTypes.contains(.fiveHour) &&
-                               activeDisplayTypes.contains(.sevenDay) {
+                            // 4. Center display area: stacked percentages whenever the
+                            // outer ring is drawn, a single one otherwise. Both
+                            // percentages invert in remaining mode so the numbers stay
+                            // coherent with the ring direction. The single-ring branch
+                            // additionally swaps its "Used"/"Available" label.
+                            if showsOuterRing {
                                 let fhPct = data.fiveHour?.percentage ?? 0
                                 let sdPct = data.sevenDay?.percentage ?? 0
                                 let fhDisplay = UsageRingDisplay.displayedPercentage(

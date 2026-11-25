@@ -143,34 +143,9 @@ enum MonitoringMode: String, Codable {
 
 // MARK: - Limit Types
 
-/// Limit type
-enum LimitType: String, CaseIterable, Codable {
-    /// 5-hour limit
-    case fiveHour = "five_hour"
-    /// 7-day limit
-    case sevenDay = "seven_day"
-    /// Extra Usage paid overage allowance
-    case extraUsage = "extra_usage"
-    /// Opus weekly limit
-    case opusWeekly = "seven_day_opus"
-    /// Sonnet weekly limit
-    case sonnetWeekly = "seven_day_sonnet"
-
-    /// Whether this is a circular icon (5-hour and 7-day)
-    var isCircular: Bool {
-        return self == .fiveHour || self == .sevenDay
-    }
-
-    /// Whether this is a rectangular icon (Opus and Sonnet)
-    var isRectangular: Bool {
-        return self == .opusWeekly || self == .sonnetWeekly
-    }
-
-    /// Whether this is a hexagonal icon (Extra Usage)
-    var isHexagonal: Bool {
-        return self == .extraUsage
-    }
-
+// `LimitType` itself is defined in `Helpers/LimitDisplayLayout.swift`, so the pure
+// display logic there can be unit tested. Only its localized name lives here.
+extension LimitType {
     /// Display name
     var displayName: String {
         switch self {
@@ -1085,49 +1060,16 @@ class UserSettings: ObservableObject {
         }()
         switch effectiveMode {
         case .smart:
-            // Smart mode: Show all types that have data
+            // Smart mode: every type the account actually has. Includes 5-hour only
+            // when the API returns it — see `LimitDisplayLayout.smartTypes`.
             guard let data = usageData else {
                 return []
             }
-
-            var types: [LimitType] = []
-
-            // In canonical order: fiveHour -> sevenDay -> extraUsage -> opus -> sonnet
-            //
-            // 5-hour and 7-day are listed only when the account actually has them.
-            // These were previously appended unconditionally, on the reasoning that
-            // "every Claude account is subject to both limits" (backported from
-            // upstream `fffff55`). That stopped being true when Anthropic dropped the
-            // 5-hour window from the top subscription: the API returns no 5-hour
-            // window at all, and naming a type active with no data behind it left the
-            // popover with no primary ring, because the ring reads the first active
-            // circular type and found nothing.
-            //
-            // `sevenDay` is still effectively always present — `toUsageData()` emits a
-            // 0% placeholder for it so brand-new accounts show the row from day one —
-            // so this does not regress new accounts.
-            if data.fiveHour != nil {
-                types.append(.fiveHour)
-            }
-            if data.sevenDay != nil {
-                types.append(.sevenDay)
-            }
-            if data.extraUsage?.enabled == true {
-                types.append(.extraUsage)
-            }
-            if data.opus != nil {
-                types.append(.opusWeekly)
-            }
-            if data.sonnet != nil {
-                types.append(.sonnetWeekly)
-            }
-
-            return types
+            return LimitDisplayLayout.smartTypes(for: data)
 
         case .custom:
-            // Custom mode: Sort by user selection, show regardless of whether data exists
-            let orderedTypes: [LimitType] = [.fiveHour, .sevenDay, .extraUsage, .opusWeekly, .sonnetWeekly]
-            return orderedTypes.filter { customDisplayTypes.contains($0) }
+            // Custom mode: the user's selection, shown whether or not it has data
+            return LimitDisplayLayout.customTypes(selected: customDisplayTypes)
         }
     }
 
