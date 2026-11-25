@@ -6,6 +6,27 @@
         <description>Updates to U4Claude (Arcanii Mod) — Claude.ai usage menu bar app for macOS.</description>
         <language>en</language>
         <item>
+            <title>v1.9.6</title>
+            <pubDate>Wed, 25 Nov 2026 00:00:00 +0000</pubDate>
+            <sparkle:version>25</sparkle:version>
+            <sparkle:shortVersionString>1.9.6</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <link>https://github.com/arcanii/Usage4Claude-Arcanii/releases/tag/v1.9.6</link>
+            <description><![CDATA[
+                <h2>v1.9.6 &mdash; Custom display no longer draws your 7-day limit twice</h2>
+                <p>One fix. No re-login required.</p>
+                <ul>
+                    <li><strong>The popover circle is consistent again in custom display mode.</strong> On plans without a 5-hour limit, v1.9.5 drew the 7-day limit as both the main circle and the thin outer ring when custom display had 5-hour and 7-day both ticked, under a &ldquo;0%&rdquo; for the missing 5-hour limit. The circle now shows what you ticked. To make the 7-day limit your main circle, untick 5-hour in Settings &rarr; General &rarr; Display Options.</li>
+                </ul>
+                <p>Smart display mode, the default, is unchanged. See <a href="https://github.com/arcanii/Usage4Claude-Arcanii/blob/main/docs/RELEASES/v1.9.6.md">the full release notes</a>.</p>
+            ]]></description>
+            <enclosure
+                url="https://github.com/arcanii/Usage4Claude-Arcanii/releases/download/v1.9.6/U4Claude-v1.9.6.dmg"
+                sparkle:edSignature="Ah+/y+Mv436trnqOnFw9pnu5hfP/IKancHIGOJGJif47voQUITqsEJCKHm2NwGIC0XOMIFcyWAFj/IuTIe5wDQ=="
+                length="7289207"
+                type="application/octet-stream"/>
+        </item>
+        <item>
             <title>v1.9.5</title>
             <pubDate>Sat, 31 Oct 2026 00:00:00 +0000</pubDate>
             <sparkle:version>24</sparkle:version>
